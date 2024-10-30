@@ -1,6 +1,22 @@
+variables:
+  GIT_STRATEGY: clone
+
 stages:
+    - pre
     - build
     - test
+
+create_process_container:
+  stage: pre
+  script:
+    - echo "Creating the process container"
+    - version=$(echo "$CI_COMMIT_MESSAGE" | sed -n 's/.*\[process container':' \([^]]*\)\].*/\1/p')
+    - docker build -t $CI_REGISTRY_IMAGE/process:$version -f docker/process/Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/process:$version
+    - docker tag $CI_REGISTRY_IMAGE/process:$version $CI_REGISTRY_IMAGE/process:latest
+    - docker push $CI_REGISTRY_IMAGE/process:latest
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /^\[process container/'
 
 build-job:
     stage: build
