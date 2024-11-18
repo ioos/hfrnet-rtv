@@ -3,7 +3,6 @@
 import logging
 from datetime import timedelta
 from pathlib import Path
-#from scipy.io import loadmat
 import calendar
 import numpy as np
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
@@ -22,9 +21,14 @@ class SumAndAvg:
        Input: 
              config:  Which type of average to compute.  Set to
                       '25 Hour', 'Monthly', 'Annual'
+             configObj: resolution and domain info 
+             rtvProcessObj: Process info needed for filenames
+             fileLocObj: Where files are located
+             time: Timestamp of date(s) to process
+             stc_lta_infoObj:  Database info used for calculations
 
        Output:
-              S - structure containing the following fields:
+              S - SumAvgTotal object containing the following fields:
                 nGood: Number of observations
                 uSum:  Sum of u
                 vSum:  Sum of v
@@ -38,53 +42,51 @@ class SumAndAvg:
                 vAvg:  Average v
                 uVar:  Variance u
                 vVar:  Variance v
+
+       Main functions:
+              get_sum:  gets the sum of total radial velocities for given time
+              get_avg:  gets the average of the radials; NOTE: can only be done after sum
+              get_sum_and_avg:  does both the sum and average 
     """
 
-    sumavgObj = SumAvgInfo()
-    rtvTotObj = RtvTotals()
-    fileList = []
-    CONFIGS = ["25 Hour", "Monthly", "Annual"]
-    nLoadedFiles = 0
-    completedSum = False
-    TEMPORAL_CONST = 24
 
-    def __init__(self, config, configObj, rtvProcessObj, fileLocObj,
+    MODES = ["25 hour", "monthly", "annual"]
+    HOURS_IN_DAY = 24
+
+    def __init__(self, mode, configObj, rtvProcessObj, fileLocObj,
                  time, stc_lta_infoObj):
         """
            Create all the different variables needed to run
         """
-        self.config = config
-        self.check_config(self.config)
+        self.mode = mode
         self.time = time
         self.stcLtaInfoObj = stc_lta_infoObj
         self.rtvProcessObj = rtvProcessObj
-        self.rtvProcessObj.subprocess_name = self.config
+        self.rtvProcessObj.subprocess_name = self.mode
         self.configObj = configObj
         self.fileLocObj = fileLocObj
+        self.sumavgObj = SumAvgInfo()
+        self.rtvTotObj = RtvTotals()
+        self.fileList = []
+        self.nLoadedFiles = 0
+        self.completedSum = False
 
-    def check_config(self, config):
-        """
-           Make sure the config is valid
-        """
-        for conf in self.CONFIGS:
-            if conf.casefold() == config.casefold():
-                self.config = conf
-                return None
+        if self.mode.casefold() not in MODES:
+            raise ValueError(f"Must have mode be one of: {self.MODES}")
 
-        raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
 
     def get_file_list(self):
         """
            Get the proper list of files based on time
         """
-        if self.config == self.CONFIGS[0]:
+        if self.mode == self.MODES[0]:
             self.fileList = self.get_25Hr_list(self.time)
-        elif self.config == self.CONFIGS[1]:
+        elif self.mode == self.MODES[1]:
             self.fileList = self.get_monthly_list(self.time)
-        elif self.config == self.CONFIGS[2]:
+        elif self.mode == self.MODES[2]:
             self.fileList = self.get_annual_list(self.time)
         else:
-            raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
+            raise ValueError(f"Must have 'config' be one of: {self.MODES}")
 
     def get_files(self, fileList):
         """
@@ -93,7 +95,7 @@ class SumAndAvg:
         fileList2 = []
         for time in fileList:
             fileLocTemp = None
-            if self.config == self.CONFIGS[0]:#25-hour
+            if self.mode == self.MODES[0]:#25-hour
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
                                                   self.fileLocObj, time, 'rtv')
@@ -101,7 +103,7 @@ class SumAndAvg:
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
                                                   self.fileLocObj, time,
-                                                  subprocess=self.config)
+                                                  subprocess=self.mode)
             fileList2.append(fileLocTemp)
 
         return fileList2
@@ -148,7 +150,8 @@ class SumAndAvg:
         temp_time = time_cent.replace(month=1, day=1)
         time_period = [temp_time]
         month_tmp = 2
-        while month_tmp < 13:
+        max_months_in_year = 13
+        while month_tmp < max_months_in_year:
             temp_time = temp_time.replace(month=month_tmp)
             time_period.append(temp_time)
             month_tmp = month_tmp + 1
@@ -164,14 +167,14 @@ class SumAndAvg:
         is25Hr = False
         isMonthly = False
         isAnnual = False
-        if self.config == self.CONFIGS[0]:
+        if self.mode == self.MODES[0]:
             is25Hr = True
-        elif self.config == self.CONFIGS[1]:
+        elif self.mode == self.MODES[1]:
             isMonthly = True
-        elif self.config == self.CONFIGS[2]:
+        elif self.mode == self.MODES[2]:
             isAnnual = True
         else:
-            raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
+            raise ValueError(f"Must have 'config' be one of: {self.MODES}")
 
         return (is25Hr, isMonthly, isAnnual)
 
@@ -225,7 +228,7 @@ class SumAndAvg:
 
     def get_sum(self) -> SumAvgInfo:
         """
-           Do the sum over the file list
+           Do the sum of radials totals over the file list
         """
 
         is25Hr, isMonthly, isAnnual = self.get_config_bools()
@@ -338,11 +341,11 @@ class SumAndAvg:
 
         if isMonthly:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*self.TEMPORAL_CONST
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*self.HOURS_IN_DAY
 
         if isAnnual:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*self.TEMPORAL_CONST
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*self.HOURS_IN_DAY
 
         if np.any(mask):
             avgsumObj.nGood[mask] = np.nan
