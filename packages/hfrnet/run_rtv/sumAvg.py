@@ -28,7 +28,8 @@ class SumAndAvg:
              time: Timestamp of date(s) to process
              stc_lta_infoObj:  Database info used for calculations
 
-       Output:
+       Output: for the get_sum, get_avg, and get_sum_and_avg functions
+
               S - SumAvgTotal object containing the following fields:
                 nGood: Number of observations
                 uSum:  Sum of u
@@ -50,9 +51,6 @@ class SumAndAvg:
               get_sum_and_avg:  does both the sum and average 
     """
 
-
-    
-
     def __init__(self, mode, configObj, rtvProcessObj, fileLocObj,
                  time, stc_lta_infoObj):
         """
@@ -70,6 +68,7 @@ class SumAndAvg:
         self.fileList = []
         self.nLoadedFiles = 0
         self.completedSum = False
+        self.is25Hr, self.isMonthly, self.isAnnual = self.get_mode_bools()
 
         if self.mode.casefold() not in MODES:
             raise ValueError(f"Must have mode be one of: {constsHFR.MODES}")
@@ -160,7 +159,7 @@ class SumAndAvg:
 
         return time_period
 
-    def get_config_bools(self) -> (bool, bool, bool):
+    def get_mode_bools(self) -> (bool, bool, bool):
         """
            Want bools for each config condition
         """
@@ -231,7 +230,6 @@ class SumAndAvg:
            Do the sum of radials totals over the file list
         """
 
-        is25Hr, isMonthly, isAnnual = self.get_config_bools()
         infoObj = self.stcLtaInfoObj
 
         # need to know which files to run over
@@ -247,7 +245,7 @@ class SumAndAvg:
 
             dataInObj = read_total_file(inFile.input_matfile)['data']
             inFileTotObj = None
-            if isAnnual:
+            if self.isAnnual:
                 inFileTotObj = dataInObj.S
             else:
                 inFileTotObj = dataInObj.U
@@ -258,17 +256,17 @@ class SumAndAvg:
             self.nLoadedFiles = self.nLoadedFiles + 1
 
             # Filter by HDOP
-            if (is25Hr or isMonthly):
+            if (self.is25Hr or self.isMonthly):
                 mask = rtvTotObj.hdop >= infoObj.stcInfo.max_error
                 if np.any(mask):
                     rtvTotObj.u_xvel[mask] = np.nan
                     rtvTotObj.v_yvel[mask] = np.nan
 
-            if len(self.sumavgObj.nGood) == 0 and not isAnnual:
+            if len(self.sumavgObj.nGood) == 0 and not self.isAnnual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
                                                        inFileTotObj)
             # Compute sums
-            if isAnnual:
+            if self.isAnnual:
                 if len(self.sumavgObj.nGood) == 0:
                     self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
                                                            inFileTotObj)
@@ -328,22 +326,21 @@ class SumAndAvg:
             _log.error("ERROR: Cannot do the average until 'get_sum' has been completed")
             return None
 
-        is25Hr, isMonthly, isAnnual = self.get_config_bools()
         infoObj = self.stcLtaInfoObj
         avgsumObj = self.sumavgObj
         mask = None
-        if is25Hr:
+        if self.is25Hr:
             # Mask points below minimum temporal coverage
             if self.nLoadedFiles < infoObj.stcInfo.min_temporal_coverage:
                 return avgsumObj
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
-        if isMonthly:
+        if self.isMonthly:
             # Mask points below minimum temporal coverage
             mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.CONSTS_IN_DAY
 
-        if isAnnual:
+        if self.isAnnual:
             # Mask points below minimum temporal coverage
             mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.CONSTS_IN_DAY
 
@@ -412,8 +409,7 @@ class SumAndAvg:
         sumObj = self.get_sum()
         avgObj = self.get_avg()
 
-        is25Hr, isMonthly, isAnnual = self.get_config_bools()
-        if isMonthly or isAnnual:
+        if self.isMonthly or self.isAnnual:
             self.qc_mask()
 
         return avgObj
