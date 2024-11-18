@@ -203,26 +203,26 @@ class SumAndAvg:
 
         return sumavgObj
 
-    def initalize_sumavg_annual(self, sumavgObj, matlabU):
+    def initalize_sumavg_annual(self, sumavgObj, inFileTotObj):
         """
            Annual should initalize to the first month's
         """
-        sumavgObj.grid = matlabU.grid
-        sumavgObj.lat = matlabU.lat
-        sumavgObj.lon = matlabU.lon
-        sumavgObj.nGood = matlabU.nGood.astype(np.float32)
-        sumavgObj.uSum = matlabU.uSum
-        sumavgObj.vSum = matlabU.vSum
-        sumavgObj.u2Sum = matlabU.u2sum
-        sumavgObj.v2Sum = matlabU.v2sum
-        sumavgObj.uMin = matlabU.uMin
-        sumavgObj.vMin = matlabU.vMin
-        sumavgObj.uMax = matlabU.uMax
-        sumavgObj.vMax = matlabU.vMax
-        #sumavgObj.uAvg = matlabU.uAvg
-        #sumavgObj.vAvg = matlabU.vAvg
-        #sumavgObj.uVar = matlabU.uVar
-        #sumavgObj.vVar = matlabU.vVar
+        sumavgObj.grid = inFileTotObj.grid
+        sumavgObj.lat = inFileTotObj.lat
+        sumavgObj.lon = inFileTotObj.lon
+        sumavgObj.nGood = inFileTotObj.nGood.astype(np.float32)
+        sumavgObj.uSum = inFileTotObj.uSum
+        sumavgObj.vSum = inFileTotObj.vSum
+        sumavgObj.u2Sum = inFileTotObj.u2sum
+        sumavgObj.v2Sum = inFileTotObj.v2sum
+        sumavgObj.uMin = inFileTotObj.uMin
+        sumavgObj.vMin = inFileTotObj.vMin
+        sumavgObj.uMax = inFileTotObj.uMax
+        sumavgObj.vMax = inFileTotObj.vMax
+        #sumavgObj.uAvg = inFileTotObj.uAvg
+        #sumavgObj.vAvg = inFileTotObj.vAvg
+        #sumavgObj.uVar = inFileTotObj.uVar
+        #sumavgObj.vVar = inFileTotObj.vVar
 
         return sumavgObj
 
@@ -245,15 +245,15 @@ class SumAndAvg:
                 _log.error(msg)
                 continue
 
-            matLabObj = read_total_file(inFile.input_matfile)['data']
-            matlabU = None
+            dataInObj = read_total_file(inFile.input_matfile)['data']
+            inFileTotObj = None
             if isAnnual:
-                matlabU = matLabObj.S
+                inFileTotObj = dataInObj.S
             else:
-                matlabU = matLabObj.U
-                rtvTotObj.u_xvel = matlabU.u
-                rtvTotObj.v_yvel = matlabU.v
-                rtvTotObj.hdop = matlabU.hdop
+                inFileTotObj = dataInObj.U
+                rtvTotObj.u_xvel = inFileTotObj.u
+                rtvTotObj.v_yvel = inFileTotObj.v
+                rtvTotObj.hdop = inFileTotObj.hdop
 
             self.nLoadedFiles = self.nLoadedFiles + 1
 
@@ -266,33 +266,33 @@ class SumAndAvg:
 
             if len(self.sumavgObj.nGood) == 0 and not isAnnual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
-                                                       matlabU)
+                                                       inFileTotObj)
             # Compute sums
             if isAnnual:
                 if len(self.sumavgObj.nGood) == 0:
                     self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
-                                                           matlabU)
+                                                           inFileTotObj)
                     self.sumavgObj = self.initalize_sumavg_annual(self.sumavgObj,
-                                                                  matlabU)
+                                                                  inFileTotObj)
                 else:
                     self.sumavgObj.nGood = np.nansum(np.stack((self.sumavgObj.nGood,
-                                                               matlabU.nGood)), axis=0)
+                                                               inFileTotObj.nGood)), axis=0)
                     self.sumavgObj.uSum  = np.nansum(np.stack((self.sumavgObj.uSum,
-                                                               matlabU.uSum)), axis=0)
+                                                               inFileTotObj.uSum)), axis=0)
                     self.sumavgObj.vSum  = np.nansum(np.stack((self.sumavgObj.vSum,
-                                                               matlabU.vSum)), axis=0)
+                                                               inFileTotObj.vSum)), axis=0)
                     self.sumavgObj.u2Sum = np.nansum(np.stack((self.sumavgObj.u2Sum,
-                                                               matlabU.u2sum)), axis=0)
+                                                               inFileTotObj.u2sum)), axis=0)
                     self.sumavgObj.v2Sum = np.nansum(np.stack((self.sumavgObj.v2Sum,
-                                                               matlabU.v2sum)), axis=0)
+                                                               inFileTotObj.v2sum)), axis=0)
                     self.sumavgObj.uMin  = np.nanmin(np.stack((self.sumavgObj.uMin,
-                                                               matlabU.uMin)), axis=0)
+                                                               inFileTotObj.uMin)), axis=0)
                     self.sumavgObj.vMin  = np.nanmin(np.stack((self.sumavgObj.vMin,
-                                                               matlabU.vMin)), axis=0)
+                                                               inFileTotObj.vMin)), axis=0)
                     self.sumavgObj.uMax  = np.nanmax(np.stack((self.sumavgObj.uMax,
-                                                               matlabU.uMax)), axis=0)
+                                                               inFileTotObj.uMax)), axis=0)
                     self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
-                                                               matlabU.vMax)), axis=0)
+                                                               inFileTotObj.vMax)), axis=0)
             else:
                 self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(rtvTotObj.u_xvel))
                 self.sumavgObj.uSum  = np.nansum(np.stack((self.sumavgObj.uSum,
