@@ -51,4 +51,3 @@ class StcLtaInfo:
     def __init__(self):
         self.stcInfo = StcInfo()
         self.ltaInfo = LtaInfo()
-    

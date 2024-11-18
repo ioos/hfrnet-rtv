@@ -9,6 +9,7 @@ from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
 from hfrnet.utils_funcs.utility import read_total_file
 import hfrnet.utils_funcs.filenames as filenames
+import hfrnet.utils_funcs.constsHFR as constsHFR
 
 _log = logging.getLogger()
 
@@ -50,8 +51,7 @@ class SumAndAvg:
     """
 
 
-    MODES = ["25 hour", "monthly", "annual"]
-    HOURS_IN_DAY = 24
+    
 
     def __init__(self, mode, configObj, rtvProcessObj, fileLocObj,
                  time, stc_lta_infoObj):
@@ -72,21 +72,21 @@ class SumAndAvg:
         self.completedSum = False
 
         if self.mode.casefold() not in MODES:
-            raise ValueError(f"Must have mode be one of: {self.MODES}")
+            raise ValueError(f"Must have mode be one of: {constsHFR.MODES}")
 
 
     def get_file_list(self):
         """
            Get the proper list of files based on time
         """
-        if self.mode == self.MODES[0]:
+        if self.mode == constsHFR.MODES[0]:
             self.fileList = self.get_25Hr_list(self.time)
-        elif self.mode == self.MODES[1]:
+        elif self.mode == constsHFR.MODES[1]:
             self.fileList = self.get_monthly_list(self.time)
-        elif self.mode == self.MODES[2]:
+        elif self.mode == constsHFR.MODES[2]:
             self.fileList = self.get_annual_list(self.time)
         else:
-            raise ValueError(f"Must have 'config' be one of: {self.MODES}")
+            raise ValueError(f"Must have 'config' be one of: {constsHFR.MODES}")
 
     def get_files(self, fileList):
         """
@@ -95,7 +95,7 @@ class SumAndAvg:
         fileList2 = []
         for time in fileList:
             fileLocTemp = None
-            if self.mode == self.MODES[0]:#25-hour
+            if self.mode == constsHFR.MODES[0]:#25-hour
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
                                                   self.fileLocObj, time, 'rtv')
@@ -167,14 +167,14 @@ class SumAndAvg:
         is25Hr = False
         isMonthly = False
         isAnnual = False
-        if self.mode == self.MODES[0]:
+        if self.mode == constsHFR.MODES[0]:
             is25Hr = True
-        elif self.mode == self.MODES[1]:
+        elif self.mode == constsHFR.MODES[1]:
             isMonthly = True
-        elif self.mode == self.MODES[2]:
+        elif self.mode == constsHFR.MODES[2]:
             isAnnual = True
         else:
-            raise ValueError(f"Must have 'config' be one of: {self.MODES}")
+            raise ValueError(f"Must have 'config' be one of: {constsHFR.MODES}")
 
         return (is25Hr, isMonthly, isAnnual)
 
@@ -341,11 +341,11 @@ class SumAndAvg:
 
         if isMonthly:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*self.HOURS_IN_DAY
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.CONSTS_IN_DAY
 
         if isAnnual:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*self.HOURS_IN_DAY
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.CONSTS_IN_DAY
 
         if np.any(mask):
             avgsumObj.nGood[mask] = np.nan
@@ -379,19 +379,15 @@ class SumAndAvg:
         QC_mask masks spatial areas as a function of time as needed.
         
         Filter out currents in the Straits of Florida
-        Do for all time until analysis show a good period, either in the past or starting from some
-        future date that we can keep.
-
+        Do for all time until analysis show a good period, either in the past or
+        starting from some future date that we can keep.
         """
 
-        fl_lat = [25, 26.75]
-        fl_lon = [-80.75, -78.75]
         A = self.sumavgObj
-        #mask = A.lat > 25 & A.lat < 26.75 & A.lon > -80.75 & A.lon < -78.75;
-        mask = np.logical_and(np.logical_and(A.lat > fl_lat[0],
-                                             A.lat < fl_lat[1]),
-                              np.logical_and(A.lon > fl_lon[0],
-                                             A.lon < fl_lon[1]))
+        mask = np.logical_and(np.logical_and(A.lat > constsHFR.fl_lat[0],
+                                             A.lat < constsHFR.fl_lat[1]),
+                              np.logical_and(A.lon > constsHFR.fl_lon[0],
+                                             A.lon < constsHFR.fl_lon[1]))
         if np.any(mask):
             self.sumavgObj.nGood[mask] = np.nan
             self.sumavgObj.uMin[mask]  = np.nan
