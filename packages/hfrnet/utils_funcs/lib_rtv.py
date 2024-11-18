@@ -30,7 +30,7 @@ class LandInfo:
 
 class RtvTotals:
     """
-        Similar to the U in the matlab.  
+        Information needed for the radial totals
         All are arrays of variable length and grid of class Grid
     """
     def __init__(self):
@@ -63,7 +63,6 @@ class DatabaseConfig:
         self.url = ""
         self.vendor = ""
 
-#things from the configureRtv 
 class ConfigureVals:
     """
         The configuration values needed to run
@@ -75,27 +74,8 @@ class ConfigureVals:
         self.confdb = DatabaseConfig()
         self.raddb = DatabaseConfig()
         self.reprocess = True
-        self.lock = False    
-        
-class LogRtv:
-    """
-        For logger info
-    """
-    def __init__(self):
-        self.cmdWinLogLevel = ""
-        self.directory = ""
-        self.filename = ""
-        self.level = ""
+        self.lock = False
 
-class FileLock:
-    """
-        For file locking (if used)
-    """
-    def __init__(self):
-        self.directory = ""
-        self.filename = ""
-        
-#replaces the c.total struct in matlab code
 class FileLocations:
     """
        Keep track of all file locations
@@ -136,8 +116,7 @@ class RtvProcess:
         self.reprocess = False
         self.subprocess = False
         self.subprocess_name = ""
-       
-        
+
 class SiteInfo:
     """
        Info about the data collection site
@@ -147,7 +126,7 @@ class SiteInfo:
         self.name = ""
         self.beampattern = ""
         self.useMinute = 0
-        
+
 class RtvInfo:
     """
        All the different variable parameters for RTV running 
@@ -164,7 +143,7 @@ class RtvInfo:
         self.uwls_max_hdop_nc = np.float64(0)
         self.new_state = ""
         self.curent_state = ""
-        
+
 class UwlsTotalInfo:
     """
        Vector calculations info
@@ -175,7 +154,7 @@ class UwlsTotalInfo:
         self.dopx = np.float64(np.nan)
         self.dopy = np.float64(np.nan)
         self.hdop = np.float64(np.nan)
-    
+
 class RadialInfo:
     """
        Radial velocity info needed for calculations
@@ -196,7 +175,6 @@ class RadialInfo:
         self.latitude = []
         self.speed = []
         self.heading = []
-
 
 class Metadata:
     """
@@ -223,7 +201,6 @@ class Metadata:
         self.source = ""
         self.summary = ""
         self.title = ""
-    
 
 class SetupError(Exception):
     pass
