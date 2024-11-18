@@ -8,7 +8,7 @@ import calendar
 import numpy as np
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
-from hfrnet.utils_funcs.utility import load_mat
+from hfrnet.utils_funcs.utility import read_total_file
 import hfrnet.utils_funcs.filenames as filenames
 
 _log = logging.getLogger()
@@ -71,8 +71,7 @@ class SumAndAvg:
                 self.config = conf
                 return None
 
-        message = f"Must have 'config' be one of: {self.CONFIGS}"
-        raise ValueError(message)
+        raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
 
     def get_file_list(self):
         """
@@ -85,8 +84,7 @@ class SumAndAvg:
         elif self.config == self.CONFIGS[2]:
             self.fileList = self.get_annual_list(self.time)
         else:
-            message = f"Must have 'config' be one of: {self.CONFIGS}"
-            raise ValueError(message)
+            raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
 
     def get_files(self, fileList):
         """
@@ -173,8 +171,7 @@ class SumAndAvg:
         elif self.config == self.CONFIGS[2]:
             isAnnual = True
         else:
-            message = f"Must have 'config' be one of: {self.CONFIGS}"
-            raise ValueError(message)
+            raise ValueError(f"Must have 'config' be one of: {self.CONFIGS}")
 
         return (is25Hr, isMonthly, isAnnual)
 
@@ -245,7 +242,7 @@ class SumAndAvg:
                 _log.error(msg)
                 continue
 
-            matLabObj = load_mat(inFile.input_matfile)['data']
+            matLabObj = read_total_file(inFile.input_matfile)['data']
             matlabU = None
             if isAnnual:
                 matlabU = matLabObj.S
@@ -316,8 +313,8 @@ class SumAndAvg:
         return self.sumavgObj
 
     def nanany(self, x):
-            # ignore NaN
-            return np.any(x, where=np.logical_not(np.isnan(x)))
+        """ ignore NaN """
+        return np.any(x, where=np.logical_not(np.isnan(x)))
 
     def get_avg(self) -> SumAvgInfo:
         """
@@ -358,7 +355,6 @@ class SumAndAvg:
             avgsumObj.uMax[mask] = np.nan
             avgsumObj.vMax[mask] = np.nan
 
-        
         if not self.nanany(avgsumObj.nGood):
             return avgsumObj
 

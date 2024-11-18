@@ -2,12 +2,7 @@
 
 import numpy as np
 from hfrnet.utils_funcs.lib_rtv import UwlsTotalInfo
-
-def cos_lambda(x):
-    return np.cos(np.deg2rad(x))
-
-def sin_lambda(x):
-    return np.sin(np.deg2rad(x))
+from hfrnet.utils_funcs.math_funcs import cos_lambda, sin_lambda
 
 
 def uwlsTotal(rSpeed, rHeading) -> UwlsTotalInfo:
