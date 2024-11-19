@@ -70,7 +70,7 @@ class SumAndAvg:
         self.completedSum = False
         self.avg_mode_25hr, self.avg_mode_monthly, self.avg_mode_annual = self.get_mode_bools()
 
-        if self.mode.casefold() not in MODES:
+        if self.mode.casefold() not in constsHFR.MODES:
             raise ValueError(f"Must have mode be one of: {constsHFR.MODES}")
 
 
