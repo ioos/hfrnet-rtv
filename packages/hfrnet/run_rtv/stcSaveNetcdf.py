@@ -57,8 +57,6 @@ def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     %    going to be a single set of parameters, it's OK to define here - at
     %    least for now.
     '''
-    # Check save directory exists
-    Path(fileLocObj.output_dir).mkdir(parents=True, exist_ok=True)
 
     # Save
     try:
@@ -109,64 +107,38 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     A.grid.ocean_indices = A.grid.ocean_indices.astype(int)
 
     # u mean
-    u_avg = np.full(A.grid.size, np.nan)
-    u_avg = set_2darray_by_index(u_avg, A.grid.ocean_indices, A.uAvg)
-    u_avg = np.rot90(u_avg, -1)
-    u_avg = np.round(u_avg) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u_avg = array_rotate_and_round(A.grid, A.uAvg)
 
     # v mean
-    v_avg = np.full(A.grid.size, np.nan)
-    v_avg = set_2darray_by_index(v_avg, A.grid.ocean_indices, A.vAvg)
-    v_avg = np.rot90( v_avg, -1 )
-    v_avg = np.round( v_avg ) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    v_avg = array_rotate_and_round(A.grid, A.vAvg)
 
     # u var
-    u_var = np.full(A.grid.size, np.nan)
-    u_var = set_2darray_by_index(u_var, A.grid.ocean_indices, A.uVar)
-    u_var = np.rot90(u_var, -1)
-    u_var = np.round(u_var) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u_var = array_rotate_and_round(A.grid, A.uVar)
+
+    # v var
+    v_var = array_rotate_and_round(A.grid, A.vVar)
+
+    # u min
+    u_min = array_rotate_and_round(A.grid, A.uMin)
+
+    # v min
+    v_min = array_rotate_and_round(A.grid, A.vMin)
+    
+    # u max
+    u_max = array_rotate_and_round(A.grid, A.uMax)
+
+    # v max
+    v_max = array_rotate_and_round(A.grid, A.vMax)
+    
     hi_uvar_count = np.sum(np.sum(u_var > 32767))  # 16-bit signed limit
     u_var[u_var > 32767] = 32767 # hi limit range check
-
     if hi_uvar_count > 0:
         _log.notice(f'U variance exceeds integer limits {hi_uvar_count} times while saving NetCDF' )
 
-
-    # v var
-    v_var = np.full(A.grid.size, np.nan)
-    v_var = set_2darray_by_index(v_var, A.grid.ocean_indices, A.vVar)
-    v_var = np.rot90(v_var, -1)
-    v_var = np.round(v_var) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
     hi_vvar_count = np.sum(np.sum(v_var > 32767))  # 16-bit signed limit
     v_var[ v_var > 32767 ] = 32767 # hi limit range check
-
     if hi_vvar_count > 0:
         _log.notice(f'V variance exceeds integer limits {hi_vvar_count} times while saving NetCDF')
-
-
-    # u min
-    u_min = np.full(A.grid.size, np.nan)
-    u_min = set_2darray_by_index(u_min, A.grid.ocean_indices, A.uMin)
-    u_min = np.rot90(u_min, -1)
-    u_min = np.round(u_min) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
-
-    # v min
-    v_min = np.full(A.grid.size, np.nan)
-    v_min = set_2darray_by_index(v_min, A.grid.ocean_indices, A.vMin)
-    v_min = np.rot90(v_min, -1)
-    v_min = np.round(v_min) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
-
-    # u max
-    u_max = np.full(A.grid.size, np.nan)
-    u_max = set_2darray_by_index(u_max, A.grid.ocean_indices, A.uMax)
-    u_max = np.rot90(u_max, -1)
-    u_max = np.round(u_max) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
-
-    # v max
-    v_max = np.full(A.grid.size, np.nan)
-    v_max = set_2darray_by_index(v_max, A.grid.ocean_indices, A.vMax)
-    v_max = np.rot90(v_max, -1)
-    v_max = np.round(v_max) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
 
     # n_obs
     n_obs = np.full(A.grid.size, np.nan)

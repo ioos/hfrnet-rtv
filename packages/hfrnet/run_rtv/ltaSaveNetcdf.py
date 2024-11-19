@@ -1,6 +1,5 @@
-import os
+
 from datetime import datetime, timedelta
-from pathlib import Path
 import textwrap
 import logging
 import numpy as np
@@ -13,6 +12,7 @@ from hfrnet.utils_funcs.productVersion import productVersion
 import hfrnet.utils_funcs.constsHFR as constsHFR
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
 
 _log = logging.getLogger()
 
@@ -58,9 +58,6 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     %    least for now.
     '''
 
-    ## Check save directory exists
-    Path(fileLocObj.ncdir).mkdir(parents=True, exist_ok=True)
-    
     ## Save
     try:
         writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, 
@@ -103,15 +100,15 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
 
     ## Define subprocess specific parameters
     if rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['month']:
-            min_temporal_coverage = int16(stdLtaInfoObj.ltaInfo.min_month_temporal_coverage)
-            time_bnds = [datetime(year=t.year, month=t.month, day=1).timestamp(),
-                next_month_start(t).timestamp()]
+        min_temporal_coverage = int16(stdLtaInfoObj.ltaInfo.min_month_temporal_coverage)
+        time_bnds = [datetime(year=time.year, month=time.month, day=1).timestamp(),
+                     next_month_start(time).timestamp()]
 
     elif rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['year']:
-            min_temporal_coverage = int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
-            time_bnds = [datetime(year=t.year, month=1, day=1).timestamp(),
-                datetime(year=t.year+1, month=1, day=1).timestamp()]
-
+        min_temporal_coverage = int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
+        time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
+                     datetime(year=time.year+1, month=1, day=1).timestamp()]
+        
 
     ## Format Variable Data
     # Need to reshape back to gridded matrices and rotate to convert from
@@ -124,52 +121,28 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     A.grid.ocean_indices = A.grid.ocean_indices.astype(int)
    
     # u mean
-    u_avg = np.full(A.grid.size, np.nan)
-    u_avg = set_2darray_by_index(u_avg, A.grid.ocean_indices, A.uAvg)
-    u_avg = np.rot90(u_avg, -1)
-    u_avg = np.round(u_avg) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
-    
+    u_avg = array_rotate_and_round(A.grid, A.uAvg)
+
     # v mean
-    v_avg = np.full(A.grid.size, np.nan)
-    v_avg = _set_2darray_by_index(v_avg, A.grid.ocean_indices, A.vAvg)
-    v_avg = np.rot90(v_avg, -1)
-    v_avg = np.round(v_avg) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    v_avg = array_rotate_and_round(A.grid, A.vAvg)
 
     # u var
-    u_var = np.full(A.grid.size, np.nan)
-    u_var = _set_2darray_by_index(u_var, A.grid.ocean_indices, A.uVar)
-    u_var = np.rot90(u_var, -1)
-    u_var = np.round(u_var) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u_var = array_rotate_and_round(A.grid, A.uVar)
 
     # v var
-    v_var = np.ones(A.grid.size)
-    v_var = _set_2darray_by_index(v_var, A.grid.ocean_indices, A.vVar)
-    v_var = np.rot90(v_var, -1)
-    v_var = np.round(v_var) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    v_var = array_rotate_and_round(A.grid, A.vVar)
 
     # u min
-    u_min = np.ones(A.grid.size ) * np.nan
-    u_min = _set_2darray_by_index(u_min, A.grid.ocean_indices, A.uMin)
-    u_min = np.rot90(u_min, -1)
-    u_min = np.round(u_min ) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u_min = array_rotate_and_round(A.grid, A.uMin)
 
     # v min
-    v_min = np.full(A.grid.size, np.nan)
-    v_min = _set_2darray_by_index(v_min, A.grid.ocean_indices, A.vMin)
-    v_min = np.rot90(v_min, -1)
-    v_min = np.round(v_min) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
-
+    v_min = array_rotate_and_round(A.grid, A.vMin)
+    
     # u max
-    u_max = np.full(A.grid.size, np.nan)
-    u_max = _set_2darray_by_index(u_max, A.grid.ocean_indices, A.uMax)
-    u_max = np.rot90(u_max, -1)
-    u_max = np.round(u_max) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u_max = array_rotate_and_round(A.grid, A.uMax)
 
     # v max
-    v_max = np.full(A.grid.size, np.nan)
-    v_max = _set_2darray_by_index(v_max, A.grid.ocean_indices, A.vMax)
-    v_max = np.rot90(v_max, -1)
-    v_max = np.round(v_max) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    v_max = array_rotate_and_round(A.grid, A.vMax)
 
     # n_obs
     n_obs = np.full(A.grid.size, np.nan)

@@ -1,19 +1,17 @@
-import os
+
 from datetime import datetime, timedelta
-from pathlib import Path
 import textwrap
+import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.utility import (_dict, double, single, int16,
-                                        int32, arange, set_history, 
+                                        int32, arange, set_history,
                                         set_2darray_by_index)
 from hfrnet.utils_funcs.productVersion import productVersion
 
-
-import logging
 _log = logging.getLogger()
 
 
@@ -58,9 +56,6 @@ def rtvSaveNetcdf(metaDataObj, configObj, fileLocObj, rtvInfoObj, rtvProcessObj,
     %    going to be a single set of parameters, it's OK to define here - at
     %    least for now.
     '''
-
-    # Check save directory exists
-    Path(fileLocObj.output_dir).mkdir(parents=True, exist_ok=True)
 
     # Save
     try:
@@ -111,34 +106,19 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     U.grid.ocean_indices = U.grid.ocean_indices.astype(int)
 
     # u
-    u = np.full(U.grid.size, np.nan)
-    u = set_2darray_by_index(u, U.grid.ocean_indices, U.u_xvel)
-    u = np.rot90(u, -1)
-    u = np.round(u) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    u = array_rotate_and_round(U.grid, U.u_xvel)
 
     # v
-    v = np.full(U.grid.size, np.nan)
-    v = set_2darray_by_index(v, U.grid.ocean_indices, U.v_yvel)
-    v = np.rot90(v, -1)
-    v = np.round(v) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s
+    v = array_rotate_and_round(U.grid, U.v_xvel)
 
-    # dopx
-    dopx = np.full(U.grid.size, np.nan)
-    dopx = set_2darray_by_index(dopx, U.grid.ocean_indices, U.dopx)
-    dopx = np.rot90(dopx, -1)
-    dopx = np.round(dopx*100) # Scale to store as short; accuracy to 100ths
+    # dopx 
+    dopx = array_rotate_and_round(U.grid, U.dopx, 'dopx')
 
     # dopy
-    dopy = np.full(U.grid.size, np.nan)
-    dopy = set_2darray_by_index(dopy, U.grid.ocean_indices, U.dopy)
-    dopy = np.rot90(dopy, -1)
-    dopy = np.round(dopy*100) # Scale to store as short; accuracy to 100ths
+    dopy = array_rotate_and_round(U.grid, U.dopy, 'dopy')
 
     # hdop
-    hdop = np.full(U.grid.size, np.nan)
-    hdop = set_2darray_by_index(hdop, U.grid.ocean_indices, U.hdop)
-    hdop = np.rot90(hdop, -1)
-    hdop = np.round(hdop*100) # Scale to store as short; accuracy to 100ths
+    hdop = array_rotate_and_round(U.grid, U.hdop, 'hdop')
 
     # n_sites
     n_sites = np.full(U.grid.size, np.nan)
