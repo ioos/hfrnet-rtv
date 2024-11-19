@@ -56,7 +56,7 @@ class SumAndAvg:
         """
            Create all the different variables needed to run
         """
-        self.mode = mode
+        self.mode = mode.lower()
         self.time = time
         self.stcLtaInfoObj = stc_lta_infoObj
         self.rtvProcessObj = rtvProcessObj
@@ -68,7 +68,7 @@ class SumAndAvg:
         self.fileList = []
         self.nLoadedFiles = 0
         self.completedSum = False
-        self.is25Hr, self.isMonthly, self.isAnnual = self.get_mode_bools()
+        self.avg_mode_25hr, self.avg_mode_monthly, self.avg_mode_annual = self.get_mode_bools()
 
         if self.mode.casefold() not in MODES:
             raise ValueError(f"Must have mode be one of: {constsHFR.MODES}")
@@ -78,11 +78,11 @@ class SumAndAvg:
         """
            Get the proper list of files based on time
         """
-        if self.mode == constsHFR.MODES[0]:
+        if self.avg_mode_25hr:
             self.fileList = self.get_25Hr_list(self.time)
-        elif self.mode == constsHFR.MODES[1]:
+        elif self.avg_mode_monthly:
             self.fileList = self.get_monthly_list(self.time)
-        elif self.mode == constsHFR.MODES[2]:
+        elif self.avg_mode_annual:
             self.fileList = self.get_annual_list(self.time)
         else:
             raise ValueError(f"Must have 'config' be one of: {constsHFR.MODES}")
@@ -163,19 +163,19 @@ class SumAndAvg:
         """
            Want bools for each config condition
         """
-        is25Hr = False
-        isMonthly = False
-        isAnnual = False
+        avg_mode_25hr = False
+        avg_mode_monthly = False
+        avg_mode_annual = False
         if self.mode == constsHFR.MODES[0]:
-            is25Hr = True
+            avg_mode_25hr = True
         elif self.mode == constsHFR.MODES[1]:
-            isMonthly = True
+            avg_mode_monthly = True
         elif self.mode == constsHFR.MODES[2]:
-            isAnnual = True
+            avg_mode_annual = True
         else:
             raise ValueError(f"Must have 'config' be one of: {constsHFR.MODES}")
 
-        return (is25Hr, isMonthly, isAnnual)
+        return (avg_mode_25hr, avg_mode_monthly, avg_mode_annual)
 
     def initalize_sumavg(self, sumavgObj, rtvTotObj) -> SumAvgInfo:
         """
@@ -245,7 +245,7 @@ class SumAndAvg:
 
             dataInObj = read_total_file(inFile.input_matfile)['data']
             inFileTotObj = None
-            if self.isAnnual:
+            if self.avg_mode_annual:
                 inFileTotObj = dataInObj.S
             else:
                 inFileTotObj = dataInObj.U
@@ -256,17 +256,17 @@ class SumAndAvg:
             self.nLoadedFiles = self.nLoadedFiles + 1
 
             # Filter by HDOP
-            if (self.is25Hr or self.isMonthly):
+            if (self.avg_mode_25hr or self.avg_mode_monthly):
                 mask = rtvTotObj.hdop >= infoObj.stcInfo.max_error
                 if np.any(mask):
                     rtvTotObj.u_xvel[mask] = np.nan
                     rtvTotObj.v_yvel[mask] = np.nan
 
-            if len(self.sumavgObj.nGood) == 0 and not self.isAnnual:
+            if len(self.sumavgObj.nGood) == 0 and not self.avg_mode_annual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
                                                        inFileTotObj)
             # Compute sums
-            if self.isAnnual:
+            if self.avg_mode_annual:
                 if len(self.sumavgObj.nGood) == 0:
                     self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
                                                            inFileTotObj)
@@ -329,20 +329,20 @@ class SumAndAvg:
         infoObj = self.stcLtaInfoObj
         avgsumObj = self.sumavgObj
         mask = None
-        if self.is25Hr:
+        if self.avg_mode_25hr:
             # Mask points below minimum temporal coverage
             if self.nLoadedFiles < infoObj.stcInfo.min_temporal_coverage:
                 return avgsumObj
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
-        if self.isMonthly:
+        if self.avg_mode_monthly:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.CONSTS_IN_DAY
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY
 
-        if self.isAnnual:
+        if self.avg_mode_annual:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.CONSTS_IN_DAY
+            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY 
 
         if np.any(mask):
             avgsumObj.nGood[mask] = np.nan
@@ -381,10 +381,11 @@ class SumAndAvg:
         """
 
         A = self.sumavgObj
-        mask = np.logical_and(np.logical_and(A.lat > constsHFR.fl_lat[0],
-                                             A.lat < constsHFR.fl_lat[1]),
-                              np.logical_and(A.lon > constsHFR.fl_lon[0],
-                                             A.lon < constsHFR.fl_lon[1]))
+        # florida region mask
+        mask = np.logical_and(np.logical_and(A.lat > constsHFR.florida_lat[0],
+                                             A.lat < constsHFR.florida_lat[1]),
+                              np.logical_and(A.lon > constsHFR.florida_lon[0],
+                                             A.lon < constsHFR.florida_lon[1]))
         if np.any(mask):
             self.sumavgObj.nGood[mask] = np.nan
             self.sumavgObj.uMin[mask]  = np.nan
@@ -409,7 +410,7 @@ class SumAndAvg:
         sumObj = self.get_sum()
         avgObj = self.get_avg()
 
-        if self.isMonthly or self.isAnnual:
+        if self.avg_mode_monthly or self.avg_mode_annual:
             self.qc_mask()
 
         return avgObj
