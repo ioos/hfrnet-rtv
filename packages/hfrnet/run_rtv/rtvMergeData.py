@@ -1,12 +1,10 @@
-import os
-from datetime import datetime
-from pathlib import Path
+
 import logging
 import numpy as np
 
 _log = logging.getLogger()
 
-from hfrnet.utils_funcs.utility import _dict, load_mat, set_history
+from hfrnet.utils_funcs.utility import load_mat, set_history
 
 def rtvMergeData(fileLocObj, configObj, radials, U_tot):
     """
@@ -18,7 +16,6 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
     %    When reprocessing, an error is thrown if previous runs are found since
     %    it is expected that they have already been removed.
     %
-    %    See also RTV, LOGGER
     %
     %    HF-Radar Network
     %    Scripps Institution of Oceanography
@@ -27,16 +24,12 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
 
     # Check for data file from previous run(s)
     last = None
-    if Path(fileLocObj.mpathfile).is_file():
+    if fileLocObj.mpathfile.is_file():
 
         if configObj.reprocess:
             # Warning if we're reprocessing
             msg = (f'Total mat-file {fileLocObj.mpathfile} exists. Should '
                       'have been removed to ensure consistent results.')
-
-            if not configObj.lock:
-                msg = (f'{msg} Maybe a concurrent process is running? '
-                          'Try using process locking')
             _log.warning(msg)
 
         else:
@@ -87,7 +80,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
             for J in range(len(fields)):
                 fn = fields[J]
                 radials[ri][fn] = last.r[I][fn]
-            
+
             msg = (f'Merged radial dataset from {last.r[I].network}'
                    f'{last.r[I].site} {last.r[I].patterntype}')
             _log.debug(msg)
