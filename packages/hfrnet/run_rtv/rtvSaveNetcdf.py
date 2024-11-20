@@ -109,7 +109,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     u = array_rotate_and_round(U.grid, U.u_xvel)
 
     # v
-    v = array_rotate_and_round(U.grid, U.v_xvel)
+    v = array_rotate_and_round(U.grid, U.v_yvel)
 
     # dopx
     dopx = array_rotate_and_round(U.grid, U.dopx, 'dopx')
