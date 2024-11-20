@@ -246,10 +246,10 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.Conventions = ','.join(nc.conventions.values())
 
     # ID (ACDD)
-    ncid.id = rtvNcid(metaDataObj, configObj, rtvProcessObj, time)
+    ncid.id_HFR = rtvNcid(metaDataObj, configObj, rtvProcessObj, time)
 
     # UUID
-    ncid.uuid = f"{uuid.uuid4()}"
+    ncid.id = f"{uuid.uuid4()}"
 
     # Date Created (ACDD)
     ncid.date_created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
