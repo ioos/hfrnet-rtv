@@ -254,6 +254,33 @@ def prev_month(t):
             prevmonthdate = eomday(t.replace(month=t.month-1, day=1))
     return prevmonthdate
 
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M:%S.%f"
+DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
+def get_datetime(datetime_str=None):
+    """get datetime in different instances"""
+    if not datetime_str:
+        return datetime.now(timezone.utc)
+
+    if isinstance(datetime_str, (datetime, timedelta)):
+        return datetime_str
+
+    if isinstance(datetime_str, (list, tuple)):
+        return datetime(datetime_str)
+
+    if isinstance(datetime_str, date):
+        return datetime.combine(datetime_str, time())
+
+    # dateutil parser does not agree with dates like 0000-00-00
+    if not datetime_str or (datetime_str or "").startswith("0000-00-00"):
+        return None
+
+    try:
+        return datetime.strptime(datetime_str, DATETIME_FORMAT)
+    except ValueError:
+        return parser.parse(datetime_str)
+
+
 def set_history(A, msg):
     """ Append to NetCDF history"""
     if not hasattr(A, 'history'):
