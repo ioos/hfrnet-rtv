@@ -5,10 +5,8 @@ import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import (_dict, double, single, int16, int32, 
-                                        next_month_start, arange, 
+from hfrnet.utils_funcs.utility import (_dict, next_month_start, arange,
                                         set_2darray_by_index, set_history)
-from hfrnet.utils_funcs.productVersion import productVersion
 import hfrnet.utils_funcs.constsHFR as constsHFR
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
@@ -100,12 +98,12 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
 
     ## Define subprocess specific parameters
     if rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['month']:
-        min_temporal_coverage = int16(stdLtaInfoObj.ltaInfo.min_month_temporal_coverage)
+        min_temporal_coverage = np.int16(stdLtaInfoObj.ltaInfo.min_month_temporal_coverage)
         time_bnds = [datetime(year=time.year, month=time.month, day=1).timestamp(),
                      next_month_start(time).timestamp()]
 
     elif rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['year']:
-        min_temporal_coverage = int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
+        min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
         time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
                      datetime(year=time.year+1, month=1, day=1).timestamp()]
         
@@ -145,9 +143,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     v_max = array_rotate_and_round(A.grid, A.vMax)
 
     # n_obs
-    n_obs = np.full(A.grid.size, np.nan)
-    n_obs = _set_2darray_by_index(n_obs, A.grid.ocean_indices, A.nGood)
-    n_obs = np.rot90(n_obs, -1)
+    n_obs = array_rotate_and_round(A.grid, A.nGood, 'nGood')
 
     # Replace NaN with fill values
     mask = np.isnan(u_avg)
@@ -325,7 +321,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.format_version = nc.formatVersion
 
     # LTA Product Version (ACDD)
-    ncid.product_version = productVersion(rtvProcessObj)
+    ncid.product_version = rtvProcessObj.productVersion
 
 
     ## Define Data Variables & Add Attributes
@@ -357,9 +353,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # WGS84 Geoid
     varid_wgs84 = ncid.createVariable('wgs84', 'i1')
     varid_wgs84.grid_mapping_name = 'latitude_longitude'
-    varid_wgs84.longitude_of_prime_meridian = single(0.0)
-    varid_wgs84.semi_major_axis = single(6378137.0)
-    varid_wgs84.inverse_flattening = double(298.257223563)
+    varid_wgs84.longitude_of_prime_meridian = np.float32(0.0)
+    varid_wgs84.semi_major_axis = np.float32(6378137.0)
+    varid_wgs84.inverse_flattening = np.float64(298.257223563)
 
 
     #.mean
@@ -379,7 +375,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_u_avg.units = 'm s-1'
-    varid_u_avg.scale_factor = single(0.01)
+    varid_u_avg.scale_factor = np.float32(0.01)
     varid_u_avg.grid_mapping = 'wgs84'
     varid_u_avg.coordinates = 'depth'
     varid_u_avg.cell_methods = \
@@ -403,7 +399,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_v_avg.units = 'm s-1'
-    varid_v_avg.scale_factor = single(0.01)
+    varid_v_avg.scale_factor = np.float32(0.01)
     varid_v_avg.grid_mapping = 'wgs84'
     varid_v_avg.coordinates = 'depth'
     varid_v_avg.cell_methods = 'depth: mean time: mean (interval: 1 hour comment: 1 hour average)'
@@ -420,7 +416,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_u_var.standard_name = 'surface_eastward_sea_water_velocity'
     varid_u_var.long_name = 'eastward surface velocity variance'
     varid_u_var.units = 'm2 s-2'
-    varid_u_var.scale_factor = single(0.0001)
+    varid_u_var.scale_factor = np.float32(0.0001)
     varid_u_var.grid_mapping = 'wgs84'
     varid_u_var.coordinates = 'depth'
     varid_u_var.cell_methods = 'depth: mean time: variance (interval: 1 hour comment: 1 hour average)'
@@ -438,7 +434,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_v_var.standard_name = 'surface_northward_sea_water_velocity'
     varid_v_var.long_name = 'northward surface velocity variance'
     varid_v_var.units = 'm2 s-2'
-    varid_v_var.scale_factor = single(0.0001)
+    varid_v_var.scale_factor = np.float32(0.0001)
     varid_v_var.grid_mapping = 'wgs84'
     varid_v_var.coordinates = 'depth'
     varid_v_var.cell_methods = \
@@ -462,7 +458,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_u_min.units = 'm s-1'
-    varid_u_min.scale_factor = single(0.01)
+    varid_u_min.scale_factor = np.float32(0.01)
     varid_u_min.grid_mapping = 'wgs84'
     varid_u_min.coordinates = 'depth'
     varid_u_min.cell_methods = \
@@ -486,7 +482,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_v_min.units = 'm s-1'
-    varid_v_min.scale_factor = single(0.01)
+    varid_v_min.scale_factor = np.float32(0.01)
     varid_v_min.grid_mapping = 'wgs84'
     varid_v_min.coordinates = 'depth'
     varid_v_min.cell_methods = 'depth: mean time: minimum (interval: 1 hour comment: 1 hour average)'
@@ -509,7 +505,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_u_max.units = 'm s-1'
-    varid_u_max.scale_factor = single(0.01)
+    varid_u_max.scale_factor = np.float32(0.01)
     varid_u_max.grid_mapping = 'wgs84'
     varid_u_max.coordinates = 'depth'
     varid_u_max.cell_methods = \
@@ -532,7 +528,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # domain check - glna
 
     varid_v_max.units = 'm s-1'
-    varid_v_max.scale_factor = single(0.01)
+    varid_v_max.scale_factor = np.float32(0.01)
     varid_v_max.grid_mapping = 'wgs84'
     varid_v_max.coordinates = 'depth'
     varid_v_max.cell_methods = \
@@ -567,7 +563,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         'Minimum number of days required to compute monthly statistics'
 
     if rtvProcessObj.method == 'uwls':
-        varid_pp.max_hdop = single(stcLtaInfoObj.stcInfo.max_error)
+        varid_pp.max_hdop = np.float32(stcLtaInfoObj.stcInfo.max_error)
         varid_pp.max_hdop_description = 'Maximum allowed hourly vector HDOP'
 
     else:

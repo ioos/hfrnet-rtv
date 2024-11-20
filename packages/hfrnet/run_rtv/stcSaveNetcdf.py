@@ -7,9 +7,8 @@ import textwrap
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import (_dict, double, single, int16, arange, 
-                                        set_history, set_2darray_by_index)
-from hfrnet.utils_funcs.productVersion import productVersion
+from hfrnet.utils_funcs.utility import (_dict, arange, set_history,
+                                        set_2darray_by_index)
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 
@@ -141,9 +140,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
         _log.notice(f'V variance exceeds integer limits {hi_vvar_count} times while saving NetCDF')
 
     # n_obs
-    n_obs = np.full(A.grid.size, np.nan)
-    n_obs = set_2darray_by_index(n_obs, A.grid.ocean_indices, A.nGood)
-    n_obs = np.rot90(n_obs, -1)
+    n_obs = array_rotate_and_round(A.grid, A.nGood, 'nGood')
 
     # Replace NaN with fill values
     mask = np.isnan(u_avg)
@@ -317,7 +314,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     ncid.format_version = nc.formatVersion
 
     # STC Product Version (ACDD)
-    ncid.product_version = productVersion(rtvProcessObj)
+    ncid.product_version = rtvProcessObj.productVersion
 
 
     # Define Data Variables & Add Attributes
@@ -347,9 +344,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # WGS84 Geoid
     varid_wgs84 = ncid.createVariable('wgs84', 'i1')
     varid_wgs84.grid_mapping_name = 'latitude_longitude'
-    varid_wgs84.longitude_of_prime_meridian = single(0.0)
-    varid_wgs84.semi_major_axis = single(6378137.0)
-    varid_wgs84.inverse_flattening = double(298.257223563)
+    varid_wgs84.longitude_of_prime_meridian = np.float32(0.0)
+    varid_wgs84.semi_major_axis = np.float32(6378137.0)
+    varid_wgs84.inverse_flattening = np.float64(298.257223563)
 
 
     # u_mean
@@ -368,7 +365,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_u_avg.units = 'm s-1'
-    varid_u_avg.scale_factor = single( 0.01 )
+    varid_u_avg.scale_factor = np.float32( 0.01 )
     varid_u_avg.grid_mapping = 'wgs84'
     varid_u_avg.coordinates = 'depth'
     varid_u_avg.cell_methods = 'depth: mean time: mean (interval: 1 hour comment: 1 hour average)'
@@ -391,7 +388,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_v_avg.units = 'm s-1'
-    varid_v_avg.scale_factor = single(0.01)
+    varid_v_avg.scale_factor = np.float32(0.01)
     varid_v_avg.grid_mapping = 'wgs84'
     varid_v_avg.coordinates = 'depth'
     varid_v_avg.cell_methods = 'depth: mean time: mean (interval: 1 hour comment: 1 hour average)'
@@ -412,7 +409,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
         varid_u_var.long_name = 'eastward surface velocity variance'
 
     varid_u_var.units = 'm2 s-2'
-    varid_u_var.scale_factor = single(0.0001)
+    varid_u_var.scale_factor = np.float32(0.0001)
     varid_u_var.grid_mapping = 'wgs84'
     varid_u_var.coordinates = 'depth'
     varid_u_var.cell_methods = ('depth: mean time: variance (interval: 1 hour '
@@ -435,7 +432,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_v_var.units = 'm2 s-2'
-    varid_v_var.scale_factor = single(0.0001)
+    varid_v_var.scale_factor = np.float32(0.0001)
     varid_v_var.grid_mapping = 'wgs84'
     varid_v_var.coordinates = 'depth'
     varid_v_var.cell_methods = ('depth: mean time: variance (interval: 1 hour '
@@ -458,7 +455,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_u_min.units = 'm s-1'
-    varid_u_min.scale_factor = single(0.01)
+    varid_u_min.scale_factor = np.float32(0.01)
     varid_u_min.grid_mapping = 'wgs84'
     varid_u_min.coordinates = 'depth'
     varid_u_min.cell_methods = ('depth: mean time: minimum (interval: 1 hour '
@@ -482,7 +479,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_v_min.units = 'm s-1'
-    varid_v_min.scale_factor = single(0.01)
+    varid_v_min.scale_factor = np.float32(0.01)
     varid_v_min.grid_mapping = 'wgs84'
     varid_v_min.coordinates = 'depth'
     varid_v_min.cell_methods = ('depth: mean time: minimum (interval: 1 hour '
@@ -505,7 +502,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_u_max.units = 'm s-1'
-    varid_u_max.scale_factor = single(0.01)
+    varid_u_max.scale_factor = np.float32(0.01)
     varid_u_max.grid_mapping= 'wgs84'
     varid_u_max.coordinates = 'depth'
     varid_u_max.cell_methods = ('depth: mean time: maximum (interval: 1 hour '
@@ -529,7 +526,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # domain check - glna
 
     varid_v_max.units = 'm s-1'
-    varid_v_max.scale_factor = single(0.01)
+    varid_v_max.scale_factor = np.float32(0.01)
     varid_v_max.grid_mapping = 'wgs84'
     varid_v_max.coordinates = 'depth'
     varid_v_max.cell_methods = ('depth: mean time: maximum (interval: 1 hour '
@@ -559,12 +556,12 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     varid_pp.combine_method_description = \
         'Method used to compute hourly total solutions from radial velocities'
 
-    varid_pp.min_temporal_coverage = int16(stcInfoObj.min_temporal_coverage)
+    varid_pp.min_temporal_coverage = np.int16(stcInfoObj.min_temporal_coverage)
     varid_pp.min_temporal_coverage_description = \
         'Minimum number of hours required to compute a subtidal current'
 
     if rtvProcessObj.method == 'uwls':
-        varid_pp.max_hdop = single(stcInfoObj.max_error)
+        varid_pp.max_hdop = np.float32(stcInfoObj.max_error)
         varid_pp.max_hdop_description = 'Maximum allowed hourly vector HDOP'
 
     else:

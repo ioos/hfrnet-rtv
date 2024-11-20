@@ -183,22 +183,6 @@ Example: The output of below is  [(36.989311051533505, -88.15142628069133),
          print(intersection_points)
 '''
 
-def double(val):
-    """np double"""
-    return np.float64(val)
-
-def single(val):
-    """np float32"""
-    return np.float32(val)
-
-def int16(val):
-    """np int"""
-    return np.int16(val)
-
-def int32(val):
-    """np int32"""
-    return np.int32(val)
-
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S.%f"
 DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
@@ -225,20 +209,6 @@ def get_datetime(datetime_str=None):
     except ValueError:
         return parser.parse(datetime_str)
 
-def to_int(v, default=0):
-    """convert to int"""
-    try:
-        return int(v)
-    except ValueError:
-        return default
-
-def to_float(v, default=0.0):
-    """convert to float"""
-    try:
-        return float(v)
-    except ValueError:
-        return default
-
 def arange(start, end, step):
     return np.arange(start, end + step/2.0, step)
 
@@ -256,6 +226,11 @@ def array_rotate_and_round(grid, var, mode='std'):
     var_avg = np.full(grid.size, np.nan)
     var_avg = set_2darray_by_index(var_avg, grid.ocean_indices, var)
     var_avg = np.rot90(var_avg, -1)
+
+    if (mode == 'nGood') or (mode == 'nRads'):
+        #don't need to round these fields
+        return var_avg
+
     if (mode == 'dopx') or (mode == 'dopy') or (mode == 'hdop'):
         var_avg = np.round(var_avg*100) # Scale to store as short; accuracy to 100ths
     else:

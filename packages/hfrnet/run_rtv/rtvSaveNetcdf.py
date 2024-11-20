@@ -7,10 +7,8 @@ import netCDF4
 from netCDF4 import Dataset
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
-from hfrnet.utils_funcs.utility import (_dict, double, single, int16,
-                                        int32, arange, set_history,
+from hfrnet.utils_funcs.utility import (_dict, arange, set_history,
                                         set_2darray_by_index)
-from hfrnet.utils_funcs.productVersion import productVersion
 
 _log = logging.getLogger()
 
@@ -121,14 +119,10 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     hdop = array_rotate_and_round(U.grid, U.hdop, 'hdop')
 
     # n_sites
-    n_sites = np.full(U.grid.size, np.nan)
-    n_sites = set_2darray_by_index(n_sites, U.grid.ocean_indices, U.nSites)
-    n_sites = np.rot90(n_sites, -1)
+    n_sites = array_rotate_and_round(U.grid, U.nSites, 'nGood')
 
     # n_rads
-    n_rads = np.full(U.grid.size, np.nan)
-    n_rads = set_2darray_by_index(n_rads, U.grid.ocean_indices, U.nRads)
-    n_rads = np.rot90(n_rads, -1)
+    n_rads = array_rotate_and_round(U.grid, U.nRads, 'nRads')
 
     # Filter all data by HDOP
     mask = hdop >= (rtvInfoObj.uwls_max_hdop_nc * 100)
@@ -262,10 +256,10 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
 
     # Geospatial Bounds (ACDD)
-    ncid.geospatial_lat_min = single(U.grid.y_range[0])
-    ncid.geospatial_lat_max = single(U.grid.y_range[1])
-    ncid.geospatial_lon_min = single(U.grid.x_range[0])
-    ncid.geospatial_lon_max = single(U.grid.x_range[1])
+    ncid.geospatial_lat_min = np.float32(U.grid.y_range[0])
+    ncid.geospatial_lat_max = np.float32(U.grid.y_range[1])
+    ncid.geospatial_lon_min = np.float32(U.grid.x_range[0])
+    ncid.geospatial_lon_max = np.float32(U.grid.x_range[1])
 
     # Processing Level (ACDD)
     ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
@@ -308,8 +302,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.format_version = nc.formatVersion
 
     # RTV Product Version (ACDD)
-    ncid.product_version = productVersion(rtvProcessObj)
-
+    ncid.product_version = rtvProcessObj.productVersion
 
     ## Define Data Variables & Add Attributes
 
@@ -341,9 +334,9 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # WGS84 Geoid
     varid_wgs84 = ncid.createVariable('wgs84', 'i1')
     varid_wgs84.grid_mapping_name = 'latitude_longitude'
-    varid_wgs84.longitude_of_prime_meridian = single(0.0)
-    varid_wgs84.semi_major_axis = single(6378137.0)
-    varid_wgs84.inverse_flattening = double(298.257223563)
+    varid_wgs84.longitude_of_prime_meridian = np.float32(0.0)
+    varid_wgs84.semi_major_axis = np.float32(6378137.0)
+    varid_wgs84.inverse_flattening = np.float64(298.257223563)
 
 
     # u
@@ -362,7 +355,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
         varid_u.standard_name = 'surface_eastward_sea_water_velocity'
 
     varid_u.units = 'm s-1'
-    varid_u.scale_factor = single(0.01)
+    varid_u.scale_factor = np.float32(0.01)
     varid_u.grid_mapping = 'wgs84'
     varid_u.coordinates = 'depth'
     varid_u.cell_methods = 'depth: mean time: mean'
@@ -382,7 +375,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
         varid_v.standard_name = 'surface_northward_sea_water_velocity'
 
     varid_v.units = 'm s-1'
-    varid_v.scale_factor = single(0.01)
+    varid_v.scale_factor = np.float32(0.01)
     varid_v.grid_mapping = 'wgs84'
     varid_v.coordinates = 'depth'
     varid_v.cell_methods = 'depth: mean time: mean'
@@ -401,7 +394,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_dopx.long_name = 'longitudinal dilution of precision'
     varid_dopx.comment = textwrap.fill(dopxComment, 70)
-    varid_dopx.scale_factor = single(0.01)
+    varid_dopx.scale_factor = np.float32(0.01)
     varid_dopx.grid_mapping = 'wgs84'
     varid_dopx.coordinates = 'depth'
 
@@ -418,7 +411,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_dopy.long_name = 'latitudinal dilution of precision'
     varid_dopy.comment = textwrap.fill(dopyComment, 70)
-    varid_dopy.scale_factor = single(0.01)
+    varid_dopy.scale_factor = np.float32(0.01)
     varid_dopy.grid_mapping = 'wgs84'
     varid_dopy.coordinates = 'depth'
 
@@ -438,7 +431,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_hdop.long_name = 'horizontal dilution of precision'
     varid_hdop.comment = textwrap.fill(hdopComment, 70)
-    varid_hdop.scale_factor = single(0.01)
+    varid_hdop.scale_factor = np.float32(0.01)
     varid_hdop.grid_mapping = 'wgs84'
     varid_hdop.coordinates = 'depth'
     varid_hdop.ancillary_variables = 'dopx dopy'
@@ -482,29 +475,29 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_pp.combine_method_description = ('Method used to compute total '
                                            'solutions from radial velocities')
 
-    varid_pp.grid_search_radius = single(rtvInfoObj.grid_search_radius)
+    varid_pp.grid_search_radius = np.float32(rtvInfoObj.grid_search_radius)
     varid_pp.grid_search_radius_units = 'km'
     varid_pp.grid_search_radius_description = ('Search radius used for finding '
                                                'contributing radial velocities')
 
-    varid_pp.max_radial_speed = int32(rtvInfoObj.max_rad_speed)
+    varid_pp.max_radial_speed = np.int32(rtvInfoObj.max_rad_speed)
     varid_pp.max_radial_speed_units = 'cm s-1'
     varid_pp.max_radial_speed_description = \
         'Maximum radial speed allowed to contribute to total solutions'
 
-    varid_pp.max_rtv_speed = int32(rtvInfoObj.max_rtv_speed)
+    varid_pp.max_rtv_speed = np.int32(rtvInfoObj.max_rtv_speed)
     varid_pp.max_rtv_speed_units =  'cm s-1'
     varid_pp.max_rtv_speed_description = 'Maximum allowed total speed'
 
-    varid_pp.min_radar_sites = int16(rtvInfoObj.min_rad_sites)
+    varid_pp.min_radar_sites = np.int16(rtvInfoObj.min_rad_sites)
     varid_pp.min_radar_sites_description = \
         'Minimum number of radar sites required to make a total solution'
 
-    varid_pp.min_radials = int16(rtvInfoObj.min_radials)
+    varid_pp.min_radials = np.int16(rtvInfoObj.min_radials)
     varid_pp.min_radials_description = \
         'Minimum number of radials required to make a solution'
 
-    varid_pp.max_hdop = single(rtvInfoObj.uwls_max_hdop_nc)
+    varid_pp.max_hdop = np.float32(rtvInfoObj.uwls_max_hdop_nc)
     varid_pp.max_hdop_description = 'Maximum allowed HDOP'
 
     # Radial Metadata 'variable'
@@ -513,7 +506,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_rm.long_name = \
         'Metadata on radial velocities used to compute total solutions'
 
-    varid_rm.number_files_loaded = int16(len(r))
+    varid_rm.number_files_loaded = np.int16(len(r))
     varid_rm.number_files_loaded_description = 'Number of radial files loaded'
 
     varid_rm.files_loaded = '\n'.join([rr.file for rr in r])
