@@ -3,6 +3,7 @@ import sys
 import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
+import uuid
 import textwrap
 import numpy as np
 import netCDF4
@@ -241,6 +242,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
 
     # ID (ACDD)
     ncid.id = rtvNcid(metaDataObj, configObj, rtvProcessObj, t)
+
+    # UUID
+    ncid.uuid = f"{uuid.uuid4()}"
 
     # Date Created (ACDD)
     ncid.date_created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
