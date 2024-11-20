@@ -1,4 +1,5 @@
 
+import os
 from datetime import datetime, timedelta
 import textwrap
 import logging
@@ -8,8 +9,8 @@ import netCDF4
 from netCDF4 import Dataset
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
-from hfrnet.utils_funcs.utility import (_dict, arange, set_history,
-                                        set_2darray_by_index)
+from hfrnet.utils_funcs.utility import _dict, arange, set_history
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
 
 _log = logging.getLogger()
 
@@ -110,7 +111,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # v
     v = array_rotate_and_round(U.grid, U.v_xvel)
 
-    # dopx 
+    # dopx
     dopx = array_rotate_and_round(U.grid, U.dopx, 'dopx')
 
     # dopy

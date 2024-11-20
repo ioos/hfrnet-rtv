@@ -4,13 +4,14 @@
 from decimal import Decimal
 import math
 from math import cos, sin, sqrt
+from datetime import datetime, timedelta, date, time, timezone
 from polycircles import polycircles
 import shapely
 from shapely.geometry.polygon import Polygon
 from geographiclib.geodesic import Geodesic
 import numpy as np
 from dateutil import parser
-from datetime import datetime, timedelta, date, time, timezone
+
 
 def cos_lambda(x):
     """cos in radians"""
@@ -210,6 +211,7 @@ def get_datetime(datetime_str=None):
         return parser.parse(datetime_str)
 
 def arange(start, end, step):
+    """get an array with range and step"""
     return np.arange(start, end + step/2.0, step)
 
 def set_2darray_by_index(u, idx, v):
@@ -227,11 +229,11 @@ def array_rotate_and_round(grid, var, mode='std'):
     var_avg = set_2darray_by_index(var_avg, grid.ocean_indices, var)
     var_avg = np.rot90(var_avg, -1)
 
-    if (mode == 'nGood') or (mode == 'nRads'):
+    if mode in ('nGood','nRads'):
         #don't need to round these fields
         return var_avg
 
-    if (mode == 'dopx') or (mode == 'dopy') or (mode == 'hdop'):
+    if mode in ('dopx', 'dopy', 'hdop'):
         var_avg = np.round(var_avg*100) # Scale to store as short; accuracy to 100ths
     else:
         var_avg = np.round(var_avg) # 1 cm/s accuracy since hfr error ~3 - 20 cm/s

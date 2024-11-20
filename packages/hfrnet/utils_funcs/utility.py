@@ -313,7 +313,7 @@ def set_history(A, msg):
         h.message = msg
         A.history.append(h)
 
-def get_processes(times, info):
+def get_processes():
     """
        Get a list of processes based on the input time
     """

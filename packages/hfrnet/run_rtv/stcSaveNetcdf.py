@@ -1,19 +1,16 @@
 import os
-import sys
-import traceback
 from datetime import datetime, timedelta
-from pathlib import Path
 import uuid
 import textwrap
+import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import (_dict, arange, set_history,
-                                        set_2darray_by_index)
+from hfrnet.utils_funcs.utility import _dict, arange, set_history
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 
-import logging
 _log = logging.getLogger()
 
 def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
@@ -123,13 +120,13 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
 
     # v min
     v_min = array_rotate_and_round(A.grid, A.vMin)
-    
+
     # u max
     u_max = array_rotate_and_round(A.grid, A.uMax)
 
     # v max
     v_max = array_rotate_and_round(A.grid, A.vMax)
-    
+
     hi_uvar_count = np.sum(np.sum(u_var > 32767))  # 16-bit signed limit
     u_var[u_var > 32767] = 32767 # hi limit range check
     if hi_uvar_count > 0:
@@ -272,10 +269,10 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # Keywords (ACDD)
     ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
     # Geospatial Bounds (ACDD)
-    ncid.geospatial_lat_min = single(A.grid.y_range[0])
-    ncid.geospatial_lat_max = single(A.grid.y_range[1])
-    ncid.geospatial_lon_min = single(A.grid.x_range[0])
-    ncid.geospatial_lon_max = single(A.grid.x_range[1])
+    ncid.geospatial_lat_min = np.float32(A.grid.y_range[0])
+    ncid.geospatial_lat_max = np.float32(A.grid.y_range[1])
+    ncid.geospatial_lon_min = np.float32(A.grid.x_range[0])
+    ncid.geospatial_lon_max = np.float32(A.grid.x_range[1])
 
     # Processing Level (ACDD)
     ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)

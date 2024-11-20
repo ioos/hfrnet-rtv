@@ -1,5 +1,6 @@
 
-from datetime import datetime, timedelta
+import os
+from datetime import datetime
 import textwrap
 import logging
 import uuid
@@ -7,7 +8,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, next_month_start, arange,
-                                        set_2darray_by_index, set_history)
+                                        set_history)
 import hfrnet.utils_funcs.constsHFR as constsHFR
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
@@ -58,7 +59,7 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
 
     ## Save
     try:
-        writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, 
+        writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
                     rtvProcessObj, time, A_totObj)
 
     except Exception as e:
@@ -68,14 +69,14 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     success = f"Saved {fileLocObj.ncpathfile}"
     _log.info(success)
 
-def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, 
+def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
                 rtvProcessObj, time, A_totObj):
     """ Formats LTA data and writes NetCDF file """
 
     A = A_totObj
 
     ## Define conventions & versions
-   
+
     # Changes to the way data are encoded (types, new vars, new metadata, updates in metadata, ...)
     # should be reflected here
     nc = _dict()
@@ -106,7 +107,6 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
         time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
                      datetime(year=time.year+1, month=1, day=1).timestamp()]
-        
 
     ## Format Variable Data
     # Need to reshape back to gridded matrices and rotate to convert from
@@ -117,7 +117,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # make sure size/index is integer
     A.grid.size = A.grid.size.astype(int)
     A.grid.ocean_indices = A.grid.ocean_indices.astype(int)
-   
+
     # u mean
     u_avg = array_rotate_and_round(A.grid, A.uAvg)
 
@@ -135,7 +135,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
 
     # v min
     v_min = array_rotate_and_round(A.grid, A.vMin)
-    
+
     # u max
     u_max = array_rotate_and_round(A.grid, A.uMax)
 
@@ -159,8 +159,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
 
     ## History
     set_history(A, 'Writing values to file')
-    
-    
+
     ## Open NetCDF file
     # Keep the classic data model to increase compatibility since we
     # aren't using features specific to the NetCDF-4.0 model.
@@ -422,12 +421,14 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_u_var.scale_factor = np.float32(0.0001)
     varid_u_var.grid_mapping = 'wgs84'
     varid_u_var.coordinates = 'depth'
-    varid_u_var.cell_methods = 'depth: mean time: variance (interval: 1 hour comment: 1 hour average)'
+    varid_u_var.cell_methods = ('depth: mean time: variance (interval: 1 hour '
+                                'comment: 1 hour average)')
     varid_u_var.ancillary_variables = 'n_obs'
 
 
     # v_var
-    varid_v_var = ncid.createVariable('v_var', 'i2', reversed([dimid_lon, dimid_lat, dimid_t]),
+    varid_v_var = ncid.createVariable('v_var', 'i2',
+                                      reversed([dimid_lon, dimid_lat, dimid_t]),
                                       compression=compression,
                                       complevel=complevel,
                                       shuffle=shuffle,
@@ -440,13 +441,14 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_v_var.scale_factor = np.float32(0.0001)
     varid_v_var.grid_mapping = 'wgs84'
     varid_v_var.coordinates = 'depth'
-    varid_v_var.cell_methods = \
-        'depth: mean time: variance (interval: 1 hour comment: 1 hour average)'
+    varid_v_var.cell_methods = ('depth: mean time: variance (interval: 1 hour '
+                                'comment: 1 hour average)')
     varid_v_var.ancillary_variables = 'n_obs'
 
 
     # u_min
-    varid_u_min = ncid.createVariable('u_min', 'i2', reversed([dimid_lon, dimid_lat, dimid_t]),
+    varid_u_min = ncid.createVariable('u_min', 'i2',
+                                      reversed([dimid_lon, dimid_lat, dimid_t]),
                                       compression=compression,
                                       complevel=complevel,
                                       shuffle=shuffle,
@@ -454,7 +456,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_u_min.set_auto_scale(False)
 
     if configObj.domain == "glna":
-            varid_u_min.long_name = 'minimum eastward surface velocity'
+        varid_u_min.long_name = 'minimum eastward surface velocity'
     else:
         varid_u_min.standard_name = 'surface_eastward_sea_water_velocity'
         varid_u_min.long_name = 'minimum eastward surface velocity'
@@ -488,12 +490,14 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     varid_v_min.scale_factor = np.float32(0.01)
     varid_v_min.grid_mapping = 'wgs84'
     varid_v_min.coordinates = 'depth'
-    varid_v_min.cell_methods = 'depth: mean time: minimum (interval: 1 hour comment: 1 hour average)'
+    varid_v_min.cell_methods = ('depth: mean time: minimum (interval: 1 hour '
+                                'comment: 1 hour average)')
     varid_v_min.ancillary_variables = 'n_obs'
 
 
     # u_max
-    varid_u_max = ncid.createVariable('u_max', 'i2', reversed([dimid_lon, dimid_lat, dimid_t]),
+    varid_u_max = ncid.createVariable('u_max', 'i2',
+                                      reversed([dimid_lon, dimid_lat, dimid_t]),
                                       compression=compression,
                                       complevel=complevel,
                                       shuffle=shuffle,
@@ -579,9 +583,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ## Add Data Values
     varid_lat[:] = arange(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy)
     varid_lon[:] = arange(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx)
-    varid_t[0] = t.timestamp()
+    varid_t[0] = time.timestamp()
     varid_time_bnds[:] = np.array(time_bnds).reshape(1, 2)
-    varid_z[:] = metaDataObj.depth_mean    
+    varid_z[:] = metaDataObj.depth_mean
     varid_z_bnds[:] = [0, metaDataObj.depth_bottom]
     varid_u_avg[:] = u_avg.reshape((u_avg.shape[0], u_avg.shape[1], -1)).transpose()
     varid_v_avg[:] = v_avg.reshape((v_avg.shape[0], v_avg.shape[1], -1)).transpose()
