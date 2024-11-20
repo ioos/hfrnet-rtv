@@ -4,22 +4,11 @@
 from decimal import Decimal
 import math
 from math import cos, sin, sqrt
-from datetime import datetime, timedelta, date, time, timezone
 from polycircles import polycircles
 import shapely
 from shapely.geometry.polygon import Polygon
 from geographiclib.geodesic import Geodesic
 import numpy as np
-from dateutil import parser
-
-
-def cos_lambda(x):
-    """cos in radians"""
-    return np.cos(np.deg2rad(x))
-
-def sin_lambda(x):
-    """sin in radians"""
-    return np.sin(np.deg2rad(x))
 
 def azimuth(lat1, lat2, long1, long2):
     """get azimuth"""
@@ -183,7 +172,7 @@ Example: The output of below is  [(36.989311051533505, -88.15142628069133),
                                             145*1852)
          print(intersection_points)
 '''
-def arange(start, end, step):
+def all_range(start, end, step):
     """get an array with range and step"""
     return np.arange(start, end + step/2.0, step)
 

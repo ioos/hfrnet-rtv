@@ -1,3 +1,4 @@
+"""Saves LTA data to a NetCDF file"""
 
 import os
 from datetime import datetime
@@ -7,19 +8,19 @@ import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import (_dict, next_month_start, arange,
+from hfrnet.utils_funcs.utility import (_dict, next_month_start,
                                         set_history)
 import hfrnet.utils_funcs.constsHFR as constsHFR
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
-from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
 
 def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessObj,
                   time, A_totObj):
     '''
-    % LTASAVENETCDF Saves LTA data to a NetCDF file
+    % Saves LTA data to a NetCDF file
     %
     %    ltaSaveNetCDF( metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessObj,
                         time, A_totObj ) 
@@ -64,7 +65,7 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
 
     except Exception as e:
         message = f'Error saving {fileLocObj.ncpathfile}: \n {e}'
-        raise RuntimeError(message)
+        raise RuntimeError(message) from e
 
     success = f"Saved {fileLocObj.ncpathfile}"
     _log.info(success)
@@ -99,7 +100,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
 
     ## Define subprocess specific parameters
     if rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['month']:
-        min_temporal_coverage = np.int16(stdLtaInfoObj.ltaInfo.min_month_temporal_coverage)
+        min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_month_temporal_coverage)
         time_bnds = [datetime(year=time.year, month=time.month, day=1).timestamp(),
                      next_month_start(time).timestamp()]
 
@@ -107,6 +108,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
         time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
                      datetime(year=time.year+1, month=1, day=1).timestamp()]
+    else:
+        min_temporal_coverage = np.int16(0)
+        time_bnds = np.int16(0)
 
     ## Format Variable Data
     # Need to reshape back to gridded matrices and rotate to convert from
@@ -277,10 +281,10 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
 
     # Geospatial Bounds (ACDD)
-    ncid.geospatial_lat_min = single(A.grid.y_range[0])
-    ncid.geospatial_lat_max = single(A.grid.y_range[1])
-    ncid.geospatial_lon_min = single(A.grid.x_range[0])
-    ncid.geospatial_lon_max = single(A.grid.x_range[1])
+    ncid.geospatial_lat_min = np.float32(A.grid.y_range[0])
+    ncid.geospatial_lat_max = np.float32(A.grid.y_range[1])
+    ncid.geospatial_lon_min = np.float32(A.grid.x_range[0])
+    ncid.geospatial_lon_max = np.float32(A.grid.x_range[1])
 
     # Processing Level (ACDD)
     ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
@@ -581,8 +585,8 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     metaDataObj.depth_bottom = ncid.depth_bottom
 
     ## Add Data Values
-    varid_lat[:] = arange(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy)
-    varid_lon[:] = arange(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx)
+    varid_lat[:] = all_range(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy)
+    varid_lon[:] = all_range(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx)
     varid_t[0] = time.timestamp()
     varid_time_bnds[:] = np.array(time_bnds).reshape(1, 2)
     varid_z[:] = metaDataObj.depth_mean

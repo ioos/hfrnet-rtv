@@ -6,8 +6,8 @@ import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import _dict, arange, set_history
-from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
+from hfrnet.utils_funcs.utility import _dict, set_history
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 
@@ -570,8 +570,8 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
         _log.error(msg)
 
     # Add Data Values
-    varid_lat[:] = arange(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy )
-    varid_lon[:] = arange(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx )
+    varid_lat[:] = all_range(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy )
+    varid_lon[:] = all_range(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx )
     varid_t[0] = t.timestamp()
     varid_time_bnds[:] = np.array([(t -  timedelta(hours=12.5)).timestamp(),
                                    (t + timedelta(hours=12.5)).timestamp()]).reshape(1, 2) # 25 hrs

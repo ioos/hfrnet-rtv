@@ -2,8 +2,6 @@
 
 import numpy as np
 from hfrnet.utils_funcs.lib_rtv import UwlsTotalInfo
-from hfrnet.utils_funcs.math_funcs import cos_lambda, sin_lambda
-
 
 def uwlsTotal(rSpeed, rHeading) -> UwlsTotalInfo:
     """
@@ -14,11 +12,11 @@ def uwlsTotal(rSpeed, rHeading) -> UwlsTotalInfo:
     n* >= 2
     """
 
-    #copying the calculation 
+    #copying the calculation
     X = np.zeros((np.size(rHeading), 2))
 
-    X[:, 0] = cos_lambda(rHeading)
-    X[:, 1] = sin_lambda(rHeading)
+    X[:, 0] = np.cos(np.deg2rad(rHeading))
+    X[:, 1] = np.sin(np.deg2rad(rHeading))
 
     X_transpose_X = np.matmul(np.transpose(X), X)
     C = np.linalg.inv(X_transpose_X)

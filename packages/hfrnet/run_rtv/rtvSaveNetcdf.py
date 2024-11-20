@@ -9,8 +9,8 @@ import netCDF4
 from netCDF4 import Dataset
 from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
-from hfrnet.utils_funcs.utility import _dict, arange, set_history
-from hfrnet.utils_funcs.math_funcs import array_rotate_and_round
+from hfrnet.utils_funcs.utility import _dict, set_history
+from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
 
@@ -518,8 +518,8 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_rm.files_loaded_description = 'Radial file names loaded'
 
     ## Add Data Values
-    varid_lat[:] = arange(U.grid.y_range[0], U.grid.y_range[1], U.grid.dy )
-    varid_lon[:] = arange(U.grid.x_range[0], U.grid.x_range[1], U.grid.dx )
+    varid_lat[:] = all_range(U.grid.y_range[0], U.grid.y_range[1], U.grid.dy )
+    varid_lon[:] = all_range(U.grid.x_range[0], U.grid.x_range[1], U.grid.dx )
     varid_t[0] = time.timestamp()
     varid_time_bnds[:] =  np.array([(time - timedelta(minutes=30)).timestamp(),
                                     (time + timedelta(minutes=30)).

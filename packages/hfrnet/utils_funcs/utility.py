@@ -1,7 +1,7 @@
 """Contains functions needed for processing"""
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date, time
 import calendar
 import logging
 import json
@@ -9,6 +9,7 @@ import numpy as np
 from scipy.io import loadmat
 import h5py
 import netCDF4 as nc4
+from dateutil import parser
 
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
@@ -194,7 +195,7 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         return rtvInfoObj
 
 def now_hour():
-    """ Rounds to nearest hour by adding a timedelta hour if minute >= 30"""
+    """ Returns datetime at top of current hour"""
     t = datetime.now(timezone.utc)
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
@@ -204,15 +205,10 @@ def eomday(t):
     return datetime(t.year, t.month, days_in_month)
 
 def now_second():
-    """ Rounds to nearest hour by adding a timedelta hour if minute >= 30"""
+    """ Returns current datetime to nearest second, no microsecond"""
     t = datetime.now(timezone.utc)
     return t.replace(second=t.second, microsecond=0, minute=t.minute,
                      hour=t.hour)
-
-def datenum(d):
-    """get which date"""
-    return (366 + d.toordinal() +
-            (d - datetime.fromordinal(d.toordinal())).total_seconds()/(24*60*60))
 
 def hour_range(start, end, step=1):
     """ranges of hours"""
