@@ -1,12 +1,10 @@
 """Contains functions needed for processing"""
 
 import os
-from pathlib import Path
 from datetime import datetime, timedelta, timezone
 import calendar
 import logging
 import json
-import pickle
 import numpy as np
 from scipy.io import loadmat
 import h5py
@@ -17,32 +15,6 @@ from hfrnet.utils_funcs.lib_rtv import RtvProcess
 
 _log = logging.getLogger()
 
-
-def save_ascii(filename, data):
-    """save ascii file"""
-    # Build save dir, as needed
-    folder = Path(filename).parent
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    if not Path(folder).exists():
-        return False, f'Failed to make dir {folder}'
-
-    np.savetxt(filename, data.T, fmt='%8.4f %9.4f %7.0f %7.0f')
-    return True, ''
-
-def save_mat(filename, data):
-    """save matlab file"""
-    # Build save dir, as needed
-    folder = Path(filename).parent
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    if not Path(folder).exists():
-        return False, f'Failed to make dir {folder}'
-
-    # savemat(filename, data)
-    # save as pickle as datetime is not supported in savemat
-    with open(filename, 'wb') as handle:
-        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    return True, ''
 
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
@@ -89,27 +61,6 @@ def process_record(d):
     data = _dict()
     for name in d.dtype.names:
         data[name] = process_record(d[name])
-    return data
-
-def load_mat(filename):
-    """load matlab file"""
-    data = {'info': {}, 'data': {}}
-    try:
-        try:
-            raw = loadmat(filename)
-        except Exception:
-            _log.info("Loading h5 file")
-            raw = h5py.File(filename,'r')
-
-        data['info']['version'] = raw.get('__version__', '')
-        data['info']['header'] = raw.get('__header__', '')
-        data['info']['globals'] = raw.get('__globals__', '')
-
-        data['data'] = process_record(raw)
-    except Exception as e:
-        msg = f"Could not load {filename}: {e}"
-        _log.error(msg)
-
     return data
 
 def read_total_file(filename):
@@ -221,6 +172,7 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         msg = (f"Invalid grid search radius of {rtvInfoObj.grid_search_radius}"
                "km. Value must be a whole number when represented in meters")
         _log.fatal(msg)
+        raise ValueError(msg)
 
     with nc4.Dataset(f"{mfile}/{domain}{res}.nc", 'r') as ds:
         rtvInfoObj.x_range = np.array(ds.variables["x_range"][:])
