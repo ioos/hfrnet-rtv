@@ -34,7 +34,6 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     %    respectively, if there are no errors.  Otherwise, success will be
     %    false and any response will be provided in message.
     %
-    %    See also PRODUCTVERSION, NETCDF
     %
     %    HF-Radar Network
     %    Scripps Institution of Oceanography
@@ -321,7 +320,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.format_version = nc.formatVersion
 
     # LTA Product Version (ACDD)
-    ncid.product_version = rtvProcessObj.productVersion
+    ncid.product_version = os.environ['PRODUCT_VERSION']
 
 
     ## Define Data Variables & Add Attributes
