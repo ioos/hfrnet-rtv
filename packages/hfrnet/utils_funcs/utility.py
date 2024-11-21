@@ -1,0 +1,307 @@
+"""Contains functions needed for processing"""
+
+import os
+from datetime import datetime, timedelta, timezone, date, time
+import calendar
+import logging
+import json
+import numpy as np
+from scipy.io import loadmat
+import netCDF4 as nc4
+from dateutil import parser
+
+
+from hfrnet.utils_funcs.lib_rtv import RtvProcess
+
+_log = logging.getLogger()
+
+
+class _dict(dict):
+    """dict like object that exposes keys as attributes"""
+    def __getattr__(self, key):
+        if key not in self or key.startswith("__"):
+            raise AttributeError()
+        ret = self.get(key, None)
+        return ret
+    def __setattr__(self, key, value):
+        self[key] = value
+    def __getstate__(self):
+        return self
+    def __setstate__(self, d):
+        self.update(d)
+    def update(self, d=None, **kwargs):
+        """update and return self -- the missing dict feature in python"""
+        if d:
+            super().update(d)
+        if kwargs:
+            super().update(kwargs)
+        return self
+
+    def copy(self):
+        return _dict(dict(self).copy())
+
+def process_record(d):
+    """gets info of processes"""
+    if hasattr(d, 'keys'):
+        keys = [k for k in d.keys() if not k.startswith('__')]
+        data = _dict()
+        for k in keys:
+            data[k] = process_record(d[k])
+        return data
+
+    if not hasattr(d, 'dtype'):
+        return d
+    if d.dtype.names is None:
+        if len(d) == 1 and d.dtype.name == 'object':
+            return process_record(d[0])
+        if hasattr(d, 'shape'):
+            if len(d.shape) <= 1 or sorted(d.shape)[-2] == 1:
+                d = np.array(d).flatten()
+        return d
+    data = _dict()
+    for name in d.dtype.names:
+        data[name] = process_record(d[name])
+    return data
+
+def read_total_file(filename):
+    """read total radial file"""
+    data = {'info': {}, 'data': {}}
+    try:
+        try:
+            raw = loadmat(filename)
+        except Exception:
+            _log.info("Loading netCDF4 file")
+            raw = nc4.Dataset(filename,'r')
+
+        data['info']['version'] = raw.get('__version__', '')
+        data['info']['header'] = raw.get('__header__', '')
+        data['info']['globals'] = raw.get('__globals__', '')
+
+        data['data'] = process_record(raw)
+    except Exception as e:
+        msg = f"Could not load {filename}: {e}"
+        _log.error(msg)
+
+    return data
+
+#------------------------------------------------
+#------------------------------------------------
+#------------------------------------------------
+def generate_time_spans(stime, etime):
+    """
+    
+    :param stime: start time
+    :param etime: end time
+    :return: numpy array of times
+    # Function to generate numpy array of 1 hr time spans
+ 
+    """
+    # Convert the input strings to datetime objects
+    start_date = datetime.strptime(stime, '%Y%m%d%H%M%S%f')
+    end_date = datetime.strptime(etime, '%Y%m%d%H%M%S%f')
+
+    # Generate the time spans
+    time_spans = []
+    current_time = start_date
+    while current_time <= end_date:
+        time_spans.append(current_time)
+        current_time += timedelta(hours=1)
+
+    # Convert the list to a numpy array
+    time_spans_array = np.array(time_spans)
+
+    return time_spans_array
+#------------------------------------------------
+#------------------------------------------------
+#------------------------------------------------
+# Define a function to convert strings to floats and integers
+
+def convert_numbers(dictobj):
+    """
+    
+    :param dictobj: is the class of a single region with parameters:
+    region, polygon, length in string format
+    :return: dictobj with all strs converted into numbers
+    """
+
+    #-- convert str to floats
+    for i in range(len(dictobj['region'])):
+        dictobj['region'][i] = float(dictobj['region'][i])
+
+    for i in range(len(dictobj['polygon'])):
+        dictobj['polygon'][i] = float(dictobj['polygon'][i])
+    dictobj['length'] = int(dictobj['length'])
+
+    #-- convert into numpy arrays
+    dictobj['polygon'] = (np.array(dictobj['polygon']).reshape(dictobj['length'], 2,
+                                                               order='F'))
+    dictobj['region'] = np.array(dictobj['region'])
+    return dictobj
+
+
+def load_land(mfile, domain):
+    """
+    Read the land json file given the domain and put it in an array of dictionary
+    """
+    dicts = []
+    # Read JSON data from a file
+    with open(f"{mfile}/{domain}.json", 'r') as file:
+        dicts = json.load(file, object_hook=convert_numbers)
+
+    return dicts
+
+#------------------------------------------------
+#------------------------------------------------
+def load_grid(mfile, domain, res, rtvInfoObj):
+    """
+    Read the grid netcdf file given the domain and res and put it in an array of
+    dictionary
+    """
+    scircle_xfield = ""
+    scircle_yfield = ""
+    if rtvInfoObj.grid_search_radius == np.floor(rtvInfoObj.grid_search_radius):
+        scircle_xfield = f"ocean_x_scircle{rtvInfoObj.grid_search_radius:.0f}km"
+        scircle_yfield = f"ocean_y_scircle{rtvInfoObj.grid_search_radius:.0f}km"
+
+    elif rtvInfoObj.grid_search_radius * 1000 == np.floor(
+            rtvInfoObj.grid_search_radius * 1000):
+        scircle_xfield = f"ocean_x_scircle{rtvInfoObj.grid_search_radius * 1000:.0f}m"
+        scircle_yfield = f"ocean_y_scircle{rtvInfoObj.grid_search_radius * 1000:.0f}m"
+
+    else:
+        msg = (f"Invalid grid search radius of {rtvInfoObj.grid_search_radius}"
+               "km. Value must be a whole number when represented in meters")
+        _log.fatal(msg)
+        raise ValueError(msg)
+
+    with nc4.Dataset(f"{mfile}/{domain}{res}.nc", 'r') as ds:
+        rtvInfoObj.x_range = np.array(ds.variables["x_range"][:])
+        rtvInfoObj.y_range = np.array(ds.variables["y_range"][:])
+
+        dd = np.array(ds.variables["dd"][:])
+        rtvInfoObj.dx = dd[0]
+        rtvInfoObj.dy = dd[1]
+        rtvInfoObj.size = np.array(ds.variables["size"][:])
+        rtvInfoObj.ocean_indices = np.array(ds.variables["ocean_indices"][:])
+        rtvInfoObj.ocean_xy = np.array(ds.variables["ocean_xy"][:,:])
+        setattr(rtvInfoObj, scircle_xfield,
+                np.array(ds.variables[f"{scircle_xfield}"][:, :]))
+        setattr(rtvInfoObj, scircle_yfield,
+                np.array(ds.variables[f"{scircle_yfield}"][:, :]))
+
+        rtvInfoObj.resolution_km  = ds.getncattr('resolution_km')
+        rtvInfoObj.projection  = ds.getncattr('projection')
+        return rtvInfoObj
+
+def now_hour():
+    """ Returns datetime at top of current hour"""
+    t = datetime.now(timezone.utc)
+    return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
+
+def eomday(t):
+    """Gets end of month"""
+    days_in_month = calendar.monthrange(t.year, t.month)[1]
+    return datetime(t.year, t.month, days_in_month)
+
+def now_second():
+    """ Returns current datetime to nearest second, no microsecond"""
+    t = datetime.now(timezone.utc)
+    return t.replace(second=t.second, microsecond=0, minute=t.minute,
+                     hour=t.hour)
+
+def hour_range(start, end, step=1):
+    """ranges of hours"""
+    cur = start
+    while cur < end:
+        yield cur
+        cur += timedelta(hours=step)
+
+def next_month_start(t):
+    """return the start day of the next month"""
+    return (datetime(year=t.year, month=t.month, day=1) +
+            timedelta(days=32)).replace(day=1)
+
+def next_month(t):
+    """return the next month"""
+    try:
+        nextmonthdate = t.replace(month=t.month+1)
+    except ValueError:
+        if t.month == 12:
+            nextmonthdate = t.replace(year=t.year+1, month=1)
+        else:
+            # next month is too short to have "same date"
+            nextmonthdate = eomday(t.replace(month=t.month+1, day=1))
+    return nextmonthdate
+
+def prev_month_start(t):
+    """return the start day of the prev month"""
+    return (datetime(year=t.year, month=t.month, day=1) + timedelta(days=-1)).replace(day=1)
+
+def prev_month(t):
+    """return the previous month's date"""
+    try:
+        prevmonthdate = t.replace(month=t.month-1)
+    except ValueError:
+        if t.month == 1:
+            prevmonthdate = t.replace(year=t.year-1, month=12)
+        else:
+            # prev month is too short to have "same date"
+            prevmonthdate = eomday(t.replace(month=t.month-1, day=1))
+    return prevmonthdate
+
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M:%S.%f"
+DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
+def get_datetime(datetime_str=None):
+    """get datetime in different instances"""
+    if not datetime_str:
+        return datetime.now(timezone.utc)
+
+    if isinstance(datetime_str, (datetime, timedelta)):
+        return datetime_str
+
+    if isinstance(datetime_str, (list, tuple)):
+        return datetime(datetime_str)
+
+    if isinstance(datetime_str, date):
+        return datetime.combine(datetime_str, time())
+
+    # dateutil parser does not agree with dates like 0000-00-00
+    if not datetime_str or (datetime_str or "").startswith("0000-00-00"):
+        return None
+
+    try:
+        return datetime.strptime(datetime_str, DATETIME_FORMAT)
+    except ValueError:
+        return parser.parse(datetime_str)
+
+
+def set_history(A, msg):
+    """ Append to NetCDF history"""
+    if not hasattr(A, 'history'):
+        A.history = []
+        h = _dict()
+        h.timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        h.program = os.path.basename(__file__)
+        h.user = os.getenv('USER') or 'unknown user'
+        h.message = msg
+        A.history.append(h)
+
+def get_processes():
+    """
+       Get a list of processes based on the input time
+    """
+    process_list = []
+    stdRtvProcess = RtvProcess()
+    stdRtvProcess.name = "rtv"
+    stdRtvProcess.method = "uwls"
+    stdRtvProcess.methoddesc = "Unweighted Least Squares"
+    stdRtvProcess.saveas = "ascii,netcdf"
+    process_list.append(stdRtvProcess)
+
+    stdRtvProcess2 = RtvProcess()
+    stdRtvProcess2.name = "stc"
+    stdRtvProcess2.method = "uwls"
+    stdRtvProcess2.methoddesc = "Unweighted Least Squares"
+    stdRtvProcess2.saveas = "ascii,netcdf"
+    process_list.append(stdRtvProcess2)
