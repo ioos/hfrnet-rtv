@@ -7,7 +7,6 @@ import logging
 import json
 import numpy as np
 from scipy.io import loadmat
-import h5py
 import netCDF4 as nc4
 from dateutil import parser
 
@@ -71,8 +70,8 @@ def read_total_file(filename):
         try:
             raw = loadmat(filename)
         except Exception:
-            _log.info("Loading h5 file")
-            raw = h5py.File(filename,'r')
+            _log.info("Loading netCDF4 file")
+            raw = nc4.Dataset(filename,'r')
 
         data['info']['version'] = raw.get('__version__', '')
         data['info']['header'] = raw.get('__header__', '')
