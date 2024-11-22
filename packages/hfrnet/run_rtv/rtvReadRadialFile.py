@@ -50,7 +50,6 @@ def rtvReadRadialFile(inFile):
     if not (inFile.fullfile).is_file():
         msg = f'File {inFile.fullfile} not found'
         _log.error(msg)
-        raise ValueError(msg)
 
     # Get LLUV Table Column Names
     try:
@@ -78,7 +77,6 @@ def rtvReadRadialFile(inFile):
     except Exception as e:
         msg = f'Could not open file: {str(e)}'
         _log.error(msg)
-        raise FileNotFoundError(msg) from e
 
     # Check we got required colunm names
     if len(columnIndex) == 0:
