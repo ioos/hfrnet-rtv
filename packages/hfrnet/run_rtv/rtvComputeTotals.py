@@ -59,7 +59,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
     nSites = len(radials)
 
     #loop over each radial dataset (site)
-    for iRadial in range(0, nSites):
+    for iRadial in range(nSites):
 
         currRadial = radials[iRadial]
 
@@ -113,6 +113,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
         msg = (f"Invalid grid search radius of {rtvInfoObj.grid_search_radius}"
                   "km. Value must be a whole number when represented in meters")
         _log.error(msg)
+        raise ValueError(msg)
 
     # Compute total solutions
     uwlsTotalComp = [UwlsTotalInfo() for i in range (nArrayLen)]
@@ -122,7 +123,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
     nPoints = len(sPoint)
 
     # Loop over each potential solution grid point
-    for iPoint in range(0, nPoints):
+    for iPoint in range(nPoints):
 
         #index of the solution point
         solutionIndex = int(sPoint[iPoint])

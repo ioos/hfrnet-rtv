@@ -38,6 +38,7 @@ def rtvProcessMetadata(processObj, configObj):
     else:
         msg = f'Process{processObj.name} not recognized for defining metadata'
         _log.error(msg)
+        raise ValueError(msg)
 
     return metaDataObj
 
@@ -303,6 +304,7 @@ def appendLocationKeywords(configObj, metaDataObj):
     else:
         msg =  f"Domain {configObj.domain} not recognized in appending location keywords"
         _log.error(msg)
+        raise ValueError(msg)
 
     metaDataObj.keywords = f"{metaDataObj.keywords}{locationKeywords}"
 
