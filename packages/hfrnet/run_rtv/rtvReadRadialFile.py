@@ -62,7 +62,7 @@ def rtvReadRadialFile(inFile):
                     m = re.match(r'^%TableColumnTypes:((\s*\w+\s*)+)', tline)
 
                     # Table column name match; save & break
-                    if m is not None:
+                    if m:
                         m = m.groups()[0].strip().split()
                         for I in range(len(m)):
                             columnIndex[m[I]] = I
@@ -71,7 +71,7 @@ def rtvReadRadialFile(inFile):
                 else:
                 # Keep looking for the LLUV table if we haven't found it yet
                     m = re.match(r'^%TableType:\s*LLUV', tline)
-                    if m is not None:
+                    if m:
                         tableType = 'LLUV'
 
     except Exception as e:
