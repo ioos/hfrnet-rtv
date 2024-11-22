@@ -92,12 +92,10 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
     sPoint = np.argwhere(np.logical_and(gridNewRadIndex,
                                         (gridAllRadCount >= rtvInfoObj.min_rad_sites)))
 
-    #FIX: NEED TO UNCOMMENT LOGGER stuff
     if len(sPoint) == 0:
         _log.info( 'No potential total solution points found' )
         return U_totals
 
-    #FIX:  NEED TO REMOVE THIS PART ABOUT THE NAME IN KM OR METERS
     #Define grid small circle field name
     scircle_xfield = ""
     scircle_yfield = ""
@@ -172,8 +170,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
     hdop_temp = np.array([tot.hdop for tot in uwlsTotalComp])
     #Filter total solutions: infinite, complex, speed threshold, HDOP threshold
     iInf = np.logical_or(np.isinf(u_temp), np.isinf(v_temp))
-    #FIX: Ask if the v_temp.imag should be v_temp.imag > 0
-    iCpx = np.logical_or(np.logical_or(u_temp.imag > 0, v_temp.imag),
+    iCpx = np.logical_or(np.logical_or(u_temp.imag > 0, v_temp.imag > 0),
                          np.logical_or(dopx_temp.imag > 0, dopy_temp.imag > 0))
     iSpd = np.sqrt(u_temp**2 + v_temp**2) > rtvInfoObj.max_rtv_speed
     iHdop = hdop_temp > rtvInfoObj.uwls_max_hdop

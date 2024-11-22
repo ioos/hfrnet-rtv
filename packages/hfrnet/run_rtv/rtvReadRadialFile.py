@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from hfrnet.utils_funcs.lib_rtv import RadialInfo
 from hfrnet.utils_funcs.math_funcs import azimuth, cart2pol
+import hfrnet.utils_funcs.constsHFR as constsHFR
 
 _log = logging.getLogger()
 
@@ -45,69 +46,55 @@ def rtvReadRadialFile(inFile):
     %    Coastal Observing Research and Development Center
     """
 
-    NUM_DEGREES = 360
-    RIGHT_ANGLE = 90
-
     # Check file exists
     if not (inFile.fullfile).is_file():
-        msg = f'readRadialFile:fileNotFound {inFile.fullfile} not found'
+        msg = f'File {inFile.fullfile} not found'
         _log.error(msg)
-
+        raise ValueError(msg)
 
     # Get LLUV Table Column Names
-    # Note: found it was faster to just get the header info then use LOAD than
-    # it was to continue with the open file and fgetl to load the rest of the data.
     try:
-        fid = open(inFile.fullfile, 'r')
+        with open(inFile.fullfile, 'r') as fid:
+            tableType = ''
+            columnIndex = {}
+            for tline in fid:
+                # Look for column names if the current table is the right type
+                if tableType == 'LLUV':
+                    m = re.match(r'^%TableColumnTypes:((\s*\w+\s*)+)', tline)
+
+                    # Table column name match; save & break
+                    if m is not None:
+                        m = m.groups()[0].strip().split()
+                        for I in range(len(m)):
+                            columnIndex[m[I]] = I
+
+                        break
+                else:
+                # Keep looking for the LLUV table if we haven't found it yet
+                    m = re.match(r'^%TableType:\s*LLUV', tline)
+                    if m is not None:
+                        tableType = 'LLUV'
+
     except Exception as e:
-        msg = f'readRadialFile:fopenErr {str(e)}'
+        msg = f'Could not open file: {str(e)}'
         _log.error(msg)
-
-    tableType = ''
-    columnIndex = {}
-    while 1:
-
-        tline = fid.readline()
-
-        if not tline:
-            break
-
-        # Look for column names if the current table is the right type
-        if tableType == 'LLUV':
-            m = re.match(r'^%TableColumnTypes:((\s*\w+\s*)+)', tline)
-
-            # Table column name match; save & break
-            if m is not None:
-                m = m.groups()[0].strip().split()
-                for I in range(len(m)):
-                    columnIndex[m[I]] = I
-
-                break
-
-
-        # Keep looking for the LLUV table if we haven't found it yet
-        else:
-            m = re.match(r'^%TableType:\s*LLUV', tline)
-            if m is not None:
-                tableType = 'LLUV'
-
-    fid.close()
+        raise FileNotFoundError(msg) from e
 
     # Check we got required colunm names
     if len(columnIndex) == 0:
-        _log.error('readRadialFile:noColumnName: No column names were found')
+        _log.error('noColumnName: No column names were found')
     elif 'LOND' not in columnIndex:
-        _log.error('readRadialFile:missingColumnName: Longitude column (LOND) not found')
+        _log.error('missingColumnName: Longitude column (LOND) not found')
     elif 'LATD' not in columnIndex:
-        _log.error('readRadialFile:missingColumnName: Latitude column (LATD) not found')
+        _log.error('missingColumnName: Latitude column (LATD) not found')
     elif 'HEAD' not in columnIndex:
-        _log.warning('readRadialFile:missingColumnName: '
+        _log.warning('missingColumnName: '
                      'Radial heading column (HEAD) not found')
     elif 'VELO' not in columnIndex:
-        _log.warning('readRadialFile:missingColumnName: Radial velocity'
+        _log.warning('missingColumnName: Radial velocity'
                      ' column (VELO) not found')
     elif 'RNGE' not in columnIndex:
-        _log.warning('readRadialFile:missingColumnName: Radial range '
+        _log.warning('missingColumnName: Radial range '
                      'column (RNGE) not found')
 
 
@@ -116,7 +103,7 @@ def rtvReadRadialFile(inFile):
     d = np.loadtxt(inFile.fullfile, comments="%")
 
     if d.size == 0:
-        _log.error('readRadialFile:noDataLoaded: '
+        _log.error('noDataLoaded: '
                    'Load function returned an empty array. No data in radial file?')
 
     else:
@@ -128,7 +115,8 @@ def rtvReadRadialFile(inFile):
         if 'HEAD' in columnIndex:
 
             # Convert deg CW from N to deg CCW from E
-            radialInfoObj.heading = (RIGHT_ANGLE - d[:, columnIndex['HEAD']]) % NUM_DEGREES
+            radialInfoObj.heading = ((constsHFR.RIGHT_ANGLE - d[:, columnIndex['HEAD']]) %
+                                     constsHFR.NUM_DEGREES)
 
         else:
 
@@ -137,7 +125,7 @@ def rtvReadRadialFile(inFile):
                          inFile.lat, inFile.lon)
 
             # Convert deg CW from N to deg CCW from E
-            radialInfoObj.heading = (RIGHT_ANGLE - az) % NUM_DEGREES
+            radialInfoObj.heading = (constsHFR.RIGHT_ANGLE - az) % constsHFR.NUM_DEGREES
 
         # Radial speed
         if "VELO" in columnIndex:
@@ -152,7 +140,7 @@ def rtvReadRadialFile(inFile):
             rdir = np.rad2deg(rdir)
 
             # Find difference in bearing (binary result, either 0 or 180)
-            dd = round(np.abs(radialInfoObj.heading - rdir)) % NUM_DEGREES
+            dd = round(np.abs(radialInfoObj.heading - rdir)) % constsHFR.NUM_DEGREES
 
             # 180 deg differences imply direction away from radar which gets a
             # negative value by convention
@@ -161,8 +149,7 @@ def rtvReadRadialFile(inFile):
             radialInfoObj.speed = rspd
 
         else:
-            _log.error('readRadialFile:missingColumnName:  '
-                       'Radial velocity components (VELU & VELV) not found')
+            _log.error('missingColumnName: Radial velocity components (VELU & VELV) not found')
 
         # Radial range (from origin)
         if 'RNGE' in columnIndex:

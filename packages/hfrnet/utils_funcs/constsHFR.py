@@ -10,3 +10,5 @@ MODES = ["25 hour", "monthly", "annual"]
 HOURS_IN_DAY = 24
 florida_lat = [25, 26.75]
 florida_lon = [-80.75, -78.75]
+NUM_DEGREES = 360
+RIGHT_ANGLE = 90
