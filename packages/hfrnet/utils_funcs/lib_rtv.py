@@ -83,6 +83,7 @@ class FileLocations:
     def __init__(self):
         self.rootdir = ""
         self.domaindir = ""
+        self.fullfile = ""
         self.mdir = ""
         self.mfilename = ""
         self.mpathfile = ""

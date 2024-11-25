@@ -129,7 +129,7 @@ class SumAndAvg:
            Gets list of hours between start and end of month of 'time'
         """
         dayOfWeek, last = calendar.monthrange(time_month.year, time_month.month)
-        start_of_month = time_month.replace(day=1)
+        start_of_month = time_month.replace(day=1, hour=0)
         end_of_month = time_month.replace(day=last, hour=23)
         temp_time = start_of_month
         time_period = [temp_time]
