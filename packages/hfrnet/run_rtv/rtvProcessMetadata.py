@@ -24,15 +24,16 @@ def rtvProcessMetadata(processObj, configObj):
     """
 
     metaDataObj = Metadata()
+    name = processObj.name.casefold()
 
     # Obtain process dependent metadata
-    if processObj.name.lower() == 'rtv':
+    if name == 'rtv':
         metaDataObj = getRtvMetadata(processObj, configObj, metaDataObj)
 
-    elif processObj.name.lower() == 'stc':
+    elif name == 'stc':
         metaDataObj = getStcMetadata(processObj, configObj, metaDataObj)
 
-    elif processObj.name.lower() == 'lta':
+    elif name == 'lta':
         metaDataObj = getLtaMetadata(processObj, configObj, metaDataObj)
 
     else:
@@ -46,8 +47,10 @@ def rtvProcessMetadata(processObj, configObj):
 def getRtvMetadata(processObj, configObj, metaDataObj):
     """ rtv metadata """
 
+    domain = (configObj.domain).casefold()
+
     # Title (REQUIRED)
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.title = (f"Near-Real Time Surface Water Velocity, "
                              f"{metaDataObj.domain_description}, "
                              f"{configObj.resolution} Resolution")
@@ -57,7 +60,7 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
                              f"{configObj.resolution} Resolution")
 
     # Summary (REQUIRED)
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.summary = ('Surface velocities estimated from HF-Radar are '
                             f"representative of the upper {metaDataObj.depth_bottom: 0.1f} "
                                'meters of the lake.  The main objective of near-real'
@@ -89,7 +92,7 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
     #case & repeat for each product below (rtv, sta, lta)
     metaDataObj.keywords_vocabulary = \
         'Global Change Master Directory (GCMD) Keywords, Version 14.1'
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.keywords = ('Earth Science, Terrestrial Hydrosphere, '
             'Surface Water, Surface Water Features, Lakes/Reservoirs')
     else:
@@ -114,8 +117,10 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
 def getStcMetadata(processObj, configObj, metaDataObj):
     """stc metadata"""
 
+    domain = (configObj.domain).casefold()
+
     # Title (REQUIRED)
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.title = ('Near-Real Time Subtidal Surface Water Velocity, '
                              f"{metaDataObj.domain_description}, "
                              f"{configObj.resolution} Resolution")
@@ -125,7 +130,7 @@ def getStcMetadata(processObj, configObj, metaDataObj):
                              f"{configObj.resolution} Resolution")
 
     # Summary (REQUIRED)
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.summary =('Surface velocities estimated from HF-Radar are '
                               f"representative of the upper {metaDataObj.depth_bottom:0.1f}"
                               ' meters of the lake.  The main objective of '
@@ -162,7 +167,7 @@ def getStcMetadata(processObj, configObj, metaDataObj):
     # Keywords (REQUIRED)
     metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 14.1'
 
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.keywords = ['Earth Science, Terrestrial Hydrosphere, '
             'Surface Water, Surface Water Features, Lakes/Reservoirs']
     else:
@@ -191,8 +196,10 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
     if not processObj.subprocess_name:
         _log.error('LTA subprocess is not defined')
 
+    domain = (configObj.domain).casefold()
+
     # Summary (REQUIRED)
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.summary = ('Surface velocities estimated from HF-Radar are '
             'representative of the upper '
             f"{metaDataObj.depth_bottom:0.1f meters} of the lake.  The "
@@ -216,10 +223,11 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
             'current maps.')
 
     # Subprocess specific fields
-    if (processObj.subprocess_name).casefold() == constsHFR.CONFIGS_DICT['month']:
+    subprocess_name = (processObj.subprocess_name).casefold()
+    if subprocess_name == constsHFR.CONFIGS_DICT['month']:
 
         # Title (REQUIRED)
-        if configObj.domain == "glna":
+        if domain == "glna":
             metaDataObj.title = ('Near-Real Time Month Average Surface Water Velocity, '
                 f"{metaDataObj.domain_description}, {configObj.resolution} Resolution'")
         else:
@@ -231,10 +239,10 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
             ' The month average is computed from all available hourly near real-time '
             'surface current maps for the given month.')
 
-    elif (processObj.subprocess_name).casefold() == constsHFR.CONFIGS_DICT['year']:
+    elif subprocess_name == constsHFR.CONFIGS_DICT['year']:
 
         # Title (REQUIRED)
-        if configObj.domain == "glna":
+        if domain == "glna":
             metaDataObj.title = ('Near-Real Time Year Average Surface Water Velocity, '
                 f"{metaDataObj.domain_description}, {configObj.resolution} Resolution")
         else:
@@ -252,7 +260,7 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
 
     # Keywords (REQUIRED)
     metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 14.1'
-    if (configObj.domain).casefold() == "glna":
+    if domain == "glna":
         metaDataObj.keywords = ('Earth Science, Terrestrial Hydrosphere, '
             'Surface Water, Surface Water Features, Lakes/Reservoirs')
     else:
@@ -278,27 +286,28 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
 def appendLocationKeywords(configObj, metaDataObj):
     """keywords for each domain"""
 
+    domain = (configObj.domain).casefold()
     locationKeywords = ''
-    if (configObj.domain).casefold() =='akns':
+    if domain =='akns':
         locationKeywords = ', Arctic Ocean, Beaufort Sea'
 
-    elif (configObj.domain).casefold() == 'gak':
+    elif domain == 'gak':
         locationKeywords = ', Pacific Ocean, North Pacific Ocean, Gulf of Alaska'
 
-    elif (configObj.domain).casefold() == 'prvi':
+    elif domain == 'prvi':
         locationKeywords = [', Atlantic Ocean, North Atlantic Ocean, Caribbean Sea, '
              'Puerto Rico, Virgin Islands']
 
-    elif (configObj.domain).casefold() == 'usegc':
+    elif domain == 'usegc':
         locationKeywords = ', Atlantic Ocean, North Atlantic Ocean, Gulf of Mexico'
 
-    elif (configObj.domain).casefold() == 'ushi':
+    elif domain == 'ushi':
         locationKeywords = ', Pacific Ocean, Central Pacific Ocean, Hawaiian Islands'
 
-    elif (configObj.domain).casefold() == 'uswc':
+    elif domain == 'uswc':
         locationKeywords = ', Pacific Ocean, North Pacific Ocean'
 
-    elif (configObj.domain).casefold() == 'glna':
+    elif domain == 'glna':
         locationKeywords = ', North America, United States of America, Great Lakes'
 
     else:
