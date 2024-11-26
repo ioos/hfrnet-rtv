@@ -1,9 +1,14 @@
+"""saveNetcdf"""
+
 from collections.abc import Mapping
 import datetime
 import json
 import copy
+import logging
 import numpy as np
 from netCDF4 import Dataset
+
+_log = logging.getLogger()
 
 def datetime_to_timestamp(d, k):
     """convert the datetime to timestamp to be saved in netcdf file"""
@@ -96,7 +101,10 @@ def saveNetcdf(filename, d):
             for k in ['times', 'tNewRtvFiles']:
                 timestamp_to_datetime(d['c']['reprocess'], k)
         if 'lta' in d['c']:
-            timestamp_to_datetime(d['c']['lta'], 'annual_min_date')
+            timestamp_to_datetime(d['c']['lta'], 'annual_min_date')    
+
+    msg = f"Saved file: {filename}"
+    _log.info(msg)
 
     nc.close()
 
@@ -147,4 +155,8 @@ def loadNetcdf(filename):
             timestamp_to_datetime(data['c']['lta'], 'annual_min_date')
 
     ncid.close()
+
+    msg = f"Loaded file: {filename}"
+    _log.info(msg)
+
     return data
