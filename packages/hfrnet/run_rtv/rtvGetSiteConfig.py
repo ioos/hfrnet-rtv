@@ -66,7 +66,7 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
     if nRows == 0:
         # No sites configured
         msg = f'Site configuration not found for {configObj.domain}, {configObj.resolution}'
-        _log.error(msg)
+        _log.warning(msg)
 
         return configObj
 
