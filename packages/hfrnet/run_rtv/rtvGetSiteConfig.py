@@ -57,7 +57,6 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
         results = conn.sql(sqlquery, as_dict=1)
 
     except Exception as e:
-
         errmsg = f'Configuration database query error {str(e)}'
         _log.error(errmsg)
 
@@ -66,6 +65,9 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
 
     if nRows == 0:
         # No sites configured
+        msg = f'Site configuration not found for {configObj.domain}, {configObj.resolution}'
+        _log.error(msg)
+
         return configObj
 
     if nRows > 0:
