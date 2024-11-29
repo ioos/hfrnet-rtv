@@ -2,22 +2,20 @@
 
 """processRtv"""
 
+import logging
 import numpy as np
 
-from hfrnet.utils_funcs.lib_rtv import RtvProcess, RadialInfo
-from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo, StcLtaInfo
-import hfrnet.run_rtv.rtv as rtv
+from hfrnet.utils_funcs.lib_rtv import RtvProcess
+from hfrnet.run_rtv import rtv
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.sumAvg import SumAndAvg
 from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
-from hfrnet.run_rtv.rtvLoadRadials import rtvLoadRadials
 from hfrnet.run_rtv.saveAscii import saveAscii
-from hfrnet.utils_funcs.utility import load_land, load_mat, load_grid
+from hfrnet.utils_funcs.utility import load_land, load_grid
 
-import logging
 _log = logging.getLogger()
 
 def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
@@ -106,14 +104,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             else:
                 msg = f'Created or updated {len(newRtvFiles)} rtv files'
                 _log.info(msg)
-                
+
         if process.name.casefold() == 'stc':
 
             for time in configObj.times:
 
                 sumAvg = SumAndAvg('25 Hour', configObj, process,
                                    fileLocObj, time, stcLtaInfoObj)
-                avgObj = sumAvg.get_sum_and_avg()
+                sumObj = sumAvg.get_sum()
+                avgObj = sumAvg.get_avg()
 
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
@@ -147,13 +146,13 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 process_str = "annual"
 
             for time in configObj.times:
-                
+
                 #calculation
                 sumAvg = SumAndAvg(process_str, configObj, process,
                                    fileLocObj, time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
-                
+
                 #metadata and filenames for output
                 avgObj.land = land
                 avgObj.grid = grid
@@ -169,7 +168,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                'process': process.to_dict()}
                     allInfo_dict = {'c': allInfo, 't': time, 'S': sumObj.to_dict()}
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
-                
+
                 #save final file
                 ltaSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcLtaInfoObj,

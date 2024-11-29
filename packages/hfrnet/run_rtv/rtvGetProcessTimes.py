@@ -27,7 +27,7 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     #        configObj, rtvInfoObj - Structures containing configuration parameters
     #           #
     #    Outputs:
-    #        t                      - Datetime vector of RTV hours to be
+    #        time                      - Datetime vector of RTV hours to be
     #                                 processed based on availability of new
     #                                 radial data.
     #        c.rtv('current_state') - Datetime of current rtv state
@@ -92,7 +92,7 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     sites_list = read_site_table(configObj)
 
     time_list = read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime)
-    print("\n\n", time_list,"\n\n")
+    
     if len(time_list) == 0:
         return t
 
@@ -101,14 +101,14 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     t = [datetime.fromtimestamp(r[0]) for r in time_list]
 
     # Shift radials >= :30 to the top of the next hour
-    for i in range(len(t)):
-        if t[i].minute >= 30:
-            t[i] = (t[i] + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0)
+    for i, iTime in enumerate(t):
+        if iTime.minute >= 30:
+            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0)
 
     # Shift radials > :00 & < :30 to the top of the current hour
-    for i in range(len(t)):
-        if t[i].minute < 30:
-            t[i] = t[i].replace(minute=0, second=0, microsecond=0)
+    for i, iTime in enumerate(t):
+        if iTime.minute < 30:
+            t[i] = iTime.replace(minute=0, second=0, microsecond=0)
 
     # Find unique values to process
     t = np.unique(t)

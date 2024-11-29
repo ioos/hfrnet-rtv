@@ -365,9 +365,13 @@ class SumAndAvg:
         A.uVar = ( 1./(A.nGood - 1) ) * (A.u2Sum - ((1./A.nGood) * (A.uSum**2)))
         A.vVar = ( 1./(A.nGood - 1) ) * (A.v2Sum - ((1./A.nGood) * (A.vSum**2)))
 
-        avgsumObj = A
+        self.sumavgObj = A
 
-        return avgsumObj
+        #apply mask for random regions
+        if self.isMonthly or self.isAnnual:
+            self.qc_mask()
+
+        return self.sumavgObj
 
     def qc_mask(self):
         """
@@ -409,8 +413,5 @@ class SumAndAvg:
         """
         sumObj = self.get_sum()
         avgObj = self.get_avg()
-
-        if self.isMonthly or self.isAnnual:
-            self.qc_mask()
 
         return avgObj

@@ -1,12 +1,12 @@
 """rtv"""
 
+import logging
 import numpy as np
 
-import hfrnet.run_rtv.rtvGetProcessTimes
+import hfrnet.run_rtv.rtvGetProcessTimes as rtvGetProcessTimes
 from hfrnet.run_rtv.rtvGetSiteConfig import rtvGetSiteConfig
 from hfrnet.run_rtv.rtvLoadRadials import rtvLoadRadials
 from hfrnet.utils_funcs.utility import load_land, load_grid
-from hfrnet.utils_funcs.lib_rtv import LandInfo, RtvTotals
 from hfrnet.run_rtv.rtvComputeTotals import rtvComputeTotals
 from hfrnet.run_rtv.rtvMergeData import rtvMergeData
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
@@ -14,7 +14,6 @@ from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveAscii import saveAscii
 
-import logging
 _log = logging.getLogger()
 
 def rtvRmTotalFiles(fileLocObj):
@@ -78,11 +77,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
 
     processTimes = []
     if reprocess:
-        # FIX: need to make sure object exists
         processTimes = configObj.times
     else:
-        #FIX: need to write class to get the process times from database
-        processTimes = rtvGetProcessTimes.rtvGetProcessTimes(configObj, rtvInfoObj)
+        processTimes = rtvGetProcessTimes(configObj, rtvInfoObj)
 
     if processTimes and len(processTimes) > 0:
         errmsg = (f"Obtained {len(processTimes)} hour(s) to process between: "
@@ -123,11 +120,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         # Get/generate filename
         fileNameList = filenames(configObj, rtvProcessObj,
                                  fileLocObj, time)
-        
-        #FIX: get site config (uses database)
+
         siteInfoObj = rtvGetSiteConfig(configObj, siteInfoObj, time)
 
-        #FIX: some checks on the number of sites
         if len(siteInfoObj) == 0:
             log_message = "No sites configured for RTV processing at this time"
             _log.warning(log_message)

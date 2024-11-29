@@ -4,7 +4,6 @@ from hfrnet.db_tools.db_manager import db_manager
 from datetime import timedelta
 _log = logging.getLogger()
 
-
 def read_domain(db_class, configureVals):
         # Check for valid domain
         sqlquery = (f"SELECT description, id FROM domain WHERE name = "
@@ -13,19 +12,18 @@ def read_domain(db_class, configureVals):
         # % Expect exactly one record to match
         n = len(result_list)
         if n == 0:
-            _log.error(f"{configureVals.domain} is not defined in the configuration "
-                        f"database")
-            db_class.close()
-            raise DatabaseError()
+                _log.error(f"{configureVals.domain} is not defined in the configuration "
+                           f"database")
+                db_class.close()
+                raise DatabaseError()
         elif n > 2:
-            _log.error(f"{configureVals.domain} returned {n} rows where only one expected")
-            db_class.close()
-            raise DatabaseError()
-        
+                _log.error(f"{configureVals.domain} returned {n} rows where only one expected")
+                db_class.close()
+                raise DatabaseError()
+                
         configureVals.domain_id = result_list['id'][0]
         # --- success
-        
-        
+
 def read_resolution(db_class, configureVals):
         # %% Check for valid resolution
         sqlquery = (f"SELECT id FROM resolution WHERE name = "

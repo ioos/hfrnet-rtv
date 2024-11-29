@@ -1,9 +1,12 @@
+"""db_manager"""
 
 import pymysql
 import logging
 _log = logging.getLogger()
 
 class db_manager:
+    """manages the database connection and queries"""
+
     def __init__(self, confdb):
         self.name = confdb.name
         self.user = confdb.user
@@ -12,14 +15,13 @@ class db_manager:
         self.region = confdb.host
         self.password = confdb.password
         self.sslrootcert = confdb.sslrootcert
-        
         self.conn_handel = None
         self.connected = False
 
     def __enter__(self):
         self.connect()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
@@ -33,11 +35,12 @@ class db_manager:
                     database=self.name)
                 self.connected = True
             except Exception as err:
-                    _log.fatal(f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-                             f", Can't connect to the database: user={self.user}, "
-                             f"database={self.name} , "
-                             f"exist")
-        # self.cursor = self.connection.cursor()
+                msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+                       f", Can't connect to the database: user={self.user}, "
+                       f"database={self.name} , "
+                       f"exist")
+                _log.fatal(msg)
+                # self.cursor = self.connection.cursor()
     #----------------------------------------------------------
     def get_query(self, query):
         if self.connected:
@@ -51,15 +54,16 @@ class db_manager:
                 self.create_dict(rows, cursor.description, datasetdict)
                 # tablee = self.store_output(cursor)
                 # rows = cursor.fetchall()
-                
+
                 _log.info(" ------------------ ")
-                for key in datasetdict.keys():
-                    _log.info(f"{key}:::{datasetdict[key]}")
+                for key, value in datasetdict.items():
+                    msg = f"{key}:::{value}"
+                    _log.info(msg)
                 _log.info(" -------->>>>>>>>>>>>>>------------------ ")
 
         return datasetdict
     #----------------------------------------------------------
-    def write_query(self, query,values):
+    def write_query(self, query):
         if self.connected:
             _log.info(" -------->>>>>>>>>>>>>>------------------ ")
             _log.info(query)
@@ -71,14 +75,15 @@ class db_manager:
                 self.create_dict(rows, cursor.description, datasetdict)
                 # tablee = self.store_output(cursor)
                 # rows = cursor.fetchall()
-                
+
                 _log.info(" ------------------ ")
-                for key in datasetdict.keys():
-                    _log.info(f"{key}:::{datasetdict[key]}")
+                for key, dataValue in datasetdict.items():
+                    msg = f"{key}:::{dataValue}"
+                    _log.info(msg)
                 _log.info(" -------->>>>>>>>>>>>>>------------------ ")
-        
+
         return datasetdict
-    
+
     # ----------------------------------------------------------
     def check_dict(self, my_dict, key, add, value):
         # Check if the key exists in the dictionary
@@ -101,22 +106,20 @@ class db_manager:
             list1 = []
             for row in data_rows:
                 list1.append(row[i])
-            # print(row[i])
-            
-            # print(list1)
+
             #-- to check the repeated dict key, then append "_2"
             self.check_dict(datasetdict, col_head, "_2", list1)
         # datasetdict[col_head]=list1
-        
+
         # print(rows[0][i])
         # list1.append(row[i])
         # datasetdict[headers[i][0]]=list1
-        
+
         # print('===================== datasetdict')
         # for row in datasetdict:
         #     print(row, datasetdict[row])
-        
-        return
+
+        #return
     #----------------------------------------------------------
 
     def close(self):
@@ -145,21 +148,21 @@ class db_manager:
         # self.connection.commit()
     #----------------------------------------------------------
 def set_db_info( config, configObj):
-        """
-           Set DB info to be used later...?
-        """
-        configObj.confdb.user = config['databases.config.user']
-        configObj.confdb.name = config['databases.config.name']
-        configObj.confdb.host = config['databases.config.host']
-        configObj.confdb.port = config['databases.config.port']
-        configObj.confdb.region = config['databases.config.region']
-        configObj.confdb.password = config['databases.config.password']
-        configObj.confdb.sslrootcert = config['databases.config.sslrootcert']
+    """
+    Set DB info to be used later...?
+    """
+    configObj.confdb.user = config['databases.config.user']
+    configObj.confdb.name = config['databases.config.name']
+    configObj.confdb.host = config['databases.config.host']
+    configObj.confdb.port = config['databases.config.port']
+    configObj.confdb.region = config['databases.config.region']
+    configObj.confdb.password = config['databases.config.password']
+    configObj.confdb.sslrootcert = config['databases.config.sslrootcert']
 
-        configObj.raddb.user = config['databases.radial.user']
-        configObj.raddb.name = config['databases.radial.name']
-        configObj.raddb.host = config['databases.radial.host']
-        configObj.raddb.port = config['databases.radial.port']
-        configObj.raddb.region = config['databases.radial.region']
-        configObj.raddb.password = config['databases.radial.password']
-        configObj.raddb.sslrootcert = config['databases.radial.sslrootcert']
+    configObj.raddb.user = config['databases.radial.user']
+    configObj.raddb.name = config['databases.radial.name']
+    configObj.raddb.host = config['databases.radial.host']
+    configObj.raddb.port = config['databases.radial.port']
+    configObj.raddb.region = config['databases.radial.region']
+    configObj.raddb.password = config['databases.radial.password']
+    configObj.raddb.sslrootcert = config['databases.radial.sslrootcert']
