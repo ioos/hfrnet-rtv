@@ -122,11 +122,11 @@ class SiteInfo:
     """
        Info about the data collection site
     """
-    def __init__(self):
-        self.network = ""
-        self.name = ""
-        self.beampattern = ""
-        self.useMinute = 0
+    def __init__(self, network="", name="", beampattern="", useMinute = 0):
+        self.network = network
+        self.name = name
+        self.beampattern = beampattern
+        self.useMinute = useMinute
 
 class RtvInfo:
     """

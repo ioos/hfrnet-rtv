@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 from hfrnet.utils_funcs.utility import now_second, now_hour
-from hfrnet.db_tools.state import State
+# from hfrnet.db_tools.state import State
 from hfrnet.db_tools.db_tables import read_site_table, read_files_times_radialtable
 
 
@@ -59,17 +59,19 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     t = []
     rtvInfoObj.current_state = None
     rtvInfoObj.new_state = None
-
-    ## Define radial file arrival time search window
-    # Oldest data time to process
-    minTime = now_hour() - timedelta(hours=rtvInfoObj.max_age)
-    #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
-
-    # Check state
-    state = State(configObj.domain, configObj.domain_id,
-                  configObj.resolution, configObj.resolution_id,
-                  rtvProcessObj.name.lower(), configObj.confdb)
-    state.get()
+    #------------------------------------- will be fixed
+    # ## Define radial file arrival time search window
+    # # Oldest data time to process
+    # minTime = now_hour() - timedelta(hours=rtvInfoObj.max_age)
+    # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
+    #
+    # # Check state
+    # state = State(configObj.domain, configObj.domain_id,
+    #               configObj.resolution, configObj.resolution_id,
+    #               rtvProcessObj.name.lower(), configObj.confdb)
+    # state.get()
+    state.time = None
+    #-------------------------
 
     # Set start time to arbitrairly old value if no state is defined - let
     # minTime select new radials

@@ -7,7 +7,7 @@ import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 from hfrnet.run_rtv import rtv
-from hfrnet.utils_funcs.filenames import filenames
+# from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.sumAvg import SumAndAvg
 from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf

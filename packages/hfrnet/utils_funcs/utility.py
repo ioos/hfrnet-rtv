@@ -9,7 +9,7 @@ import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
-
+from pathlib import Path
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 
@@ -305,3 +305,67 @@ def get_processes():
     stdRtvProcess2.methoddesc = "Unweighted Least Squares"
     stdRtvProcess2.saveas = "ascii,netcdf"
     process_list.append(stdRtvProcess2)
+
+
+def load_mat(filename):
+    data = {'info': {}, 'data': {}}
+    try:
+        try:
+            raw = loadmat(filename)
+        except:
+            raw = h5py.File(filename,'r')
+
+        data['info']['version'] = raw.get('__version__', '')
+        data['info']['header'] = raw.get('__header__', '')
+        data['info']['globals'] = raw.get('__globals__', '')
+
+        data['data'] = process_record(raw)
+    except:
+        traceback.print_exc(file=sys.stdout)
+
+    return data
+
+#########################################################################
+def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
+    """
+    :param config_dict: contains the yaml config file
+    :return: the ccap file name
+    """
+    # example file name
+    # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
+    
+    ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    
+    file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
+    return file_name
+
+#########################################################################
+#########################################################################
+#########################################################################
+
+def setup_log_filename(my_pkgint, added_name=""):
+    """
+    :param my_pkgint: contains the interface of the unit object
+    It sets up the logfile for the entire unit logging object
+    :param added_name: any optional string added to the unit name
+    """
+    # --------------------- create the log file
+    log_dir = Path(my_pkgint.config['directory.log'])
+    stime = f"{my_pkgint.config['time.start_date']}"
+    etime = f"{my_pkgint.config['time.end_date']}"
+    algo_ver = f"{my_pkgint.config['production.version']}"
+    
+    run_logfile = create_CCAP_filename_s_e(stime, etime,
+                                           algo_ver,
+                                           f"{added_name}", ".log")
+    handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
+    date_format = '%Y-%m-%d %H:%M:%S'
+    full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
+    
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(fmt=full_format, datefmt=date_format))
+    
+    my_log = logging.getLogger()
+    my_log.addHandler(handler)
+    
+    return handler

@@ -71,12 +71,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     """
 
     # FIX: will have to make a field
-    reprocess = True
-    if configObj.reprocess is True:
-        reprocess = True
 
     processTimes = []
-    if reprocess:
+    if configObj.reprocess:
         processTimes = configObj.times
     else:
         processTimes = rtvGetProcessTimes(configObj, rtvInfoObj)
@@ -112,16 +109,17 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     newFileMask = np.full(len(processTimes), False)
 
     #Loop over all the processing times
-    for time in processTimes:
+    for CalcTime in processTimes:
 
         #increment index
         index = index + 1
 
         # Get/generate filename
+        fileNameList=[]
         fileNameList = filenames(configObj, rtvProcessObj,
-                                 fileLocObj, time)
+                                 fileLocObj, CalcTime)
 
-        siteInfoObj = rtvGetSiteConfig(configObj, siteInfoObj, time)
+        siteInfoObj = rtvGetSiteConfig(configObj, siteInfoObj, CalcTime)
 
         if len(siteInfoObj) == 0:
             log_message = "No sites configured for RTV processing at this time"
@@ -135,12 +133,12 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
             continue
 
         #FIX: have to remove existing total files when reprocessing
-        #if reprocess:
+        #if configObj.reprocess:
             #rtvRmTotalFiles(fileLocObj, _log)
 
         #load radial data; will have to be a big module
         radials = rtvLoadRadials(configObj, siteInfoObj, fileNameList,
-                                 rtvInfoObj, landInfoObj_list, time)
+                                 rtvInfoObj, landInfoObj_list, CalcTime)
 
         nSites = len(radials)
         #do checks on nSites
@@ -162,7 +160,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         if np.any(U_tot.hdop <= rtvInfoObj.uwls_max_hdop_nc):
 
             rtvSaveNetcdf(metaDataObj, configObj, fileNameList,
-                          rtvInfoObj, rtvProcessObj, time,
+                          rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
             saveAscii(rtvProcessObj, fileNameList, rtvInfoObj, U_tot)
         else:

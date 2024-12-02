@@ -3,7 +3,7 @@
 import re
 import logging
 from pathlib import Path
-from datetime import timedelta
+
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RadialInfo
@@ -11,7 +11,7 @@ from hfrnet.run_rtv.rtvReadRadialFile import rtvReadRadialFile
 
 from hfrnet.utils_funcs.utility import _dict, read_total_file
 from hfrnet.utils_funcs.math_funcs import  km2deg, scircle1, inpolygon, scxsc
-from hfrnet.utils_funcs.database import Database
+from hfrnet.db_tools.db_tables import get_files_list_radialtable
 
 _log = logging.getLogger()
 
@@ -99,18 +99,13 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Initialize return values
     radials = [] # isempty returns true
 
-    # Determine if we're reprocessing
-    reprocessing = True
-    if configObj.reprocess:
-        reprocessing = True
-
     # Ensure radial selection consistent with previous run(s)
     # Check if a file already exists
     last = None
 
     if fileLocObj.mpathfile.is_file():
 
-        if reprocessing:
+        if configObj.reprocess:
             # Error out if we're reprocessing
             errmsg = (f'Total mat-file ({fileLocObj.mpathfile}) exists. Should '
                       'have been removed to ensure consistent results.')
@@ -203,106 +198,10 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                        'previous runs')
 
     # Build radial query
+    q = []
+    results = get_files_list_radialtable(configObj, calcTime, siteInfoObj)
 
     # Note: t +/- 30 min. is a query optimization
-    sqlquery = ('SELECT '
-                'FROM_UNIXTIME(r.time) AS t,n.net,s.sta,patterntype,file_arrival_time,'
-                'lat,lon,range_res,range_bin_end,manufacturer,dfile,dir '
-                'FROM radialfiles r '
-                'JOIN network n ON n.network_id = r.network_id '
-                'JOIN site s ON s.site_id = r.site_id '
-                f"WHERE FROM_UNIXTIME(r.time) >= '{ timeCalc - timedelta(minutes=30)}' "
-                f"AND FROM_UNIXTIME(r.time) < '{ timeCalc + timedelta(minutes=30)}' ")
-
-    if not reprocessing:
-        sqlquery = (f'{sqlquery}'
-                    f"AND r.file_arrival_time < '{rtvInfoObj.new_state}' ")
-
-    # Site conditions
-    nSite = len(siteInfoObj)
-
-    if nSite > 0:
-        sqlquery = f"{sqlquery}AND ( "
-    for I in range(nSite):
-
-        iSiteInfo = siteInfoObj[I]
-        # Network and site
-        sqlquery = (f'{sqlquery}'
-                    f"( n.net = '{iSiteInfo.network}' AND "
-                    f"s.sta = '{iSiteInfo.name}' ") ##ok<*AGROW>
-
-        # Beampattern
-        if iSiteInfo.beampattern == 'ideal':
-            sqlquery = f"{sqlquery}AND r.patterntype = 'i' "
-        elif iSiteInfo.beampattern == 'measured':
-            sqlquery = f"{sqlquery}AND r.patterntype = 'm' "
-        else:
-            errmsg = f'Unknown beam pattern type {iSiteInfo.beampattern}'
-            _log.error(errmsg)
-
-        DATE_FORMAT = "%Y-%m-%d"
-        TIME_FORMAT = "%H:%M:%S"
-        DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
-        currUseMinute = iSiteInfo.useMinute
-        # Radial timestamp
-        if currUseMinute == 0:
-            tr = timeCalc.strftime(DATETIME_FORMAT)
-        elif 0 <currUseMinute < 30:
-            tr = ((timeCalc + timedelta(minutes = currUseMinute )).
-                  strftime(DATETIME_FORMAT))
-        elif 30 <= currUseMinute < 60:
-            tr = ((timeCalc - timedelta(minutes = 60 - currUseMinute )).
-                  strftime(DATETIME_FORMAT))
-        else:
-            tr = ""
-            errmsg = (f'useMinute value of {currUseMinute} is out of range '
-                      f'for site {iSiteInfo.network}:{iSiteInfo.name}.'
-                      'Value must be [0-59]')
-            _log.error(errmsg)
-
-        sqlquery = f"{sqlquery}AND FROM_UNIXTIME(FLOOR(r.time/60)*60) = '{tr}')"
-
-        # End statement
-        if I == nSite - 1:
-            sqlquery = f"{sqlquery})"
-        else:
-            sqlquery = f"{sqlquery} OR "
-
-    # Submit Query
-    # Connect to radial database
-    conn = Database(user=configObj.raddb.user,
-                    password=configObj.raddb.password)
-    conn.connect()
-    conn.use('hfradar')
-
-    # Check connection is open
-    if not conn.is_open():
-        errmsg = 'Failed to connect to radial database'
-        _log.error(errmsg)
-
-    results = None
-    # Execute query
-    try:
-        results = conn.sql(sqlquery, as_dict=1)
-
-    except Exception as e:
-        errmsg = f'Database query error {str(e)}'
-        _log.error(errmsg)
-
-    conn.close()
-    nRows = 0
-    if results:
-        nRows = len(results)
-
-    # Check results
-    if nRows == 0:
-        # No match
-        return radials
-
-    errmsg = f'Site query returned {nRows} record(s)'
-    _log.debug(errmsg)
-
-    q = []
     if results:
         q = results
 
@@ -330,7 +229,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     nq = len(q)
     newRadialIndex = None
     # Index new radials
-    if reprocessing:
+    if configObj.reprocessing:
         newRadialIndex = np.ones(nq, dtype=bool)
 
     else:
