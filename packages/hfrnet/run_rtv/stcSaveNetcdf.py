@@ -6,9 +6,8 @@ import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.utils_funcs.utility import _dict, set_history
+from hfrnet.utils_funcs.utility import _dict, set_history, rtvNcid
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
-from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 
 _log = logging.getLogger()

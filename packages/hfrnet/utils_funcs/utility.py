@@ -369,3 +369,36 @@ def setup_log_filename(my_pkgint, added_name=""):
     my_log.addHandler(handler)
     
     return handler
+
+def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
+    """
+    %    Generates NetCDF ACDD ID attribute value
+    %
+    %    id = rtvNcid(metadataObj, configObj, rtvProcessObj, time) returns
+    %    an id string for the NetCDF Attribute Convention for Data 
+    %    Discovery (ACDD) metadata standard.
+    %
+    %    The id is comprised of the data timestamp (t) and metadata contained
+    %    in the configuration structures including the institution acronym,
+    %    process method, process name, subprocess (if defined), domain and
+    %    resolution.
+    %
+    %    Used in RTVSAVENETCDF, STCSAVENETCDF, LTASAVENETCDF
+    %
+    %    HF-Radar Network
+    %    Scripps Institution of Oceanography
+    %    Coastal Observing Research and Development Center
+    """
+
+    if rtvProcessObj.subprocess and rtvProcessObj.subprocess_name:
+
+        ncid = (f"{time.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+                f"hfr{rtvProcessObj.method}{rtvProcessObj.name}{rtvProcessObj.subprocess_name}"
+                f"{configObj.domain}{configObj.resolution}")
+    else:
+
+        ncid = (f"{time.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+                f"hfr{rtvProcessObj.method}{rtvProcessObj.name}"
+                f"{configObj.domain}{configObj.resolution}")
+
+    return ncid
