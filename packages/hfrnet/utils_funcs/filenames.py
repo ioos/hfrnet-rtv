@@ -84,6 +84,36 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
 
     return retFileLoc
 
+
+def find_file(domain, resolution, method, time, directory, file_format):
+    """search for file which matches config"""
+    
+    data_file = Path(directory)
+    search_par = (f"rtv_*{domain}*{resolution}*"
+                  f"{method}*{time.strftime('%Y_%m_%d_%H%M')}*"
+                  f".{file_format}")
+    if file_format == 'nc':
+        search_par = (f"{time.strftime('%Y%m%d%H%M')}"
+                      f"*_hfr"
+                      f"*_{domain}"
+                      f"*_{resolution}"
+                      f"*_rtv"
+                      f"*_{method}"
+                      f"*.{file_format}")
+        
+    data_file = list(data_file.glob(f"{search_par}"))
+    if len(data_file) == 1:
+        return Path(data_file[0])
+        
+    data_file_no25hr = [iFile for iFile in data_file if '25hr' not in str(iFile)]
+    if len(data_file_no25hr) == 1:
+        return Path(data_file_no25hr[0])
+        
+    msg = f"{file_format} not found: {data_file_no25hr}, {directory}/{search_par}"
+    _log.warning(msg)
+    return ""
+
+
 # RTV paths & files
 def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files needed for the 'rtv' running mode"""
@@ -93,34 +123,6 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     resolution = configObj.resolution.casefold()
     method = rtvProcessObj.method.casefold()
 
-    def find_file(directory, file_format):
-        """search for file which matches config"""
-
-        data_file = Path(directory)
-        search_par = (f"rtv_*{domain}*{resolution}*"
-                      f"{method}*{t.strftime('%Y_%m_%d_%H%M')}*"
-                      f".{file_format}")
-        if file_format == 'nc':
-            search_par = (f"{t.strftime('%Y%m%d%H%M')}"
-                          f"*_hfr"
-                          f"*_{domain}"
-                          f"*_{resolution}"
-                          f"*_rtv"
-                          f"*_{method}"
-                          f"*.{file_format}")
-
-        data_file = list(data_file.glob(f"{search_par}"))
-        if len(data_file) == 1:
-            return Path(data_file[0])
-
-        data_file_no25hr = [iFile for iFile in data_file if '25hr' not in str(iFile)]
-        if len(data_file_no25hr) == 1:
-            return Path(data_file_no25hr[0])
-
-        msg = f"{file_format} not found: {data_file_no25hr}, {directory}/{search_par}"
-        _log.warning(msg)
-        return ""
-
     # Mat-file
     retObj.mdir = Path(fileLocObj.input_dir, t.strftime("%Y_%m"))
 
@@ -128,7 +130,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
                         f"{method}_{t.strftime('%Y_%m_%d_%H%M')}.mat")
 
     # Get the relevant file
-    retObj.mpathfile = find_file(retObj.mdir, 'mat')
+    retObj.mpathfile = find_file(domain, resolution, method, t, retObj.mdir, 'mat')
 
     if retObj.mpathfile == "":
         retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
@@ -159,7 +161,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
                          f"_{method}"
                          f".nc")
 
-    retObj.ncpathfile = find_file(retObj.ncdir, 'nc')
+    retObj.ncpathfile = find_file(domain, resolution, method, t, retObj.ncdir, 'nc')
     if retObj.ncpathfile == "":
         retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
 
