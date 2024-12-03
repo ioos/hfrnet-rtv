@@ -23,12 +23,12 @@ def _update_key(d):
          'manufacturer': 'manufacturer', 'dfile': 'file', 'dir': 'dir'}
     return _dict((m.get(key, key), value) for (key, value) in d.items())
 
-def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, timeCalc):
+def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, calcTime):
     """
     % RTVLOADRADIALS Loads radial data for RTV processing
     %
     %    radials = rtvLoadRadials( configObj, siteInfoObj, fileLocObj, rtvInfoObj, 
-    %                              landInfoObj, timeCalc ) 
+    %                              landInfoObj, calcTime )
     %    returns a structure containing
     %    radial data from all sites for the given hour of RTV processing.
     %    Data are provided for the preferred beam pattern and filtered by
@@ -57,7 +57,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     %
     %        (configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj) - Structures 
     %                    containing configuration parameters
-    %        timeCalc      - Datetime (scalar)
+    %        calcTime      - Datetime (scalar)
     %
     %    Outputs:
     %
@@ -105,31 +105,25 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
     if fileLocObj.mpathfile.is_file():
 
-        if configObj.reprocess:
-            # Error out if we're reprocessing
-            errmsg = (f'Total mat-file ({fileLocObj.mpathfile}) exists. Should '
-                      'have been removed to ensure consistent results.')
-            _log.error(errmsg)
-        else:
-            # Load previous radial dataset
-            try:
-                last = read_total_file(fileLocObj.mpathfile, '-mat', 'r')
-                errmsg = f'Loaded radial structure from prior run ({fileLocObj.mpathfile})'
-                _log.info(errmsg)
+        # Load previous radial dataset
+        try:
+            last = read_total_file(fileLocObj.mpathfile, '-mat', 'r')
+            errmsg = f'Loaded radial structure from prior run ({fileLocObj.mpathfile})'
+            _log.info(errmsg)
 
-            except Exception as e:
-                errmsg = (f'Failed to load radial structure from prior run ('
-                          f'{fileLocObj.mpathfile}): {str(e)}')
-                _log.warning(errmsg)
-                _log.warning('Cannot ensure consistent radial selection if results are '
-                             'combined with previous run(s)')
+        except Exception as e:
+            errmsg = (f'Failed to load radial structure from prior run ('
+                      f'{fileLocObj.mpathfile}): {str(e)}')
+            _log.warning(errmsg)
+            _log.warning('Cannot ensure consistent radial selection if results are '
+                         'combined with previous run(s)')
 
     else:
         errmsg = f'{fileLocObj.mpathfile} not found, no pre-existing radial data'
         _log.debug(errmsg)
 
     # Modify radial selection as needed based on previous run(s)
-    if not last:
+    if last is not None:
         nMod = 0
 
         # Loop over each site defined in the config
@@ -199,25 +193,26 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
     # Build radial query
     q = []
-    results = get_files_list_radialtable(configObj, calcTime, siteInfoObj)
+    results, nfiles = get_files_list_radialtable(configObj, calcTime, siteInfoObj)
 
     # Note: t +/- 30 min. is a query optimization
     if results:
         q = results
 
     # Log & remove any records that have NULL where data should be required
-    rmRecordIndex = np.zeros(len(q), dtype=bool)
+    rmRecordIndex = np.zeros(nfiles, dtype=bool)
 
-    for I in range(len(q)):
-
+    for I in range(nfiles):
+        
         q[I] = _update_key(q[I])
+        fileInfo = q[I]
 
-        if (q[I].file == "" or q[I].dir == "" or
-            np.isnan(q[I].lat) or np.isnan(q[I].lon) or
-            (not reprocessing and (q[I].arrivaltime == ""))):
+        if (fileInfo.file == "" or fileInfo.dir == "" or
+            np.isnan(fileInfo.lat) or np.isnan(fileInfo.lon) or
+            (not configObj.reprocess and (fileInfo.arrivaltime == ""))):
             rmRecordIndex[I] = True
-            errmsg = (f'Radialfiles record {q[I].network}:{q[I].site} '
-                      f'({q[I].beampattern} {q[I].t} is missing required fields,'
+            errmsg = (f'Radialfiles record {fileInfo.network}:{fileInfo.site} '
+                      f'({fileInfo.beampattern} {fileInfo.t} is missing required fields,'
                       ' removing from processing')
             _log.warning(errmsg)
 
@@ -229,7 +224,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     nq = len(q)
     newRadialIndex = None
     # Index new radials
-    if configObj.reprocessing:
+    if configObj.reprocess:
         newRadialIndex = np.ones(nq, dtype=bool)
 
     else:
@@ -245,14 +240,14 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                 _log.debug(errmsg)
 
             else:
-                errmsg = (f'Obtained radial from {q(I).network}:{q(I).site}'
+                errmsg = (f'Obtained radial from {q[I].network}:{q[I].site}'
                           f'({q[I].beampattern})')
                 _log.debug(errmsg)
 
     nNewRadials = np.count_nonzero(newRadialIndex)
     if nNewRadials:
 
-        if reprocessing:
+        if configObj.reprocess:
             errmsg = f'{nNewRadials} radial(s) to be reprocessed'
             _log.info(errmsg)
 

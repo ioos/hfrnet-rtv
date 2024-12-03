@@ -2,6 +2,7 @@ import logging
 from hfrnet.utils_funcs.lib_rtv import DatabaseError, RtvProcess
 from hfrnet.db_tools.db_manager import db_manager
 from datetime import timedelta
+from decimal import Decimal
 
 _log = logging.getLogger()
 
@@ -315,10 +316,10 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 			sqlquery = f"{sqlquery}AND ( "
 		for i in range(nSite):
 			# Network and site
-			network_temp = siteInfoObj['network'][i]
-			name_temp = siteInfoObj['name'][i]
-			beampattern_temp = siteInfoObj['beampattern'][i]
-			useMinute_temp = siteInfoObj['useMinute'][i]
+			network_temp = siteInfoObj[i].network
+			name_temp = siteInfoObj[i].name
+			beampattern_temp = siteInfoObj[i].beampattern
+			useMinute_temp = siteInfoObj[i].useMinute
 			sqlquery = (f'{sqlquery}'
 			            f"( n.net = '{network_temp}' AND s.sta = '{name_temp}' ")
 			
@@ -358,13 +359,21 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 		files_list = db_class.get_query(sqlquery)
 		
 		# % Expect exactly one record to match
-		nRows = len(files_list['name'])
+		nRows = len(next(iter(files_list.values())))
+		list_of_dicts = [dict(zip(files_list, t)) for t in
+		                 zip(*files_list.values())]
 		
+		# Convert all Decimal objects to float
+		for ifile_dict in list_of_dicts:
+			for key, value in ifile_dict.items():
+				if isinstance(value, Decimal):
+					ifile_dict[key] = float(value)
+				
 		if nRows == 0:
 			errmsg = f'No match found in the radial table'
 			_log.error(errmsg)
 	
-	return files_list
+	return list_of_dicts, nRows
 
 
 def get_active_sitelist(configObj, calcTime):

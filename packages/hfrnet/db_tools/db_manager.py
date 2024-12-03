@@ -54,7 +54,7 @@ class db_manager:
                 self.create_dict(rows, cursor.description, datasetdict)
                 # tablee = self.store_output(cursor)
                 # rows = cursor.fetchall()
-
+                
                 _log.info(" ------------------ ")
                 for key, value in datasetdict.items():
                     msg = f"{key}:::{value}"
