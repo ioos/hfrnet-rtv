@@ -1,21 +1,22 @@
 """filenames.py"""
 
 import logging
+import calendar
 from pathlib import Path
 from copy import deepcopy
-
+from datetime import datetime, timezone
 from hfrnet.utils_funcs.lib_rtv import FileLocations
-import hfrnet.utils_funcs.constsHFR as constsHFR
+from hfrnet.utils_funcs import constsHFR
 
 _log = logging.getLogger()
 
 def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
-              subprocess=None, institution_acronym='SIO'):
+              subprocess=None):
     """
      FILENAMES Generate process paths & filenames
 
         filenames(configObj, rtvProcessObj, fileLocObj, time, process, 
-                  subprocess, institution_acronym) 
+                  subprocess)
         updates or adds fields to the c.total structure which define the paths
         and file names for all files to be exported (MAT, ASCII, & NetCDF) for
         the given process, domain, resolution, and timestamp.
@@ -47,7 +48,7 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
         # Verify process field & name are defined in config structure
         if rtvProcessObj.name:
             process = rtvProcessObj.name.casefold()
-            
+
             # Verify subprocess is defined in config for lta
             if process == 'lta':
                 if rtvProcessObj.subprocess_name:
@@ -60,20 +61,20 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
 
     # Obtain process specific paths & filenames
     if process == 'rtv':
-        retFileLoc = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, time,
-                                     institution_acronym)
+        retFileLoc = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, time)
+
     elif process ==  'stc':
-        retFileLoc = getStcFilenames(fileLocObj, configObj, rtvProcessObj, time,
-                                     institution_acronym)
+        retFileLoc = getStcFilenames(fileLocObj, configObj, rtvProcessObj, time)
+
     elif process == 'lta':
-        
+
         if subprocess.casefold() == (constsHFR.CONFIGS_DICT['month']).casefold():
             retFileLoc = getLtaMonthFilenames(fileLocObj, configObj,
-                                              rtvProcessObj, time, institution_acronym)
+                                              rtvProcessObj, time)
 
         elif subprocess.casefold() == (constsHFR.CONFIGS_DICT['year']).casefold():
             retFileLoc = getLtaYearFilenames(fileLocObj, configObj,
-                                             rtvProcessObj, time, institution_acronym)
+                                             rtvProcessObj, time)
         else:
             msg = f"Unknown subprocess {subprocess}"
             _log.fatal(msg)
@@ -84,27 +85,29 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
     return retFileLoc
 
 # RTV paths & files
-def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t,
-                    institution_acronym):
+def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files needed for the 'rtv' running mode"""
 
     retObj = fileLocObj
+    domain = configObj.domain.casefold()
+    resolution = configObj.resolution.casefold()
+    method = rtvProcessObj.method.casefold()
 
     def find_file(directory, file_format):
         """search for file which matches config"""
 
         data_file = Path(directory)
-        search_par = (f"rtv_*{configObj.domain}*{configObj.resolution}*"
-                      f"{rtvProcessObj.method}*{t.strftime('%Y_%m_%d_%H%M')}*"
+        search_par = (f"rtv_*{domain}*{resolution}*"
+                      f"{method}*{t.strftime('%Y_%m_%d_%H%M')}*"
                       f".{file_format}")
         if file_format == 'nc':
             search_par = (f"{t.strftime('%Y%m%d%H%M')}"
                           f"*_hfr"
-                          f"*_{configObj.domain}"
-                          f"*_{configObj.resolution}"
+                          f"*_{domain}"
+                          f"*_{resolution}"
                           f"*_rtv"
-                          f"*_{rtvProcessObj.method}"
-                          f"*_{institution_acronym.upper()}.{file_format}")
+                          f"*_{method}"
+                          f"*.{file_format}")
 
         data_file = list(data_file.glob(f"{search_par}"))
         if len(data_file) == 1:
@@ -121,8 +124,8 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t,
     # Mat-file
     retObj.mdir = Path(fileLocObj.input_dir, t.strftime("%Y_%m"))
 
-    retObj.mfilename = (f"rtv_{configObj.domain}_{configObj.resolution}_"
-                        f"{rtvProcessObj.method}_{t.strftime('%Y_%m_%d_%H%M')}.mat")
+    retObj.mfilename = (f"rtv_{domain}_{resolution}_"
+                        f"{method}_{t.strftime('%Y_%m_%d_%H%M')}.mat")
 
     # Get the relevant file
     retObj.mpathfile = find_file(retObj.mdir, 'mat')
@@ -135,11 +138,11 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t,
     # ASCII
     retObj.asciidir = retObj.output_dir
 
-    fileLocObj.asciifilename = (f"rtv"
-                                f"_{configObj.domain}"
-                                f"_{configObj.resolution}"
-                                f"_{rtvProcessObj.method}"
-                                f"_{t.strftime('%Y_%m_%d_%H%M')}.asc")
+    start_time = t.strftime(constsHFR.NCCF_FORMAT)
+    end_time = t.strftime(constsHFR.NCCF_FORMAT)
+    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    fileLocObj.asciifilename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
+                                f"_s{start_time}_e{end_time}_c{creation_time}.asc")
 
     # Get the relevant file
     retObj.asciipathfile = Path(fileLocObj.asciidir,
@@ -150,44 +153,47 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t,
 
     retObj.ncfilename = (f"{t.strftime('%Y%m%d%H%M')}"
                          f"_hfr"
-                         f"_{configObj.domain}"
-                         f"_{configObj.resolution}"
+                         f"_{domain}"
+                         f"_{resolution}"
                          f"_rtv"
-                         f"_{rtvProcessObj.method}"
-                         f"_{institution_acronym.upper()}.nc")
-
-    #retObj.ncfilename = (f"rtv-{configObj.domain}-{configObj.resolution}-uwls"
-     #                    f"_v1r0_hfr_s{startTime}_e{endTime}_c{creationTime}.nc")
+                         f"_{method}"
+                         f".nc")
 
     retObj.ncpathfile = find_file(retObj.ncdir, 'nc')
     if retObj.ncpathfile == "":
         retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
 
+    retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
     retObj.output_ncfile = Path(retObj.output_dir, retObj.ncfilename)
 
     return retObj
 
 
 # STC paths & files
-def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t, institution_acronym):
+def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files for 'stc' running method"""
 
     retObj = fileLocObj
+    domain = configObj.domain.casefold()
+    resolution = configObj.resolution.casefold()
     # Mat-file
-    retObj.mdir = Path(fileLocObj.input_dir, t.strftime('%Y_%m'))
+    #retObj.mdir = Path(fileLocObj.input_dir, t.strftime('%Y_%m'))
 
-    retObj.mfilename = (f"rtv-25hrAvg_{configObj.domain}_"
-                        f"{configObj.resolution}_{rtvProcessObj.method}_"
-                        f"{t.strftime('%Y_%m_%d_%H%M')}.mat")
+    #retObj.mfilename = (f"rtv-25hrAvg_{configObj.domain}_"
+      #                  f"{configObj.resolution}_{rtvProcessObj.method}_"
+     #                   f"{t.strftime('%Y_%m_%d_%H%M')}.mat")
 
-    retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
+    #retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
 
     # ASCII
     retObj.asciidir = retObj.output_dir
 
-    retObj.asciifilename = (f"rtv-25hrAvg_{configObj.domain}_"
-                            f"{configObj.resolution}_{rtvProcessObj.method}_"
-                            f"{t.strftime('%Y_%m_%d_%H%M')}.asc")
+    start_time = t.strftime(constsHFR.NCCF_FORMAT)
+    end_time = t.strftime(constsHFR.NCCF_FORMAT)
+    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    retObj.asciifilename = (f"rtv-{domain}-{resolution}-25h-avg"
+                            "_v1r0_hfr"
+                            f"_s{start_time}_e{end_time}_c{creation_time}.asc")
 
     retObj.asciipathfile = Path(fileLocObj.asciidir,
                                 fileLocObj.asciifilename)
@@ -195,42 +201,39 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t, institution_acronym
     # NetCDF
     retObj.ncdir = Path(retObj.mdir, 'NetCDF')
 
-    retObj.ncfilename = (f"{t.strftime('%Y%m%d%H%M')}_hfr_"
-                         f"{configObj.domain}_{configObj.resolution}_"
-                         f"rtv_{rtvProcessObj.method}_25hr_average_" 
-                         f"{institution_acronym.upper()}.nc")
+    retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
 
-    retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
     retObj.output_ncfile = Path(fileLocObj.output_dir, retObj.ncfilename)
 
     #intermediate file
     retObj.intermed_filename = (f"rtv-monthSum_{configObj.domain}_"
                                   f"{configObj.resolution}_{rtvProcessObj.method}_"
                                   f"{t.strftime('%Y%m')}.nc")
-    
+
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
     return retObj
 
 # LTA Month paths & files
-def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t,
-                         institution_acronym):
+def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files for the 'month' average calc"""
 
     retObj = fileLocObj
+    domain = configObj.domain.casefold()
+    resolution = configObj.resolution.casefold()
+
     # Mat-file (sum)
     retObj.msumdir = Path(fileLocObj.input_dir, 'long_term_averages',
                           t.strftime('%Y/%m'))
 
-    retObj.msumfilename = (f"rtv-monthSum_{configObj.domain}_"
-                           f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.msumfilename = (f"rtv-monthSum_{domain}_"
+                           f"{resolution}_{rtvProcessObj.method}_"
                            f"{t.strftime('%Y%m')}.mat")
 
     retObj.msumpathfile = Path(fileLocObj.msumdir, fileLocObj.msumfilename)
 
     # Input rtv file
-    retObj = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t,
-                    institution_acronym)
+    retObj = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t)
     retObj.input_dir = fileLocObj.input_dir
     retObj.input_matfile = retObj.mpathfile
 
@@ -238,8 +241,8 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t,
     # Mat-file (average)
     retObj.mdir = fileLocObj.output_dir
 
-    retObj.mfilename = (f"rtv-monthAvg_{configObj.domain}_"
-                        f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.mfilename = (f"rtv-monthAvg_{domain}_"
+                        f"{resolution}_{rtvProcessObj.method}_"
                         f"{t.strftime('%Y%m')}.mat")
 
     retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
@@ -248,15 +251,19 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t,
     # ASCII (average)
     retObj.asciidir = fileLocObj.output_dir
 
-    retObj.asciifilename = (f"rtv-monthAvg_{configObj.domain}_"
-                            f"{configObj.resolution}_{rtvProcessObj.method}_"
-                            f"{t.strftime('%Y%m')}.asc")
+    dayOfWeek, last = calendar.monthrange(t.year, t.month)
+    start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)
+    end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)
+    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    retObj.asciifilename = (f"rtv-{domain}-{resolution}"
+                            "-month-avg_v1r0_hfr"
+                            f"_s{start_time}_e{end_time}_c{creation_time}.asc")
 
     retObj.asciipathfile = Path(fileLocObj.asciidir, fileLocObj.asciifilename)
 
     #intermediate file
-    retObj.intermed_filename = (f"rtv-monthSum_{configObj.domain}_"
-                                  f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.intermed_filename = (f"rtv-monthSum_{domain}_"
+                                  f"{resolution}_{rtvProcessObj.method}_"
                                   f"{t.strftime('%Y%m')}.nc")
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
@@ -264,9 +271,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t,
     # NetCDF (average)
     retObj.ncdir = fileLocObj.output_dir
 
-    retObj.ncfilename = (f"{t.strftime('%Y%m')}_hfr_{configObj.domain}_"
-                         f"{configObj.resolution}_rtv_{rtvProcessObj.method}_"
-                         f"month_average_{institution_acronym.upper()}.nc")
+    retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
 
     retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
     retObj.output_ncfile = retObj.ncpathfile
@@ -274,15 +279,17 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t,
     return retObj
 
 # LTA Year paths & files
-def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t, institution_acronym):
+def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files for the 'year' average calculation"""
 
     retObj = FileLocations()
+    domain = configObj.domain.casefold()
+    resolution = configObj.resolution.casefold()
 
     retObj.output_dir = fileLocObj.output_dir
 
-    retObj.mfilename = (f"rtv-monthSum_{configObj.domain}_"
-                        f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.mfilename = (f"rtv-monthSum_{domain}_"
+                        f"{resolution}_{rtvProcessObj.method}_"
                         f"{t.strftime('%Y%m')}.mat")
     retObj.input_dir = Path(fileLocObj.input_dir, 'long_term_averages',
                             t.strftime('%Y'), t.strftime('%m'))
@@ -292,39 +299,40 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t, institution_acr
     retObj.mdir = Path(fileLocObj.output_dir, 'long_term_averages',
                        t.strftime('%Y'))
 
-    retObj.mfilename = (f"rtv-annualAvg_{configObj.domain}_"
-                        f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.mfilename = (f"rtv-annualAvg_{domain}_"
+                        f"{resolution}_{rtvProcessObj.method}_"
                         f"{t.strftime('%Y')}.mat")
 
     retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
 
     #intermediate file
-    retObj.intermed_filename = (f"rtv-annualSum_{configObj.domain}_"
-                                  f"{configObj.resolution}_{rtvProcessObj.method}_"
+    retObj.intermed_filename = (f"rtv-annualSum_{domain}_"
+                                  f"{resolution}_{rtvProcessObj.method}_"
                                   f"{t.strftime('%Y%m')}.nc")
-    
+
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
     # ASCII
     retObj.asciidir = retObj.output_dir
 
-    retObj.mfilename = (f"rtv_{configObj.domain}_{configObj.resolution}_"
+    retObj.mfilename = (f"rtv_{domain}_{resolution}_"
                         f"{rtvProcessObj.method}_" 
                         f"{t.strftime('%Y_%m_%d_%H%M')}.mat")
 
-    retObj.asciifilename = (f"rtv-annualAvg_{configObj.domain}_"
-                            f"{configObj.resolution}_{rtvProcessObj.method}_"
-                            f"{t.strftime('%Y')}.asc")
+    start_time = (t.replace(month=1, day=1, hour=0, minute=0, second=0)
+                  .strftime(constsHFR.NCCF_FORMAT))
+    end_time = (t.replace(month=12, day=31, hour=23, minute=59, second=59)
+                .strftime(constsHFR.NCCF_FORMAT))
+    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    retObj.asciifilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr"
+                            f"s{start_time}_e{end_time}_c{creation_time}.asc")
 
     retObj.asciipathfile = Path(retObj.asciidir, retObj.asciifilename)
 
     # NetCDF
     retObj.ncdir = retObj.mdir
 
-    retObj.ncfilename = (f"{t.strftime('%Y')}_hfr_{configObj.domain}_"
-                         f"{configObj.resolution}_rtv_" 
-                         f"{rtvProcessObj.method}_annual_average_"
-                         f"{institution_acronym.upper()}.nc")
+    retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
 
     retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
     retObj.output_ncfile = retObj.ncpathfile
