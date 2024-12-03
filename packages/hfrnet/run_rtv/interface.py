@@ -144,7 +144,7 @@ class Interface(aim.Interface):
         _log.info(working_dir)
 
         self.mconfigureVals.reprocess = False
-        if self.config['processing.batch_processing'] =='True':
+        if self.config['processing.batch_processing'].casefold() =='True':
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True
@@ -163,14 +163,13 @@ class Interface(aim.Interface):
         set_db_info(self.config, self.mconfigureVals)
         # get the analysis parametrers for domain, res, rtv,stc,lta
         with db_manager(self.mconfigureVals.confdb) as db_class:
-            # db_class = db_manager(self.mconfigureVals.confdb)
-            # db_class.connect()
     
             # Check for valid domain
             try:
                 read_domain(db_class, self.mconfigureVals)
             except DatabaseError:
-                _log.info(">>>>>>>> ERROR")
+                _log.info(f"No domain {self.mconfigureVals.domain} decsription were found or "
+                          f"database connection failed")
                 return
             
             # ---------------------------------
@@ -178,15 +177,14 @@ class Interface(aim.Interface):
             try:
                 read_resolution(db_class, self.mconfigureVals)
             except DatabaseError:
-                _log.info(">>>>>>>> ERROR")
+                _log.info(f"No domain {self.mconfigureVals.resolution}  were found "
+                          f"or database connection failed")
                 return
             # ---------------------------------
             # Check for valid resolution
             process_list = []
             read_methods(db_class, self.mconfigureVals, self.mrtvInfo,
                          self.mstcInfo, self.mltaInfo,process_list)
-            # # -- close the connection
-            # db_class.close()
         
         self.set_file_locations(self.fileLocObj)
         
