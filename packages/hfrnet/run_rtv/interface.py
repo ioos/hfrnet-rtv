@@ -15,6 +15,7 @@ __updated__ = "2024-07-23"
 
 from pathlib import Path
 import aim
+import os
 
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
@@ -132,7 +133,8 @@ class Interface(aim.Interface):
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
 
-                
+        os.environ['PRODUCT_VERSION'] = self.config['production.version']
+
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                                              f"_{self.mconfigureVals.resolution}")
         
@@ -144,7 +146,7 @@ class Interface(aim.Interface):
         _log.info(working_dir)
 
         self.mconfigureVals.reprocess = False
-        if self.config['processing.batch_processing'].casefold() =='True':
+        if self.config['processing.batch_processing'].casefold() == 'true':
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True

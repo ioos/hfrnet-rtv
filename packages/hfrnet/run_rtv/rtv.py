@@ -3,7 +3,7 @@
 import logging
 import numpy as np
 
-import hfrnet.run_rtv.rtvGetProcessTimes as rtvGetProcessTimes
+from hfrnet.run_rtv.rtvGetProcessTimes import rtvGetProcessTimes
 from hfrnet.run_rtv.rtvGetSiteConfig import rtvGetSiteConfig
 from hfrnet.run_rtv.rtvLoadRadials import rtvLoadRadials
 from hfrnet.utils_funcs.utility import load_land, load_grid
@@ -70,8 +70,6 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     all processing is completed.
     """
 
-    # FIX: will have to make a field
-
     processTimes = []
     if configObj.reprocess:
         processTimes = configObj.times
@@ -115,7 +113,6 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         index = index + 1
 
         # Get/generate filename
-        fileNameList=[]
         fileNameList = filenames(configObj, rtvProcessObj,
                                  fileLocObj, CalcTime)
 

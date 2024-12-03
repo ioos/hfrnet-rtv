@@ -12,7 +12,7 @@ from hfrnet.db_tools.db_tables import read_site_table, read_files_times_radialta
 _log = logging.getLogger()
 
 
-def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
+def rtvGetProcessTimes(configObj, rtvInfoObj):
     """
     # RTVGETPROCESSTIMES Obtain RTV times to process
     #
@@ -62,7 +62,8 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     #------------------------------------- will be fixed
     # ## Define radial file arrival time search window
     # # Oldest data time to process
-    # minTime = now_hour() - timedelta(hours=rtvInfoObj.max_age)
+    minTime = now_hour() - timedelta(hours=rtvInfoObj.max_age)
+
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
     #
     # # Check state
@@ -70,18 +71,18 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     #               configObj.resolution, configObj.resolution_id,
     #               rtvProcessObj.name.lower(), configObj.confdb)
     # state.get()
-    state.time = None
+    state_time = None
     #-------------------------
 
     # Set start time to arbitrairly old value if no state is defined - let
     # minTime select new radials
-    if state.time is None:
+    if state_time is None:
         rtvInfoObj.current_state = datetime.fromisoformat('1970-01-01')
         msg = (f"No rtv state defined. Using maximum data age of {rtvInfoObj.max_age}"
                f' hours to find radials since {minTime}')
         _log.info(msg)
     else:
-        rtvInfoObj.current_state = state.time
+        rtvInfoObj.current_state = state_time
         msg = f"Obtained rtv state time of {rtvInfoObj.current_state}"
         _log.info(msg)
 
@@ -94,7 +95,7 @@ def rtvGetProcessTimes(rtvProcessObj, configObj, rtvInfoObj):
     sites_list = read_site_table(configObj)
 
     time_list = read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime)
-    
+    print("\n\n", time_list, "\n\n")
     if len(time_list) == 0:
         return t
 

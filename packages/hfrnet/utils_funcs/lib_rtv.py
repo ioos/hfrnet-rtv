@@ -1,7 +1,25 @@
+#!/usr/bin/env python
 
 import numpy as np
 
-class Grid:
+
+class BaseObject:
+    """the base object to provice some common functions"""
+    def to_dict(self):
+        """return the dict for all attributes in the object"""
+        return dict(vars(self))
+
+    def from_dict(self, **kwargs):
+        """set the object attributes"""
+        var = vars(self)
+        for k, v in kwargs.items():
+            if k in var:
+                if isinstance(getattr(self, k), BaseObject):
+                    getattr(self, k).from_dict(**v)
+                else:
+                    setattr(self, k, v)
+
+class Grid(BaseObject):
     """
         The 'grid' class keeps info about the ocean velocities
     """
@@ -28,7 +46,7 @@ class LandInfo:
         self.length = intVar
 
 
-class RtvTotals:
+class RtvTotals(BaseObject):
     """
         Information needed for the radial totals
         All are arrays of variable length and grid of class Grid
@@ -47,6 +65,15 @@ class RtvTotals:
         self.grid = Grid()
         self.land = LandInfo(self.lat, self.lon, 10)
 
+    def to_dict(self):
+        """return the dict for all attributes in the object"""
+        d = super().to_dict()
+        d['lat'] = np.array(d['lat'])
+        d['lon'] = np.array(d['lon'])
+        d['grid'] = d['grid'].to_dict()
+        d.pop('land', None)
+        return d
+
 class DatabaseConfig:
     """
        The database configuration info
@@ -63,7 +90,8 @@ class DatabaseConfig:
         self.url = ""
         self.vendor = ""
 
-class ConfigureVals:
+#things from the configureRtv
+class ConfigureVals(BaseObject):
     """
         The configuration values needed to run
     """
@@ -76,14 +104,20 @@ class ConfigureVals:
         self.reprocess = True
         self.lock = False
 
-class FileLocations:
+    def to_dict(self):
+        """return the dict for all attributes in the object"""
+        d = super().to_dict()
+        for k in ['confdb', 'raddb', 'times']:
+            d.pop(k)
+        return d
+
+class FileLocations(BaseObject):
     """
        Keep track of all file locations
     """
     def __init__(self):
         self.rootdir = ""
         self.domaindir = ""
-        self.fullfile = ""
         self.mdir = ""
         self.mfilename = ""
         self.mpathfile = ""
@@ -97,6 +131,7 @@ class FileLocations:
         self.gridfile = ""
         self.radial_remote_dir = ""
         self.radial_local_dir = ""
+        self.msumdir = ""
         self.msumfile = ""
         self.msumfilename = ""
         self.msumpathfile = ""
@@ -104,8 +139,10 @@ class FileLocations:
         self.input_matfile = ""
         self.output_dir = ""
         self.output_ncfile = ""
+        self.intermed_ncfilename = ""
+        self.intermed_ncfilepath = ""
 
-class RtvProcess:
+class RtvProcess(BaseObject):
     """
        The configuration of the process
     """
@@ -118,6 +155,7 @@ class RtvProcess:
         self.subprocess = False
         self.subprocess_name = ""
 
+
 class SiteInfo:
     """
        Info about the data collection site
@@ -128,9 +166,9 @@ class SiteInfo:
         self.beampattern = beampattern
         self.useMinute = useMinute
 
-class RtvInfo:
+class RtvInfo(BaseObject):
     """
-       All the different variable parameters for RTV running 
+       All the different variable parameters for RTV running
     """
     def __init__(self):
         self.grid_search_radius = np.float64(0)
@@ -156,7 +194,7 @@ class UwlsTotalInfo:
         self.dopy = np.float64(np.nan)
         self.hdop = np.float64(np.nan)
 
-class RadialInfo:
+class RadialInfo(BaseObject):
     """
        Radial velocity info needed for calculations
     """
@@ -177,7 +215,8 @@ class RadialInfo:
         self.speed = []
         self.heading = []
 
-class Metadata:
+
+class Metadata(BaseObject):
     """
        Metadata info
     """
@@ -202,6 +241,7 @@ class Metadata:
         self.source = ""
         self.summary = ""
         self.title = ""
+
 
 class SetupError(Exception):
     pass

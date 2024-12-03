@@ -7,7 +7,7 @@ import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 from hfrnet.run_rtv import rtv
-# from hfrnet.utils_funcs.filenames import filenames
+from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.sumAvg import SumAndAvg
 from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf
@@ -72,13 +72,13 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
     process = RtvProcess()
 
+    domain = configObj.domain.lower()
     #load land and grid files
-    land = load_land(fileLocObj.landfile,
-                     configObj.domain)
+    land = load_land(fileLocObj.landfile, domain)
     grid = None
-    gridvar = f'{configObj.domain}{configObj.resolution}'
+    gridvar = f'{domain}{configObj.resolution}'
     try:
-        grid = load_grid(fileLocObj.gridfile, configObj.domain,
+        grid = load_grid(fileLocObj.gridfile, domain,
                          configObj.resolution, rtvInfoObj)
         if len(grid.size) < 1:
             grid.size = np.array([0, 0], dtype=int)
