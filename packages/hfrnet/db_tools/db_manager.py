@@ -16,7 +16,6 @@ class db_manager:
         self.password = confdb.password
         self.sslrootcert = confdb.sslrootcert
         self.conn_handel = None
-        self.connected = False
 
     def __enter__(self):
         self.connect()
@@ -26,61 +25,42 @@ class db_manager:
         self.close()
 
     def connect(self):
-        if ~self.connected:
-            try:
-                self.conn_handel = pymysql.connect(
-                    host=self.host,
-                    user=self.user,
-                    password=self.password,
-                    database=self.name)
-                self.connected = True
-            except Exception as err:
-                msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-                       f", Can't connect to the database: user={self.user}, "
-                       f"database={self.name} , "
-                       f"exist")
-                _log.fatal(msg)
-                # self.cursor = self.connection.cursor()
+        try:
+            self.conn_handel = pymysql.connect(
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                database=self.name)
+        except Exception as err:
+            msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+                   f", Can't connect to the database: user={self.user}, "
+                   f"database={self.name} , "
+                   f"exist")
+            _log.fatal(msg)
     #----------------------------------------------------------
     def get_query(self, query):
-        if self.connected:
+        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(query)
+        datasetdict = {}
+        with self.conn_handel.cursor() as cursor:
+            cursor.execute(query)
+            # Fetch the first row
+            rows = cursor.fetchall()
+            self.create_dict(rows, cursor.description, datasetdict)
+            
+            _log.info(" ------------------ ")
+            for key, value in datasetdict.items():
+                msg = f"{key}:::{value}"
+                _log.info(msg)
             _log.info(" -------->>>>>>>>>>>>>>------------------ ")
-            _log.info(query)
-            with self.conn_handel.cursor() as cursor:
-                cursor.execute(query)
-                # Fetch the first row
-                rows = cursor.fetchall()
-                datasetdict = {}
-                self.create_dict(rows, cursor.description, datasetdict)
-                # tablee = self.store_output(cursor)
-                # rows = cursor.fetchall()
-                
-                _log.info(" ------------------ ")
-                for key, value in datasetdict.items():
-                    msg = f"{key}:::{value}"
-                    _log.info(msg)
-                _log.info(" -------->>>>>>>>>>>>>>------------------ ")
 
         return datasetdict
     #----------------------------------------------------------
     def write_query(self, query):
-        if self.connected:
-            _log.info(" -------->>>>>>>>>>>>>>------------------ ")
-            _log.info(query)
-            with self.conn_handel.cursor() as cursor:
-                cursor.execute(query)
-                # Fetch the first row
-                rows = cursor.fetchall()
-                datasetdict = {}
-                self.create_dict(rows, cursor.description, datasetdict)
-                # tablee = self.store_output(cursor)
-                # rows = cursor.fetchall()
-
-                _log.info(" ------------------ ")
-                for key, dataValue in datasetdict.items():
-                    msg = f"{key}:::{dataValue}"
-                    _log.info(msg)
-                _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(query)
+        with self.conn_handel.cursor() as cursor:
+            cursor.execute(query)
 
         return datasetdict
 
@@ -98,34 +78,20 @@ class db_manager:
     #----------------------------------------------------------
 
     def create_dict(self, data_rows, headers, datasetdict):
-        # datasetdict = {}
         # List of tuples
         for i in range(len(headers)):
             col_head = headers[i][0]
-            # print(col_head)
             list1 = []
             for row in data_rows:
                 list1.append(row[i])
 
             #-- to check the repeated dict key, then append "_2"
             self.check_dict(datasetdict, col_head, "_2", list1)
-        # datasetdict[col_head]=list1
 
-        # print(rows[0][i])
-        # list1.append(row[i])
-        # datasetdict[headers[i][0]]=list1
-
-        # print('===================== datasetdict')
-        # for row in datasetdict:
-        #     print(row, datasetdict[row])
-
-        #return
     #----------------------------------------------------------
 
     def close(self):
-        if self.connected:
-            self.conn_handel.close()
-            self.connected = False
+        self.conn_handel.close()
     #----------------------------------------------------------
 
     def table_exists(self, table_name):
