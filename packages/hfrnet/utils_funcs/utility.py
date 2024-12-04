@@ -420,6 +420,7 @@ def ltaRunConfig(rtvTime, configObj):
     #FIX: have to get state from database to see if it's already been done
     #state = State( c.domain, c.resolution, 'lta-monthly', c.confdb )
     #state.get()
+    #state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
    
     if reprocessing:
         #if timeNow is a month more than the reprocess date, then do monthly avg

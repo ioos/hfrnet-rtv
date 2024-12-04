@@ -41,6 +41,7 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
         # Verify subprocess is provided for lta
         if process.casefold() == 'lta'  and  subprocess is None:
             _log.fatal("Subprocess input required for lta")
+            raise ValueError("Subprocess input required for lta")
 
     else:
         # Otherwise, obtain from configuration structure
@@ -56,8 +57,10 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
                 else:
                     _log.fatal("Undefined subprocess field or key in "
                                "configuration structure,(required for lta)")
+                    raise ValueError("Subprocess input required for lta")
         else:
             _log.fatal("Undefined process name in configuration structure")
+            raise ValueError(f"Invalid process name: {process}")
 
     # Obtain process specific paths & filenames
     if process == 'rtv':
@@ -78,9 +81,11 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
         else:
             msg = f"Unknown subprocess {subprocess}"
             _log.fatal(msg)
+            raise ValueError(f"Invalid subprocess name: {subprocess}")
     else:
-        msg = f"Unknown subprocess {subprocess}"
+        msg = f"Unknown process {process}"
         _log.fatal(msg)
+        raise ValueError(f"Invalid process name: {process}")
 
     return retFileLoc
 
@@ -103,11 +108,11 @@ def find_file(domain, resolution, method, time, directory, file_format):
         
     data_file = list(data_file.glob(f"{search_par}"))
     if len(data_file) == 1:
-        return Path(data_file[0])
+        return data_file[0]
         
     data_file_no25hr = [iFile for iFile in data_file if '25hr' not in str(iFile)]
     if len(data_file_no25hr) == 1:
-        return Path(data_file_no25hr[0])
+        return data_file_no25hr[0]
         
     msg = f"{file_format} not found: {data_file_no25hr}, {directory}/{search_par}"
     _log.warning(msg)
