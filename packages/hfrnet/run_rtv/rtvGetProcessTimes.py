@@ -6,13 +6,13 @@ import numpy as np
 
 from hfrnet.utils_funcs.utility import now_second, now_hour
 # from hfrnet.db_tools.state import State
-from hfrnet.db_tools.db_tables import read_site_table, read_files_times_radialtable
+from hfrnet.db_tools.db_tables import read_site_table, get_files_times_radialtable
 
 
 _log = logging.getLogger()
 
 
-def rtvGetProcessTimes(configObj, rtvInfoObj):
+def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     """
     # RTVGETPROCESSTIMES Obtain RTV times to process
     #
@@ -67,11 +67,12 @@ def rtvGetProcessTimes(configObj, rtvInfoObj):
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
     #
     # # Check state
-    # state = State(configObj.domain, configObj.domain_id,
-    #               configObj.resolution, configObj.resolution_id,
-    #               rtvProcessObj.name.lower(), configObj.confdb)
-    # state.get()
+    state = State(configObj.domain, configObj.domain_id,
+                  configObj.resolution, configObj.resolution_id,
+                  rtvProcessObj.name.lower(), configObj.confdb)
+    state.get()
     state_time = None
+    state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
     #-------------------------
 
     # Set start time to arbitrairly old value if no state is defined - let
@@ -94,9 +95,10 @@ def rtvGetProcessTimes(configObj, rtvInfoObj):
     ## Find all sites associated with the domain and resolution
     sites_list = read_site_table(configObj)
 
-    time_list = read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime)
-    print("\n\n", time_list, "\n\n")
-    if len(time_list) == 0:
+    time_list, nfiles = get_files_times_radialtable(configObj, rtvInfoObj, sites_list,
+                                                minTime)
+    
+    if nfiles == 0:
         return t
 
     ## Find unique dates (hours) to process

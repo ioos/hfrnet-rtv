@@ -74,7 +74,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     if configObj.reprocess:
         processTimes = configObj.times
     else:
-        processTimes = rtvGetProcessTimes(configObj, rtvInfoObj)
+        processTimes = rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj)
 
     if processTimes and len(processTimes) > 0:
         errmsg = (f"Obtained {len(processTimes)} hour(s) to process between: "

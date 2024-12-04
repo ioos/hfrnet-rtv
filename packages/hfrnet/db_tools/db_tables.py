@@ -67,7 +67,8 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 	result_list = db_class.get_query(sqlquery)
 	# % Return if there are no processes found to run
 	
-	n = len(result_list['name'])
+	
+	n = len(next(iter(result_list.values())))
 	if n == 0:
 		_log.error(f"there are no processes found to run")
 		db_class.close()
@@ -234,7 +235,8 @@ def read_site_table(configObj):
 		sites_list = db_class.get_query(sqlquery)
 	
 	# % Expect exactly one record to match
-	nRows = len(sites_list['name'])
+	
+	nRows = len(next(iter(sites_list.values())))
 	
 	if nRows == 0:
 		errmsg = (f'No sites defined for RTV {configObj.resolution} '
@@ -250,7 +252,7 @@ def read_site_table(configObj):
 	# ------------------------------------
 
 
-def read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
+def get_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 	# Check for valid domain
 	# Connect to the configuration database
 	with db_manager(configObj.raddb) as db_class:
@@ -266,7 +268,7 @@ def read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 			f"AND FROM_UNIXTIME(r.time) >= '{minTime}' "
 			'AND ( ')
 		# Site conditions
-		nSite = len(sites_list['name'])
+		nSite = len(next(iter(sites_list.values())))
 		for i in range(nSite):
 			
 			# Network and site
@@ -284,7 +286,8 @@ def read_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 		time_list = db_class.get_query(sqlquery)
 	
 	# % Expect exactly one record to match
-	nRows = len(time_list['FROM_UNIXTIME(r.time)'])
+	
+	nRows = len(next(iter(time_list.values())))
 	
 	msg = f'Found {nRows} sites associated with {configObj.domain} {configObj.resolution}'
 	_log.info(msg)
@@ -393,3 +396,30 @@ def get_active_sitelist(configObj, calcTime):
 			f"( c.end_time > '{calcTime}' OR ISNULL(c.end_time) )")
 		
 		return db_class.get_query(sqlquery)
+	
+def get_state_time(configObj, process_name):
+	# Connect to the configuration database
+	
+	with db_manager(configObj.confdb) as db_class:
+		# Build & execute query
+		sqlquery = (
+			'SELECT time,csv '
+            'FROM state '
+            f"WHERE name = '{process_name}' "
+            f"AND domain_id = '{configObj.domain_id}' "
+            f"AND resolution_id = '{configObj.resolution_id}' ")
+		
+		results = db_class.get_query(sqlquery)
+		nRows = len(next(iter(results.values())))
+		if len(nRows) > 0:
+			state_time = results['time']
+			if results['csv']:
+				state_csv = results['csv']
+		else:
+			state_time = None
+			state_csv = ''
+			
+	return state_time, state_csv
+	
+
+
