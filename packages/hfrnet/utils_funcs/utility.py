@@ -404,3 +404,48 @@ def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
                 f"{configObj.domain}{configObj.resolution}")
 
     return ncid
+
+
+
+def ltaRunConfig(rtvTime, configObj):
+    """Determine if need to do monthly/yearly average"""
+
+    reprocessing = configObj.reprocess
+    doMonthly = False
+    doYearly = False
+    timeNow = datetime.now(timezone.utc)
+    timeYearly = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
+    minMonthDay = 2
+
+    #FIX: have to get state from database to see if it's already been done
+    #state = State( c.domain, c.resolution, 'lta-monthly', c.confdb )
+    #state.get()
+   
+    if reprocessing:
+        #if timeNow is a month more than the reprocess date, then do monthly avg
+        if (timeNow.month - rtvTime.month) >= 1:
+            doMonthly = True
+        #if reprocess date if previous year, then do yearly avg
+        if (timeNow.year - rtvTime.year) >= 1:
+            doYearly = True
+    else:
+        if rtvTime.day <= minMonthDay:
+            doMonthly = True
+            #replace the month in the datetime to do previous month's average 
+            rtvTime = rtvTime.replace(month=(rtvTime.month -1))
+            
+            #check if average has been done 
+            #if isinstance(state.time, datetime) and state.time.month == timeNow.month:
+            #doMonthly = False
+            
+        if rtvTime < timeYearly:
+            doYearly = True
+            
+            #replace year to do previous year's average
+            rtvTime = rtvTime.replace(year=(rtvTime.year -1))
+
+            #check if average has been done
+            #if isinstance(state.time, datetime) and state.time.year == timeNow.year:
+            #doYearly = False
+    
+    return (doMonthly, doYearly, rtvTime)
