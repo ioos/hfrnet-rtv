@@ -332,7 +332,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.asciipathfile = Path(retObj.asciidir, retObj.asciifilename)
 
     # NetCDF
-    retObj.ncdir = retObj.mdir
+    retObj.ncdir = retObj.output_dir
 
     retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
 

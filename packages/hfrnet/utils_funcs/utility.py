@@ -98,7 +98,9 @@ def generate_time_spans(stime, etime):
     """
     # Convert the input strings to datetime objects
     start_date = datetime.strptime(stime, '%Y%m%d%H%M%S%f')
+    start_date = start_date.replace(tzinfo=timezone.utc)
     end_date = datetime.strptime(etime, '%Y%m%d%H%M%S%f')
+    end_date = end_date.replace(tzinfo=timezone.utc)
 
     # Generate the time spans
     time_spans = []

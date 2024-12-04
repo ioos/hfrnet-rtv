@@ -4,6 +4,7 @@
 
 import logging
 import numpy as np
+from datetime import datetime, timezone
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 from hfrnet.run_rtv import rtv
@@ -17,6 +18,51 @@ from hfrnet.run_rtv.saveAscii import saveAscii
 from hfrnet.utils_funcs.utility import load_land, load_grid
 
 _log = logging.getLogger()
+
+
+def ltaRunConfig(rtvTime, configObj):
+    """Determine if need to do monthly/yearly average"""
+
+    reprocessing = configObj.reprocess
+    doMonthly = False
+    doYearly = False
+    timeNow = datetime.now(timezone.utc)
+    timeYearly = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
+    minMonthDay = 2
+
+    #FIX: have to get state from database to see if it's already been done
+    #state = State( c.domain, c.resolution, 'lta-monthly', c.confdb )
+    #state.get()
+   
+    if reprocessing:
+        #if timeNow is a month more than the reprocess date, then do monthly avg
+        if (timeNow.month - rtvTime.month) >= 1:
+            doMonthly = True
+        #if reprocess date if previous year, then do yearly avg
+        if (timeNow.year - rtvTime.year) >= 1:
+            doYearly = True
+    else:
+        if rtvTime.day <= minMonthDay:
+            doMonthly = True
+            #replace the month in the datetime to do previous month's average 
+            rtvTime = rtvTime.replace(month=(rtvTime.month -1))
+            
+            #check if average has been done 
+            #if isinstance(state.time, datetime) and state.time.month == timeNow.month:
+            #doMonthly = False
+            
+        if rtvTime < timeYearly:
+            doYearly = True
+            
+            #replace year to do previous year's average
+            rtvTime = rtvTime.replace(year=(rtvTime.year -1))
+
+            #check if average has been done
+            #if isinstance(state.time, datetime) and state.time.year == timeNow.year:
+            #doYearly = False
+    
+    return (doMonthly, doYearly, rtvTime)
+    
 
 def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                stcLtaInfoObj, compTotObj):
@@ -86,11 +132,12 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
         errmsg = f'Error loading variable {gridvar} from {fileLocObj.gridfile}: {str(e)}'
         _log.error(errmsg)
 
+    newRtvFiles = []
     nProcesses = len(rtvProcessObj)
     for iProcess in range(nProcesses):
 
         process = rtvProcessObj[iProcess]
-
+        
         if process.method != 'uwls':
             message = f"ERROR: Only 'uwls' methods are supported, not {process.method}"
             _log.warning(message)
@@ -107,7 +154,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'stc':
 
-            for time in configObj.times:
+            for time in newRtvFiles:
 
                 sumAvg = SumAndAvg('25 Hour', configObj, process,
                                    fileLocObj, time, stcLtaInfoObj)
@@ -145,22 +192,26 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             if doYearly:
                 process_str = "annual"
 
-            for time in configObj.times:
-
-                #calculation
-                sumAvg = SumAndAvg(process_str, configObj, process,
-                                   fileLocObj, time, stcLtaInfoObj)
-                sumObj = sumAvg.get_sum()
-                avgObj = sumAvg.get_avg()
-
-                #metadata and filenames for output
-                avgObj.land = land
-                avgObj.grid = grid
-                metaDataObj = rtvProcessMetadata(process, configObj)
-                fileNameList = filenames(configObj, process,
-                                         fileLocObj, time)
+            for time in newRtvFiles:
+                
+                doMonthly, doYearly, time = ltaRunConfig(time, configObj)
 
                 if doMonthly:
+
+                    #calculation
+                    sumAvg = SumAndAvg("monthly", configObj, process,
+                                       fileLocObj, time, stcLtaInfoObj)
+                    sumObj = sumAvg.get_sum()
+                    avgObj = sumAvg.get_avg()
+                    
+                    #metadata and filenames for output
+                    avgObj.land = land
+                    avgObj.grid = grid
+                    metaDataObj = rtvProcessMetadata(process, configObj)
+                    fileNameList = filenames(configObj, process,
+                                             fileLocObj, time)
+
+                    
                     #save intermediate file
                     allInfo = {'metaDataObj': metaDataObj.to_dict(),
                                'configObj': configObj.to_dict(),
@@ -169,8 +220,28 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     allInfo_dict = {'c': allInfo, 't': time, 'S': sumObj.to_dict()}
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
-                #save final file
-                ltaSaveNetcdf(metaDataObj, configObj,
-                              fileNameList, stcLtaInfoObj,
-                              process, time, avgObj)
-                saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
+                    #save final file
+                    ltaSaveNetcdf(metaDataObj, configObj,
+                                  fileNameList, stcLtaInfoObj,
+                                  process, time, avgObj)
+                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
+
+                if doYearly:
+                    #calculation
+                    sumAvg = SumAndAvg("annual", configObj, process,
+                                       fileLocObj, time, stcLtaInfoObj)
+                    sumObj = sumAvg.get_sum()
+                    avgObj = sumAvg.get_avg()
+                
+                    #metadata and filenames for output
+                    avgObj.land = land
+                    avgObj.grid = grid
+                    metaDataObj = rtvProcessMetadata(process, configObj)
+                    fileNameList = filenames(configObj, process,
+                                             fileLocObj, time)
+                    
+                    #save final file
+                    ltaSaveNetcdf(metaDataObj, configObj,
+                                  fileNameList, stcLtaInfoObj,
+                                  process, time, avgObj)
+                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
