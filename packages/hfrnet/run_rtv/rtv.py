@@ -16,26 +16,6 @@ from hfrnet.run_rtv.saveAscii import saveAscii
 
 _log = logging.getLogger()
 
-def rtvRmTotalFiles(fileLocObj):
-    """ Removes any existing total files """
-
-    filefields = ["mpathfile", "asciipathfile", "ncpathfile"]
-
-    for filefield in filefields:
-        pathfile = getattr(fileLocObj, filefield)
-
-        if pathfile.is_file():
-
-            try:
-                pathfile.unlink()
-                msg = f'Deleted {pathfile}'
-                _log.debug(msg)
-
-            except Exception as e:
-                msg = f'Error removing {pathfile}: {str(e)}'
-                _log.warning(msg)
-
-
 def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotObj) -> str:
     """
     RTV Process radials to totals
@@ -128,10 +108,6 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                            "continue to next time interval")
             _log.warning(log_message)
             continue
-
-        #FIX: have to remove existing total files when reprocessing
-        #if configObj.reprocess:
-            #rtvRmTotalFiles(fileLocObj, _log)
 
         #load radial data; will have to be a big module
         radials = rtvLoadRadials(configObj, siteInfoObj, fileNameList,
