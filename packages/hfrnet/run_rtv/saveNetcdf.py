@@ -12,6 +12,7 @@ _log = logging.getLogger()
 
 def datetime_to_timestamp(d, k):
     """convert the datetime to timestamp to be saved in netcdf file"""
+
     if k in d:
         if isinstance(d[k], list):
             d[k] = [t.timestamp() for t in d[k]]
@@ -74,13 +75,13 @@ def saveNetcdf(filename, d):
     if 'c' in d:
         d['c'] = copy.deepcopy(d['c'])
         ncid = d['c'].pop('ncid', None)
-        #getExternalMetadata = d['c'].pop('getExternalMetadata', None)
-        #getExternalProcessMetadata = d['c'].pop('getExternalProcessMetadata', None)
         if 'reprocess' in d['c']:
             for k in ['times', 'tNewRtvFiles']:
                 datetime_to_timestamp(d['c']['reprocess'], k)
         if 'lta' in d['c']:
             datetime_to_timestamp(d['c']['lta'], 'annual_min_date')
+        if 'runTime' in d['c']['configObj']:
+            datetime_to_timestamp(d['c']['configObj'], 'runTime')
         d['c'] = json.dumps(d['c'])
 
     # same the dict to netcdf file
@@ -93,15 +94,14 @@ def saveNetcdf(filename, d):
         d['c'] = json.loads(d['c'])
         if ncid is not None:
             d['c']['ncid'] = ncid
-        #if getExternalMetadata is not None:
-        #    d['c']['getExternalMetadata'] =  getExternalMetadata
-        #if getExternalProcessMetadata is not None:
-        #    d['c']['getExternalProcessMetadata'] = getExternalProcessMetadata
+
         if 'reprocess' in d['c']:
             for k in ['times', 'tNewRtvFiles']:
                 timestamp_to_datetime(d['c']['reprocess'], k)
         if 'lta' in d['c']:
-            timestamp_to_datetime(d['c']['lta'], 'annual_min_date')    
+            timestamp_to_datetime(d['c']['lta'], 'annual_min_date')
+        if 'runTime' in d['c']['configObj']:
+            timestamp_to_datetime(d['c']['configObj'], 'runTime')
 
     msg = f"Saved file: {filename}"
     _log.info(msg)

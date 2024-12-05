@@ -119,9 +119,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
                 #save intermediate file
                 allInfo = {'metaDataObj': metaDataObj.to_dict(),
-                     'configObj': configObj.to_dict(),
-                     'stcInfoObj': stcInfoObj.to_dict(),
-                     'process': process.to_dict()}
+                           'configObj': configObj.to_dict(),
+                           'stcInfoObj': stcInfoObj.to_dict(),
+                           'process': process.to_dict()}
+                #print("\n\n process: \n", configObj.to_dict(), "\n", allInfo, "\n\n")
                 allInfo_dict = {'c': allInfo, 'tc': time, 'A': sumObj.to_dict()}
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
@@ -133,8 +134,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
             for time in newRtvFiles:
 
-                doMonthly, doYearly, time = ltaRunConfig(time, configObj)
-
+                doMonthly, doYearly, time = ltaRunConfig(time, configObj, process)
+                
                 if doMonthly:
 
                     #calculation

@@ -12,6 +12,7 @@ import netCDF4 as nc4
 from dateutil import parser
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
+from hfrnet.db_tools.db_tables import get_state_time
 
 _log = logging.getLogger()
 
@@ -413,7 +414,7 @@ def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
 
 
 
-def ltaRunConfig(rtvTime, configObj):
+def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     """Determine if need to do monthly/yearly average"""
 
     reprocessing = configObj.reprocess
@@ -423,10 +424,8 @@ def ltaRunConfig(rtvTime, configObj):
     timeYearly = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
     minMonthDay = 2
 
-    #FIX: have to get state from database to see if it's already been done
-    #state = State( c.domain, c.resolution, 'lta-monthly', c.confdb )
-    #state.get()
-    #state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+    #have to get state from database to see if it's already been done
+    state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
 
     if reprocessing:
         #if timeNow is a month more than the reprocess date, then do monthly avg
@@ -438,21 +437,24 @@ def ltaRunConfig(rtvTime, configObj):
     else:
         if rtvTime.day <= minMonthDay:
             doMonthly = True
-            #replace the month in the datetime to do previous month's average
-            rtvTime = rtvTime.replace(month=rtvTime.month -1)
 
             #check if average has been done
-            #if isinstance(state.time, datetime) and state.time.month == timeNow.month:
-            #doMonthly = False
+            if state_time.month == timeNow.month:
+                doMonthly = False
+
+            if doMonthly:
+                #replace the month in the datetime to do previous month's average
+                rtvTime = rtvTime.replace(month=rtvTime.month -1)
 
         if rtvTime < timeYearly:
             doYearly = True
 
-            #replace year to do previous year's average
-            rtvTime = rtvTime.replace(year=rtvTime.year -1)
-
             #check if average has been done
-            #if isinstance(state.time, datetime) and state.time.year == timeNow.year:
-            #doYearly = False
+            if state_time.year == timeNow.year:
+                doYearly = False
+            
+            if doYearly:
+                #replace year to do previous year's average
+                rtvTime = rtvTime.replace(year=rtvTime.year -1)
 
     return (doMonthly, doYearly, rtvTime)
