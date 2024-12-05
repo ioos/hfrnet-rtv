@@ -4,7 +4,6 @@
 
 import logging
 import numpy as np
-from datetime import datetime, timezone
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 from hfrnet.run_rtv import rtv
@@ -66,11 +65,6 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
     Use runRtv to call processRtv in batch mode from the command-line.
 
     """
-
-    # FIX: Do we need to keep processing time?
-    # initalize stopwatch
-    #ticValue = tic
-
     process = RtvProcess()
 
     domain = configObj.domain.lower()
@@ -92,7 +86,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
     for iProcess in range(nProcesses):
 
         process = rtvProcessObj[iProcess]
-        
+
         if process.method != 'uwls':
             message = f"ERROR: Only 'uwls' methods are supported, not {process.method}"
             _log.warning(message)
@@ -137,18 +131,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 saveAscii(process, fileNameList, stcInfoObj, avgObj)
         if process.name.casefold() == 'lta':
 
-            #FIX: temp thing to run testing
-            doMonthly = True
-            doYearly = False
-
-            process_str = ""
-            if doMonthly:
-                process_str = "monthly"
-            if doYearly:
-                process_str = "annual"
-
             for time in newRtvFiles:
-                
+
                 doMonthly, doYearly, time = ltaRunConfig(time, configObj)
 
                 if doMonthly:
@@ -158,7 +142,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, time, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
-                    
+
                     #metadata and filenames for output
                     avgObj.land = land
                     avgObj.grid = grid
@@ -166,7 +150,6 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, time)
 
-                    
                     #save intermediate file
                     allInfo = {'metaDataObj': metaDataObj.to_dict(),
                                'configObj': configObj.to_dict(),
@@ -187,14 +170,14 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, time, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
-                
+
                     #metadata and filenames for output
                     avgObj.land = land
                     avgObj.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, time)
-                    
+
                     #save final file
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
