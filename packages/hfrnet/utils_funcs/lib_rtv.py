@@ -102,7 +102,9 @@ class ConfigureVals(BaseObject):
         self.confdb = DatabaseConfig()
         self.raddb = DatabaseConfig()
         self.reprocess = True
-        self.lock = False
+        # This will be the now time whenever the current time is needed
+        # This will be set to the start time in the yml file
+        self.runTime = None
 
     def to_dict(self):
         """return the dict for all attributes in the object"""

@@ -110,7 +110,7 @@ class db_manager:
             resolution VARCHAR(255)
         )
         """
-        self.run_query(create_table_query)
+        self.get_query(create_table_query)
         # self.connection.commit()
     #----------------------------------------------------------
 def set_db_info( config, configObj):

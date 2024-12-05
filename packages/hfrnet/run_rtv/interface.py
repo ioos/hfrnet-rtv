@@ -16,7 +16,7 @@ __updated__ = "2024-07-23"
 from pathlib import Path
 import aim
 import os
-
+from datetime import datetime
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
 from hfrnet.db_tools.db_tables import read_domain, read_resolution, read_methods
@@ -144,7 +144,10 @@ class Interface(aim.Interface):
                   f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
         _log.info(working_dir)
-
+        # set the runtime to the start time
+        self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
+                                          '%Y%m%d%H%M%S%f')
+        # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
         if self.config['processing.batch_processing'].casefold() == 'true':
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],

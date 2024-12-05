@@ -411,7 +411,7 @@ def get_state_time(configObj, process_name):
 		
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
-		if len(nRows) > 0:
+		if nRows > 0:
 			state_time = results['time']
 			if results['csv']:
 				state_csv = results['csv']

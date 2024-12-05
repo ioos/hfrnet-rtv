@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 import numpy as np
 
 from hfrnet.utils_funcs.utility import now_second, now_hour
-# from hfrnet.db_tools.state import State
-from hfrnet.db_tools.db_tables import read_site_table, get_files_times_radialtable
+
+from hfrnet.db_tools.db_tables import (read_site_table, get_files_times_radialtable
+, get_state_time)
 
 
 _log = logging.getLogger()
@@ -62,16 +63,16 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     #------------------------------------- will be fixed
     # ## Define radial file arrival time search window
     # # Oldest data time to process
-    minTime = now_hour() - timedelta(hours=rtvInfoObj.max_age)
+    minTime = now_hour(configObj.runTime) - timedelta(hours=rtvInfoObj.max_age)
 
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
     #
     # # Check state
-    state = State(configObj.domain, configObj.domain_id,
-                  configObj.resolution, configObj.resolution_id,
-                  rtvProcessObj.name.lower(), configObj.confdb)
-    state.get()
-    state_time = None
+    # state = State(configObj.domain, configObj.domain_id,
+    #               configObj.resolution, configObj.resolution_id,
+    #               rtvProcessObj.name.lower(), configObj.confdb)
+    # state.get()
+    # state_time = None
     state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
     #-------------------------
 
@@ -88,7 +89,7 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
         _log.info(msg)
 
     # Define the end time of the search window
-    rtvInfoObj.new_state = now_second() - timedelta(seconds=10)
+    rtvInfoObj.new_state = now_second(configObj.runTime) - timedelta(seconds=10)
     msg = f"Radial search window ends on {rtvInfoObj.new_state}"
     _log.debug(msg)
 
@@ -103,7 +104,8 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
 
     ## Find unique dates (hours) to process
     # Assign process times
-    t = [datetime.fromtimestamp(r[0]) for r in time_list]
+    # t = [datetime.fromtimestamp(r[0]) for r in time_list]
+    t = next(iter(time_list.values()))
 
     # Shift radials >= :30 to the top of the next hour
     for i, iTime in enumerate(t):

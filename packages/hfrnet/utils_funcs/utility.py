@@ -195,9 +195,12 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         rtvInfoObj.projection  = ds.getncattr('projection')
         return rtvInfoObj
 
-def now_hour():
+def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
-    t = datetime.now(timezone.utc)
+    if inTime:
+        t = inTime
+    else:
+        t = datetime.now(timezone.utc)
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
 def eomday(t):
@@ -205,9 +208,12 @@ def eomday(t):
     days_in_month = calendar.monthrange(t.year, t.month)[1]
     return datetime(t.year, t.month, days_in_month)
 
-def now_second():
+def now_second(inTime = None):
     """ Returns current datetime to nearest second, no microsecond"""
-    t = datetime.now(timezone.utc)
+    if inTime:
+        t = inTime
+    else:
+        t = datetime.now(timezone.utc)
     return t.replace(second=t.second, microsecond=0, minute=t.minute,
                      hour=t.hour)
 
