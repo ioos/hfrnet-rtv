@@ -5,11 +5,11 @@ from datetime import datetime, timedelta, timezone, date, time
 import calendar
 import logging
 import json
+from pathlib import Path
 import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
-from pathlib import Path
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 
@@ -323,7 +323,7 @@ def load_mat(filename):
 
         data['data'] = process_record(raw)
     except:
-        traceback.print_exc(file=sys.stdout)
+        _log.info("Could not load file")
 
     return data
 
@@ -335,9 +335,9 @@ def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
     """
     # example file name
     # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
-    
+
     ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
-    
+
     file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
     return file_name
 
@@ -356,20 +356,20 @@ def setup_log_filename(my_pkgint, added_name=""):
     stime = f"{my_pkgint.config['time.start_date']}"
     etime = f"{my_pkgint.config['time.end_date']}"
     algo_ver = f"{my_pkgint.config['production.version']}"
-    
+
     run_logfile = create_CCAP_filename_s_e(stime, etime,
                                            algo_ver,
                                            f"{added_name}", ".log")
     handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
     date_format = '%Y-%m-%d %H:%M:%S'
     full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
-    
+
     handler.setLevel(logging.INFO)
     handler.setFormatter(logging.Formatter(fmt=full_format, datefmt=date_format))
-    
+
     my_log = logging.getLogger()
     my_log.addHandler(handler)
-    
+
     return handler
 
 def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
@@ -421,7 +421,7 @@ def ltaRunConfig(rtvTime, configObj):
     #state = State( c.domain, c.resolution, 'lta-monthly', c.confdb )
     #state.get()
     #state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
-   
+
     if reprocessing:
         #if timeNow is a month more than the reprocess date, then do monthly avg
         if (timeNow.month - rtvTime.month) >= 1:
@@ -432,21 +432,21 @@ def ltaRunConfig(rtvTime, configObj):
     else:
         if rtvTime.day <= minMonthDay:
             doMonthly = True
-            #replace the month in the datetime to do previous month's average 
-            rtvTime = rtvTime.replace(month=(rtvTime.month -1))
-            
-            #check if average has been done 
+            #replace the month in the datetime to do previous month's average
+            rtvTime = rtvTime.replace(month=rtvTime.month -1)
+
+            #check if average has been done
             #if isinstance(state.time, datetime) and state.time.month == timeNow.month:
             #doMonthly = False
-            
+
         if rtvTime < timeYearly:
             doYearly = True
-            
+
             #replace year to do previous year's average
-            rtvTime = rtvTime.replace(year=(rtvTime.year -1))
+            rtvTime = rtvTime.replace(year=rtvTime.year -1)
 
             #check if average has been done
             #if isinstance(state.time, datetime) and state.time.year == timeNow.year:
             #doYearly = False
-    
+
     return (doMonthly, doYearly, rtvTime)
