@@ -516,6 +516,8 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_rm.files_loaded = '\n'.join([rr.file for rr in r])
     varid_rm.files_loaded_description = 'Radial file names loaded'
 
+    metaDataObj.depth_bottom = ncid.depth_bottom
+
     ## Add Data Values
     varid_lat[:] = all_range(U.grid.y_range[0], U.grid.y_range[1], U.grid.dy )
     varid_lon[:] = all_range(U.grid.x_range[0], U.grid.x_range[1], U.grid.dx )

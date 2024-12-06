@@ -568,6 +568,8 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
                f"method: {rtvProcessObj.method}")
         _log.error(msg)
 
+    metaDataObj.depth_bottom = ncid.depth_bottom
+
     # Add Data Values
     varid_lat[:] = all_range(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy )
     varid_lon[:] = all_range(A.grid.x_range[0], A.grid.x_range[1], A.grid.dx )
