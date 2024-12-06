@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 import calendar
 import numpy as np
+from copy import deepcopy
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
 from hfrnet.utils_funcs.utility import read_total_file
@@ -103,7 +104,7 @@ class SumAndAvg:
                                                   self.rtvProcessObj,
                                                   self.fileLocObj, time,
                                                   subprocess=self.mode)
-            fileList2.append(fileLocTemp)
+            fileList2.append(deepcopy(fileLocTemp))
 
         return fileList2
 
