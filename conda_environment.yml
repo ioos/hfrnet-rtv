@@ -21,3 +21,4 @@ dependencies:
       - charset-normalizer==3.3.2
       - netCDF4==1.6.5
       - python-dateutil==2.9.0.post0
+      - boto3==1.35.71
