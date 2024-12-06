@@ -1,6 +1,6 @@
 """rtvLoadRadials"""
 
-import re
+#import re
 import logging
 from pathlib import Path
 
@@ -108,7 +108,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         # Load previous radial dataset
         try:
-            last = read_total_file(fileLocObj.mpathfile, '-mat', 'r')
+            last = read_total_file(fileLocObj.mpathfile)
             errmsg = f'Loaded radial structure from prior run ({fileLocObj.mpathfile})'
             _log.info(errmsg)
 
@@ -126,17 +126,18 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Modify radial selection as needed based on previous run(s)
     if last is not None:
         nMod = 0
-
+        last_data = last['data']
         # Loop over each site defined in the config
+        last_network = np.array([rr for rr in last_data.r.network])
+        last_site = np.array([rr for rr in last_data.r.site])
         for iSiteInfo in siteInfoObj:
 
             # Look for a site/network match in existing radial data
-            siteMatch = ((iSiteInfo.network == np.array([rr.network for rr in last.r])) &
-                         (iSiteInfo.name == np.array([rr.site for rr in last.r])))
-
+            siteMatch = ((iSiteInfo.network == last_network) &
+                         (iSiteInfo.name == last_site))
+            
             if not np.any(siteMatch):
                 continue
-
 
             # Error out if there is more than one matched record
             if np.count_nonzero(siteMatch) > 1:
@@ -148,16 +149,17 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
             # Check that the patterntypes are consistent
             siteMatch = np.argwhere(siteMatch)[0][0]
-            if iSiteInfo.beampattern[0] != last.r[siteMatch].patterntype:
 
-                if 'i' == last.r[siteMatch].patterntype:
+            if iSiteInfo.beampattern != last_data.r.patterntype[siteMatch]:
+
+                if 'i' == last_data.r.patterntype[siteMatch]:
                     iSiteInfo.beampattern = 'ideal'
 
-                elif 'm' == last.r[siteMatch].patterntype:
+                elif 'm' == last_data.r.patterntype[siteMatch]:
                     iSiteInfo.beampattern = 'measured'
 
                 else:
-                    errmsg = (f'Unknown beam pattern type {last.r[siteMatch].patterntype}'
+                    errmsg = (f'Unknown beam pattern type {last_data.r.patterntype[siteMatch]}'
                               f' found for {iSiteInfo.network}:{iSiteInfo.name}'
                               ' in previous radial data structure loaded from '
                               f'{fileLocObj.mpathfile}')
@@ -170,10 +172,12 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
                 nMod = nMod + 1
 
-            # Check that useMinutes is consistent
-            if iSiteInfo.useMinute != last.r[siteMatch].t.minute:
+            # FIX: Check that useMinutes is consistent
+            #FIX: just a guess, not sure what the minute actually is in the data structure
+            last_data_minute = last_data.r.t[siteMatch][0][3][1][0]
+            if iSiteInfo.useMinute != last_data_minute:
 
-                iSiteInfo.useMinute = last.r[siteMatch].t.minute
+                #iSiteInfo.useMinute = int(last_data_minute)
 
                 errmsg = (f'Modified {iSiteInfo.network}:{iSiteInfo.name} '
                           f'selection to use radials from {iSiteInfo.useMinute} '
@@ -193,7 +197,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                        'previous runs')
 
     # Build radial query
-    q = []
+    file_list_temp = []
     results, nfiles = get_files_list_radialtable(configObj, calcTime, siteInfoObj)
 
     # Note: t +/- 30 min. is a query optimization
