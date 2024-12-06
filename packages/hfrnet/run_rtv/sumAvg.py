@@ -112,7 +112,6 @@ class SumAndAvg:
         """
         Make the timestamp list +/- 12 hours
         """
-
         start_time = center_time - timedelta(hours=12)
         end_time = center_time + timedelta(hours=12)
         temp_time = start_time

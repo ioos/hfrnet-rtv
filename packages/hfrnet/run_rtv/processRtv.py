@@ -3,6 +3,7 @@
 """processRtv"""
 
 import logging
+from datetime import timedelta
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
@@ -104,15 +105,16 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
         if process.name.casefold() == 'stc':
 
             for time in newRtvFiles:
-
+                #offset time to the center of the 25 hr window
+                center_time = time - timedelta(hours=12) 
                 sumAvg = SumAndAvg('25 Hour', configObj, process,
-                                   fileLocObj, time, stcLtaInfoObj)
+                                   fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
 
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
-                                         fileLocObj, time)
+                                         fileLocObj, center_time)
                 avgObj.land = land
                 avgObj.grid = grid
                 stcInfoObj = stcLtaInfoObj.stcInfo
@@ -122,13 +124,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                            'configObj': configObj.to_dict(),
                            'stcInfoObj': stcInfoObj.to_dict(),
                            'process': process.to_dict()}
-                allInfo_dict = {'c': allInfo, 'tc': time, 'A': sumObj.to_dict()}
+                allInfo_dict = {'c': allInfo, 'tc': center_time, 'A': sumObj.to_dict()}
+
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
                 stcSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcInfoObj,
-                              process, time, avgObj)
+                              process, center_time, avgObj)
                 saveAscii(process, fileNameList, stcInfoObj, avgObj)
+
         if process.name.casefold() == 'lta':
 
             for time in newRtvFiles:

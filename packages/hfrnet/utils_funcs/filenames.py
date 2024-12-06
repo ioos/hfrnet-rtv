@@ -213,9 +213,9 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.output_ncfile = Path(fileLocObj.output_dir, retObj.ncfilename)
 
     #intermediate file
-    retObj.intermed_filename = (f"rtv-monthSum_{configObj.domain}_"
-                                  f"{configObj.resolution}_{rtvProcessObj.method}_"
-                                  f"{t.strftime('%Y%m')}.nc")
+    retObj.intermed_filename = (f"rtv-25HrSum_{configObj.domain}_"
+                                f"{configObj.resolution}_{rtvProcessObj.method}_"
+                                f"{t.strftime('%Y%m')}.nc")
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
