@@ -4,8 +4,8 @@ import logging
 from datetime import timedelta
 from pathlib import Path
 import calendar
-import numpy as np
 from copy import deepcopy
+import numpy as np
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
 from hfrnet.utils_funcs.utility import read_total_file
@@ -338,11 +338,13 @@ class SumAndAvg:
 
         if self.isMonthly:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY
+            mask = (avgsumObj.nGood <
+                    infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if self.isAnnual:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY 
+            mask = (avgsumObj.nGood <
+                    infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if np.any(mask):
             avgsumObj.nGood[mask] = np.nan

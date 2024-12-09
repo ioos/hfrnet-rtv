@@ -12,7 +12,7 @@ import netCDF4 as nc4
 from dateutil import parser
 import h5py
 
-from hfrnet.utils_funcs.lib_rtv import RtvProcess
+from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.db_tools.db_tables import get_state_time
 
 _log = logging.getLogger()
@@ -178,24 +178,26 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         _log.fatal(msg)
         raise ValueError(msg)
 
+    grid = Grid()
     with nc4.Dataset(f"{mfile}/{domain}{res}.nc", 'r') as ds:
-        rtvInfoObj.x_range = np.array(ds.variables["x_range"][:])
-        rtvInfoObj.y_range = np.array(ds.variables["y_range"][:])
+
+        grid.x_range = np.array(ds.variables["x_range"][:])
+        grid.y_range = np.array(ds.variables["y_range"][:])
 
         dd = np.array(ds.variables["dd"][:])
-        rtvInfoObj.dx = dd[0]
-        rtvInfoObj.dy = dd[1]
-        rtvInfoObj.size = np.array(ds.variables["size"][:])
-        rtvInfoObj.ocean_indices = np.array(ds.variables["ocean_indices"][:])
-        rtvInfoObj.ocean_xy = np.array(ds.variables["ocean_xy"][:,:])
-        setattr(rtvInfoObj, scircle_xfield,
+        grid.dx = dd[0]
+        grid.dy = dd[1]
+        grid.size = np.array(ds.variables["size"][:])
+        grid.ocean_indices = np.array(ds.variables["ocean_indices"][:])
+        grid.ocean_xy = np.array(ds.variables["ocean_xy"][:,:])
+        setattr(grid, scircle_xfield,
                 np.array(ds.variables[f"{scircle_xfield}"][:, :]))
-        setattr(rtvInfoObj, scircle_yfield,
+        setattr(grid, scircle_yfield,
                 np.array(ds.variables[f"{scircle_yfield}"][:, :]))
 
-        rtvInfoObj.resolution_km  = ds.getncattr('resolution_km')
-        rtvInfoObj.projection  = ds.getncattr('projection')
-        return rtvInfoObj
+        grid.resolution_km  = ds.getncattr('resolution_km')
+        grid.projection  = ds.getncattr('projection')
+        return grid
 
 def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
@@ -439,10 +441,10 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
         #have to get state from database to see if it's already been done
         state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
-        minYearCutoff = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
-        minMonthDay = 2
+        minYearCutoff = datetime(timeNow.year, 1, 20, 0, 0, tzinfo=timezone.utc)
+        minMonthDay = 13
 
-        if rtvTime.day <= minMonthDay:
+        if rtvTime.day >= minMonthDay:
             doMonthly = True
 
             month_diff = timeNow.month - state_time.month
@@ -460,7 +462,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 #replace the month in the datetime to do previous month's average
                 timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime < minYearCutoff:
+        if rtvTime > minYearCutoff:
             doYearly = True
 
             #check if average has been done

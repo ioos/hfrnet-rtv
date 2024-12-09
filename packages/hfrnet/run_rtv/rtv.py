@@ -13,6 +13,7 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveAscii import saveAscii
+from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 
 _log = logging.getLogger()
 
@@ -136,6 +137,16 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
             saveAscii(rtvProcessObj, fileNameList, rtvInfoObj, U_tot)
+
+            #save intermediate file (greater precision)
+            allInfo = {'metaDataObj': metaDataObj.to_dict(),
+                       'configObj': configObj.to_dict(),
+                       'rtvInfoObj': rtvInfoObj.to_dict(),
+                       'processObj': rtvProcessObj.to_dict()}
+            allInfo_dict = {'c':allInfo, 't':CalcTime, 'U':U_tot.to_dict(),
+                            'r': [r.to_dict() for r in radials]}
+            saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
+
         else:
             _log.info( 'No total solutions below netcdf hdop threshold' )
 

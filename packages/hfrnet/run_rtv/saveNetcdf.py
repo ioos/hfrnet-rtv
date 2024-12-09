@@ -73,6 +73,7 @@ def saveNetcdf(filename, d):
     for k in ['t', 'tc']:
         datetime_to_timestamp(d, k)
     if 'c' in d:
+
         d['c'] = copy.deepcopy(d['c'])
         ncid = d['c'].pop('ncid', None)
         if 'reprocess' in d['c']:

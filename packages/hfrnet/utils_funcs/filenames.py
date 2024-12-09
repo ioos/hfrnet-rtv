@@ -92,7 +92,7 @@ def filenames(configObj, rtvProcessObj, fileLocObj, time, process=None,
 
 def find_file(domain, resolution, method, time, directory, file_format):
     """search for file which matches config"""
-    
+
     data_file = Path(directory)
     search_par = (f"rtv_*{domain}*{resolution}*"
                   f"{method}*{time.strftime('%Y_%m_%d_%H%M')}*"
@@ -105,15 +105,15 @@ def find_file(domain, resolution, method, time, directory, file_format):
                       f"*_rtv"
                       f"*_{method}"
                       f"*.{file_format}")
-        
+
     data_file = list(data_file.glob(f"{search_par}"))
     if len(data_file) == 1:
         return data_file[0]
-        
+
     data_file_no25hr = [iFile for iFile in data_file if '25hr' not in str(iFile)]
     if len(data_file_no25hr) == 1:
         return data_file_no25hr[0]
-        
+
     msg = f"{file_format} not found: {data_file_no25hr}, {directory}/{search_par}"
     _log.warning(msg)
     return ""
@@ -159,12 +159,12 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.ncdir = Path(retObj.mdir, 'NetCDF')
 
     retObj.ncfilename = (f"{t.strftime('%Y%m%d%H%M')}"
-                         f"_hfr"
-                         f"_{domain}"
-                         f"_{resolution}"
-                         f"_rtv"
-                         f"_{method}"
-                         f".nc")
+                         f"_hfr_{domain}_{resolution}"
+                         f"_rtv_{method}.nc")
+
+    retObj.intermed_filename = (f"{t.strftime('%Y%m%d%H%M')}"
+                                f"_hfr_{domain}_{resolution}"
+                                f"_rtv_{method}_intermediate.nc")
 
     retObj.ncpathfile = find_file(domain, resolution, method, t, retObj.ncdir, 'nc')
     if retObj.ncpathfile == "":
@@ -172,6 +172,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
     retObj.output_ncfile = Path(retObj.output_dir, retObj.ncfilename)
+    retObj.intermed_filepath = Path(retObj.output_dir, retObj.intermed_filename)
 
     return retObj
 
