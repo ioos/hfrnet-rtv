@@ -10,6 +10,7 @@ import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
+import h5py
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
 from hfrnet.db_tools.db_tables import get_state_time
@@ -379,7 +380,7 @@ def setup_log_filename(my_pkgint, added_name=""):
 
     return handler
 
-def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
+def rtvNcid(metadataObj, configObj, rtvProcessObj, currTime):
     """
     %    Generates NetCDF ACDD ID attribute value
     %
@@ -401,12 +402,12 @@ def rtvNcid(metadataObj, configObj, rtvProcessObj, time):
 
     if rtvProcessObj.subprocess and rtvProcessObj.subprocess_name:
 
-        ncid = (f"{time.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+        ncid = (f"{currTime.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
                 f"hfr{rtvProcessObj.method}{rtvProcessObj.name}{rtvProcessObj.subprocess_name}"
                 f"{configObj.domain}{configObj.resolution}")
     else:
 
-        ncid = (f"{time.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+        ncid = (f"{currTime.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
                 f"hfr{rtvProcessObj.method}{rtvProcessObj.name}"
                 f"{configObj.domain}{configObj.resolution}")
 
@@ -421,40 +422,53 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     doMonthly = False
     doYearly = False
     timeNow = datetime.now(timezone.utc)
-    timeYearly = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
-    minMonthDay = 2
-
-    #have to get state from database to see if it's already been done
-    state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+    timeMonthly = rtvTime
+    timeYearly = rtvTime
 
     if reprocessing:
+
         #if timeNow is a month more than the reprocess date, then do monthly avg
         if (timeNow.month - rtvTime.month) >= 1:
             doMonthly = True
+
         #if reprocess date if previous year, then do yearly avg
         if (timeNow.year - rtvTime.year) >= 1:
             doYearly = True
-    else:
+
+    else:#NRT
+
+        #have to get state from database to see if it's already been done
+        state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+        minYearCutoff = datetime(timeNow.year, 1, 2, 0, 0, tzinfo=timezone.utc)
+        minMonthDay = 2
+
         if rtvTime.day <= minMonthDay:
             doMonthly = True
 
-            #check if average has been done
-            if state_time.month == timeNow.month:
+            month_diff = timeNow.month - state_time.month
+            # Average has already been done this month
+            if month_diff == 0:
                 doMonthly = False
+            elif month_diff == 1:
+                doMonthly = True
+            else:
+                msg = ("Error: time difference in month between db state time"
+                       f"and current time inproper: {month_diff}")
+                _log.error(msg)
 
             if doMonthly:
                 #replace the month in the datetime to do previous month's average
-                rtvTime = rtvTime.replace(month=rtvTime.month -1)
+                timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime < timeYearly:
+        if rtvTime < minYearCutoff:
             doYearly = True
 
             #check if average has been done
             if state_time.year == timeNow.year:
                 doYearly = False
-            
+
             if doYearly:
                 #replace year to do previous year's average
-                rtvTime = rtvTime.replace(year=rtvTime.year -1)
+                timeYearly = rtvTime.replace(year=rtvTime.year -1)
 
-    return (doMonthly, doYearly, rtvTime)
+    return (doMonthly, doYearly, timeMonthly, timeYearly)

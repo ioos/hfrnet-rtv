@@ -104,9 +104,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'stc':
 
-            for time in newRtvFiles:
+            for iTime in newRtvFiles:
                 #offset time to the center of the 25 hr window
-                center_time = time - timedelta(hours=12) 
+                center_time = iTime - timedelta(hours=12)
                 sumAvg = SumAndAvg('25 Hour', configObj, process,
                                    fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
@@ -135,15 +135,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'lta':
 
-            for time in newRtvFiles:
+            for iTime in newRtvFiles:
 
-                doMonthly, doYearly, time = ltaRunConfig(time, configObj, process)
-                
+                doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
+
                 if doMonthly:
 
                     #calculation
                     sumAvg = SumAndAvg("monthly", configObj, process,
-                                       fileLocObj, time, stcLtaInfoObj)
+                                       fileLocObj, monthTime, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
 
@@ -152,26 +152,26 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     avgObj.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
-                                             fileLocObj, time)
+                                             fileLocObj, monthTime)
 
                     #save intermediate file
                     allInfo = {'metaDataObj': metaDataObj.to_dict(),
                                'configObj': configObj.to_dict(),
                                'stcLtaInfoObj': stcLtaInfoObj.to_dict(),
                                'process': process.to_dict()}
-                    allInfo_dict = {'c': allInfo, 't': time, 'S': sumObj.to_dict()}
+                    allInfo_dict = {'c': allInfo, 't': iTime, 'S': sumObj.to_dict()}
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
                     #save final file
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
-                                  process, time, avgObj)
+                                  process, iTime, avgObj)
                     saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
 
                 if doYearly:
                     #calculation
                     sumAvg = SumAndAvg("annual", configObj, process,
-                                       fileLocObj, time, stcLtaInfoObj)
+                                       fileLocObj, yearTime, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
 
@@ -180,10 +180,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     avgObj.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
-                                             fileLocObj, time)
+                                             fileLocObj, yearTime)
 
                     #save final file
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
-                                  process, time, avgObj)
+                                  process, iTime, avgObj)
                     saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)

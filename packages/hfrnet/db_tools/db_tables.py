@@ -402,12 +402,11 @@ def get_state_time(configObj, process_name):
 	
 	with db_manager(configObj.confdb) as db_class:
 		# Build & execute query
-		sqlquery = (
-			'SELECT time,csv '
-            'FROM state '
-            f"WHERE name = '{process_name}' "
-            f"AND domain_id = '{configObj.domain_id}' "
-            f"AND resolution_id = '{configObj.resolution_id}' ")
+		sqlquery = ('SELECT time,csv '
+                            'FROM state '
+                            f"WHERE name = '{process_name}' "
+                            f"AND domain_id = '{configObj.domain_id}' "
+                            f"AND resolution_id = '{configObj.resolution_id}' ")
 		
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
@@ -418,8 +417,5 @@ def get_state_time(configObj, process_name):
 		else:
 			state_time = None
 			state_csv = ''
-			
+
 	return state_time, state_csv
-	
-
-
