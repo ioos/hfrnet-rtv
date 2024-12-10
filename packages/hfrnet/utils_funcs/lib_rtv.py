@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""lib for processing rtv"""
+
 import numpy as np
 
 
@@ -138,7 +140,7 @@ class FileLocations(BaseObject):
         self.msumfilename = ""
         self.msumpathfile = ""
         self.input_dir = ""
-        self.input_matfile = ""
+        self.input_file = ""
         self.output_dir = ""
         self.output_ncfile = ""
         self.intermed_ncfilename = ""

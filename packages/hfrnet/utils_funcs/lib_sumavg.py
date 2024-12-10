@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""lib of Classes needed for doing sum and avg"""
+
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import Grid, LandInfo, BaseObject
@@ -12,8 +14,8 @@ class SumAvgInfo(BaseObject):
         self.nGood = []
         self.uSum = []
         self.vSum = []
-        self.u2Sum = []
-        self.v2Sum = []
+        self.u2sum = []
+        self.v2sum = []
         self.uMin = []
         self.uMax = []
         self.vMin = []
@@ -22,6 +24,8 @@ class SumAvgInfo(BaseObject):
         self.vAvg = []
         self.uVar = []
         self.vVar = []
+        self.lat = []
+        self.lon = []
         self.grid = Grid()
         self.land = LandInfo([], [], 0)
 

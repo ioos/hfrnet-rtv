@@ -13,7 +13,9 @@ from dateutil import parser
 import h5py
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
+from hfrnet.utils_funcs import constsHFR
 from hfrnet.db_tools.db_tables import get_state_time
+from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
 
@@ -71,15 +73,15 @@ def read_total_file(filename):
     try:
         try:
             raw = loadmat(filename)
+            data['info']['version'] = raw.get('__version__', '')
+            data['info']['header'] = raw.get('__header__', '')
+            data['info']['globals'] = raw.get('__globals__', '')
+
+            data['data'] = process_record(raw)
         except Exception:
             _log.info("Loading netCDF4 file")
-            raw = nc4.Dataset(filename,'r')
+            data = loadNetcdf(filename)
 
-        data['info']['version'] = raw.get('__version__', '')
-        data['info']['header'] = raw.get('__header__', '')
-        data['info']['globals'] = raw.get('__globals__', '')
-
-        data['data'] = process_record(raw)
     except Exception as e:
         msg = f"Could not load {filename}: {e}"
         _log.error(msg)
@@ -460,7 +462,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 #replace the month in the datetime to do previous month's average
                 timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime > YEAR_AVG_MIN_DATE:
+        if rtvTime > constsHFR.YEAR_AVG_MIN_DATE:
             doYearly = True
 
             #check if average has been done

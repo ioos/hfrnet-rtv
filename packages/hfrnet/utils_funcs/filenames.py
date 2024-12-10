@@ -118,6 +118,21 @@ def find_file(domain, resolution, method, time, directory, file_format):
     _log.warning(msg)
     return ""
 
+def find_intermediate_file(directory, search_par, file_format):
+    """get the monthSum file"""
+
+    data_file = list(directory.glob(f"{search_par}.{file_format}"))
+    if len(data_file) == 1:
+        return data_file[0]
+
+    if len(data_file) > 1:
+        msg = f"Mutiple matching files: {data_file}"
+        _log.warning(msg)
+        return ""
+
+    msg = f"File not found: {search_par}.{file_format}"
+    _log.warning(msg)
+    return ""
 
 # RTV paths & files
 def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
@@ -138,9 +153,11 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.mpathfile = find_file(domain, resolution, method, t, retObj.mdir, 'mat')
 
     if retObj.mpathfile == "":
+        retObj.mpathfile = find_file(domain, resolution, method, t, retObj.mdir, 'nc')
+    if retObj.mpathfile == "":
         retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
 
-    retObj.input_matfile = retObj.mpathfile
+    retObj.input_file = retObj.mpathfile
 
     # ASCII
     retObj.asciidir = retObj.output_dir
@@ -184,14 +201,6 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj = fileLocObj
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
-    # Mat-file
-    #retObj.mdir = Path(fileLocObj.input_dir, t.strftime('%Y_%m'))
-
-    #retObj.mfilename = (f"rtv-25hrAvg_{configObj.domain}_"
-      #                  f"{configObj.resolution}_{rtvProcessObj.method}_"
-     #                   f"{t.strftime('%Y_%m_%d_%H%M')}.mat")
-
-    #retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
 
     # ASCII
     retObj.asciidir = retObj.output_dir
@@ -230,20 +239,10 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
 
-    # Mat-file (sum)
-    retObj.msumdir = Path(fileLocObj.input_dir, 'long_term_averages',
-                          t.strftime('%Y/%m'))
-
-    retObj.msumfilename = (f"rtv-monthSum_{domain}_"
-                           f"{resolution}_{rtvProcessObj.method}_"
-                           f"{t.strftime('%Y%m')}.mat")
-
-    retObj.msumpathfile = Path(fileLocObj.msumdir, fileLocObj.msumfilename)
-
     # Input rtv file
     retObj = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t)
     retObj.input_dir = fileLocObj.input_dir
-    retObj.input_matfile = retObj.mpathfile
+    retObj.input_file = retObj.mpathfile
 
     ### Output files
     # Mat-file (average)
@@ -271,8 +270,8 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #intermediate file
     retObj.intermed_filename = (f"rtv-monthSum_{domain}_"
-                                  f"{resolution}_{rtvProcessObj.method}_"
-                                  f"{t.strftime('%Y%m')}.nc")
+                                f"{resolution}_{rtvProcessObj.method}_"
+                                f"{t.strftime('%Y%m')}.nc")
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
@@ -296,12 +295,16 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.output_dir = fileLocObj.output_dir
 
-    retObj.mfilename = (f"rtv-monthSum_{domain}_"
-                        f"{resolution}_{rtvProcessObj.method}_"
-                        f"{t.strftime('%Y%m')}.mat")
     retObj.input_dir = Path(fileLocObj.input_dir, 'long_term_averages',
                             t.strftime('%Y'), t.strftime('%m'))
-    retObj.input_matfile = Path(retObj.input_dir, retObj.mfilename)
+
+    fileForm = (f"rtv-monthSum_{domain}_"
+                f"*{resolution}_{rtvProcessObj.method}_"
+                f"*{t.strftime('%Y%m')}")
+    temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'mat')
+    if not temp_file:
+        temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'nc')
+    retObj.input_file = temp_file
 
     # Mat-file
     retObj.mdir = Path(fileLocObj.output_dir, 'long_term_averages',

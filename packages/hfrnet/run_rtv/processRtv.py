@@ -94,6 +94,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             continue
 
         if process.name.casefold() == 'rtv':
+
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
                                   process, rtvInfoObj, compTotObj)
             if len(newRtvFiles) == 0:
@@ -134,7 +135,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 saveAscii(process, fileNameList, stcInfoObj, avgObj)
 
         if process.name.casefold() == 'lta':
-
+            newRtvFiles = [configObj.runTime]
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
