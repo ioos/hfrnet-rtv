@@ -441,10 +441,8 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
         #have to get state from database to see if it's already been done
         state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
-        minYearCutoff = datetime(timeNow.year, 1, 20, 0, 0, tzinfo=timezone.utc)
-        minMonthDay = 13
 
-        if rtvTime.day >= minMonthDay:
+        if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
 
             month_diff = timeNow.month - state_time.month
@@ -462,7 +460,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 #replace the month in the datetime to do previous month's average
                 timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime > minYearCutoff:
+        if rtvTime > YEAR_AVG_MIN_DATE:
             doYearly = True
 
             #check if average has been done
