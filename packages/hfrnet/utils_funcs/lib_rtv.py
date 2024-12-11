@@ -82,15 +82,19 @@ class DatabaseConfig:
     """
     def __init__(self):
         self.user = ""
-        self.password = ""
-        self.name = ""
-        self.driver = ""
-        self.logintimeout = 0
-        self.port = 0
-        self.protocol = ""
-        self.server = ""
-        self.url = ""
-        self.vendor = ""
+        self.host = ""
+        self.port = ""
+        self.password = 0
+        self.ssl_ca = 0
+        self.ssl_verify_identity = ""
+        self.ssl_verify_cert = ""
+        self.auth_plugin_map = ""
+        self.dbname = ""
+        #--- This is to use the correct parameteres when connection
+        # to the DB server depends on the OS
+        # if it's on a linux, set it to 'rhw'
+        # if it's on the cloud 9, set it to 'aws'
+        self.run_env = "rhw" # "aws"
 
 #things from the configureRtv
 class ConfigureVals(BaseObject):
@@ -101,8 +105,11 @@ class ConfigureVals(BaseObject):
         self.domain = domain
         self.resolution = resolution
         self.times = None
-        self.confdb = DatabaseConfig()
-        self.raddb = DatabaseConfig()
+        #-- The DB object
+        self.dbObject = DatabaseConfig()
+        self.config_dbname=''
+        self.radial_dbname=''
+        # self.raddb = DatabaseConfig()
         self.reprocess = True
         # This will be the now time whenever the current time is needed
         # This will be set to the start time in the yml file
@@ -111,7 +118,7 @@ class ConfigureVals(BaseObject):
     def to_dict(self):
         """return the dict for all attributes in the object"""
         d = super().to_dict()
-        for k in ['confdb', 'raddb', 'times']:
+        for k in ['dbObject', 'times']:
             d.pop(k)
         return d
 

@@ -219,7 +219,7 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 def read_site_table(configObj):
 	# Connect to the configuration database
 	
-	with db_manager(configObj.confdb) as db_class:
+	with db_manager(configObj.dbObject) as db_class:
 		
 		# Build & execute query
 		sqlquery = (
@@ -255,7 +255,7 @@ def read_site_table(configObj):
 def get_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 	# Check for valid domain
 	# Connect to the configuration database
-	with db_manager(configObj.raddb) as db_class:
+	with db_manager(configObj.dbObject,configObj.radial_dbname) as db_class:
 		
 		# Build & execute query
 		sqlquery = (
@@ -302,7 +302,7 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 	TIME_FORMAT = "%H:%M:%S"
 	DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
 	
-	with db_manager(configObj.raddb) as db_class:
+	with db_manager(configObj.dbObject,configObj.radial_dbname) as db_class:
 		sqlquery = ('SELECT '
 		            'FROM_UNIXTIME(r.time) AS t,n.net,s.sta,patterntype,file_arrival_time,'
 		            'lat,lon,range_res,range_bin_end,manufacturer,dfile,dir '
@@ -382,7 +382,7 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 def get_active_sitelist(configObj, calcTime):
 	# Connect to the configuration database
 	
-	with db_manager(configObj.confdb) as db_class:
+	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = (
 			'SELECT s.network,s.name,c.beampattern,c.use_radial_minute,s.id '
@@ -400,7 +400,7 @@ def get_active_sitelist(configObj, calcTime):
 def get_state_time(configObj, process_name):
 	# Connect to the configuration database
 	
-	with db_manager(configObj.confdb) as db_class:
+	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT time,csv '
                             'FROM state '

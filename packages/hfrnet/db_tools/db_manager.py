@@ -1,5 +1,6 @@
 """db_manager"""
 
+from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
 import pymysql
 import logging
 _log = logging.getLogger()
@@ -7,14 +8,9 @@ _log = logging.getLogger()
 class db_manager:
     """manages the database connection and queries"""
 
-    def __init__(self, confdb):
-        self.name = confdb.name
-        self.user = confdb.user
-        self.host = confdb.host
-        self.port = confdb.port
-        self.region = confdb.host
-        self.password = confdb.password
-        self.sslrootcert = confdb.sslrootcert
+    def __init__(self, dbObject, dbname='rtvproc'):
+        self.dbConfig = dbObject
+        self.dbConfig.db_name=dbname
         self.conn_handel = None
 
     def __enter__(self):
@@ -26,15 +22,29 @@ class db_manager:
 
     def connect(self):
         try:
-            self.conn_handel = pymysql.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.name)
+            if self.dbConfig.run_env == 'rhw':
+                # -- connect on local rhw linux
+                self.conn_handel = pymysql.connect(
+                    host=self.dbConfig.host,
+                    user=self.dbConfig.user,
+                    database=self.dbConfig.db_name)
+            else:
+                #--- connect on AWS
+                self.conn_handel = pymysql.connect(
+                user = USER,
+                database = DBNAME,
+                host = ENDPOINT,
+                port = PORT,
+                password = token,
+                ssl_ca = './us-east-1-bundle.pem',
+                ssl_verify_identity = True,
+                ssl_verify_cert = True,
+                auth_plugin_map = {'mysql_clear_password': None},)
+        
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-                   f", Can't connect to the database: user={self.user}, "
-                   f"database={self.name} , "
+                   f", Can't connect to the database: user={self.dbConfig.user}, "
+                   f"database={self.dbConfig.name} , "
                    f"exist")
             _log.fatal(msg)
     #----------------------------------------------------------
@@ -117,18 +127,16 @@ def set_db_info( config, configObj):
     """
     Set DB info to be used later...?
     """
-    configObj.confdb.user = config['databases.config.user']
-    configObj.confdb.name = config['databases.config.name']
-    configObj.confdb.host = config['databases.config.host']
-    configObj.confdb.port = config['databases.config.port']
-    configObj.confdb.region = config['databases.config.region']
-    configObj.confdb.password = config['databases.config.password']
-    configObj.confdb.sslrootcert = config['databases.config.sslrootcert']
+    configObj.dbObject.user = config['databases.user']
+    configObj.dbObject.host = config['databases.host']
+    configObj.dbObject.port = config['databases.port']
+    configObj.dbObject.password = config['databases.password']
+    configObj.dbObject.ssl_ca = config['databases.ssl_ca']
+    configObj.dbObject.ssl_verify_identity = config['databases.ssl_verify_identity']
+    configObj.dbObject.ssl_verify_cert = config['databases.ssl_verify_cert']
+    configObj.dbObject.auth_plugin_map = config['databases.auth_plugin_map']
+    configObj.dbObject.run_env = config['databases.run_env']
+    #---- set the environment parameters
+    configObj.config_dbname = config['databases.config_dbname']
+    configObj.radial_dbname = config['databases.radial_dbname']
 
-    configObj.raddb.user = config['databases.radial.user']
-    configObj.raddb.name = config['databases.radial.name']
-    configObj.raddb.host = config['databases.radial.host']
-    configObj.raddb.port = config['databases.radial.port']
-    configObj.raddb.region = config['databases.radial.region']
-    configObj.raddb.password = config['databases.radial.password']
-    configObj.raddb.sslrootcert = config['databases.radial.sslrootcert']

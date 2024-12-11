@@ -77,24 +77,17 @@ class Interface(aim.Interface):
             'radial_local_dir': str,
         },
         'databases': {
-            'config': {
-                'name': str,
-                'user': str,
-                'host': str,
-                'port': str,
-                'region': str,
-                'password': str,
-                'sslrootcert': str,
-            },
-            'radial': {
-                'name': str,
-                'user': str,
-                'host': str,
-                'port': str,
-                'region': str,
-                'password': str,
-                'sslrootcert': str,
-            },
+            'run_env': str,
+            'user': str,
+            'host': str,
+            'port': str,
+            'password': str,
+            'ssl_ca': str,
+            'ssl_verify_identity': str,
+            'ssl_verify_cert': str,
+            'auth_plugin_map': {},
+            'config_dbname': str,
+            'radial_dbname': str,
         },
     }
     
@@ -167,7 +160,7 @@ class Interface(aim.Interface):
 
         set_db_info(self.config, self.mconfigureVals)
         # get the analysis parametrers for domain, res, rtv,stc,lta
-        with db_manager(self.mconfigureVals.confdb) as db_class:
+        with db_manager(self.mconfigureVals.dbObject) as db_class:
     
             # Check for valid domain
             try:
