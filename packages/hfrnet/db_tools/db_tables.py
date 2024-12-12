@@ -419,3 +419,21 @@ def get_state_time(configObj, process_name):
 			state_csv = ''
 
 	return state_time, state_csv
+
+
+def get_files_list_intem_table(configObj, calcTime, process_name):
+	# Check for valid domain
+	# Connect to the configuration database
+	
+	with db_manager(configObj.dbObject, configObj.radial_dbname) as db_class:
+		sqlquery = (
+			'SELECT f.name,f.dir from inter_files f '
+			f"WHERE f.domain = '{configObj.domain}' "
+			f"AND f.res = '{configObj.resolution}' "
+			f"AND f.stime = '{calcTime}' "
+			f"AND f.process = '{process_name}'")
+		
+		file_list = db_class.get_query(sqlquery)
+
+		nrow = len(next(iter(file_list.values())))
+		return file_list, nrow
