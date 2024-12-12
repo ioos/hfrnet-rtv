@@ -1,9 +1,9 @@
 """rtvLoadRadials"""
 
-import re
+#import re
 import logging
 from pathlib import Path
-from datetime import timedelta
+
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RadialInfo
@@ -11,7 +11,7 @@ from hfrnet.run_rtv.rtvReadRadialFile import rtvReadRadialFile
 
 from hfrnet.utils_funcs.utility import _dict, read_total_file
 from hfrnet.utils_funcs.math_funcs import  km2deg, scircle1, inpolygon, scxsc
-from hfrnet.utils_funcs.database import Database
+from hfrnet.db_tools.db_tables import get_files_list_radialtable
 
 _log = logging.getLogger()
 
@@ -23,12 +23,12 @@ def _update_key(d):
          'manufacturer': 'manufacturer', 'dfile': 'file', 'dir': 'dir'}
     return _dict((m.get(key, key), value) for (key, value) in d.items())
 
-def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, timeCalc):
+def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, calcTime):
     """
     % RTVLOADRADIALS Loads radial data for RTV processing
     %
     %    radials = rtvLoadRadials( configObj, siteInfoObj, fileLocObj, rtvInfoObj, 
-    %                              landInfoObj, timeCalc ) 
+    %                              landInfoObj, calcTime )
     %    returns a structure containing
     %    radial data from all sites for the given hour of RTV processing.
     %    Data are provided for the preferred beam pattern and filtered by
@@ -57,7 +57,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     %
     %        (configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj) - Structures 
     %                    containing configuration parameters
-    %        timeCalc      - Datetime (scalar)
+    %        calcTime      - Datetime (scalar)
     %
     %    Outputs:
     %
@@ -98,79 +98,71 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
     # Initialize return values
     radials = [] # isempty returns true
-
-    # Determine if we're reprocessing
-    reprocessing = True
-    if configObj.reprocess:
-        reprocessing = True
+    nSite = len(siteInfoObj)
 
     # Ensure radial selection consistent with previous run(s)
     # Check if a file already exists
     last = None
 
-    if fileLocObj.mpathfile.is_file():
+    if fileLocObj.input_file.is_file():
+        
+        # Load previous radial dataset
+        try:
+            last = read_total_file(fileLocObj.input_file)
+            errmsg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
+            _log.info(errmsg)
 
-        if reprocessing:
-            # Error out if we're reprocessing
-            errmsg = (f'Total mat-file ({fileLocObj.mpathfile}) exists. Should '
-                      'have been removed to ensure consistent results.')
-            _log.error(errmsg)
-        else:
-            # Load previous radial dataset
-            try:
-                last = read_total_file(fileLocObj.mpathfile, '-mat', 'r')
-                errmsg = f'Loaded radial structure from prior run ({fileLocObj.mpathfile})'
-                _log.info(errmsg)
-
-            except Exception as e:
-                errmsg = (f'Failed to load radial structure from prior run ('
-                          f'{fileLocObj.mpathfile}): {str(e)}')
-                _log.warning(errmsg)
-                _log.warning('Cannot ensure consistent radial selection if results are '
-                             'combined with previous run(s)')
+        except Exception as e:
+            errmsg = (f'Failed to load radial structure from prior run ('
+                      f'{fileLocObj.input_file}): {str(e)}')
+            _log.warning(errmsg)
+            _log.warning('Cannot ensure consistent radial selection if results are '
+                         'combined with previous run(s)')
 
     else:
-        errmsg = f'{fileLocObj.mpathfile} not found, no pre-existing radial data'
+        errmsg = f'{fileLocObj.input_file} not found, no pre-existing radial data'
         _log.debug(errmsg)
 
     # Modify radial selection as needed based on previous run(s)
-    if not last:
+    if last is not None:
         nMod = 0
-
+        last_data = last['data']
         # Loop over each site defined in the config
+        last_network = np.array([rr for rr in last_data.r.network])
+        last_site = np.array([rr for rr in last_data.r.site])
         for iSiteInfo in siteInfoObj:
 
             # Look for a site/network match in existing radial data
-            siteMatch = ((iSiteInfo.network == np.array([rr.network for rr in last.r])) &
-                         (iSiteInfo.name == np.array([rr.site for rr in last.r])))
-
+            siteMatch = ((iSiteInfo.network == last_network) &
+                         (iSiteInfo.name == last_site))
+            
             if not np.any(siteMatch):
                 continue
-
 
             # Error out if there is more than one matched record
             if np.count_nonzero(siteMatch) > 1:
 
                 errmsg = (f'Found two records of radial data from {iSiteInfo.network}:'
                           f'{iSiteInfo.name} in previous radial data structure '
-                          f'loaded from {fileLocObj.mpathfile}')
+                          f'loaded from {fileLocObj.input_file}')
                 _log.error(errmsg)
 
             # Check that the patterntypes are consistent
             siteMatch = np.argwhere(siteMatch)[0][0]
-            if iSiteInfo.beampattern[0] != last.r[siteMatch].patterntype:
 
-                if 'i' == last.r[siteMatch].patterntype:
+            if iSiteInfo.beampattern != last_data.r.patterntype[siteMatch]:
+
+                if 'i' == last_data.r.patterntype[siteMatch]:
                     iSiteInfo.beampattern = 'ideal'
 
-                elif 'm' == last.r[siteMatch].patterntype:
+                elif 'm' == last_data.r.patterntype[siteMatch]:
                     iSiteInfo.beampattern = 'measured'
 
                 else:
-                    errmsg = (f'Unknown beam pattern type {last.r[siteMatch].patterntype}'
+                    errmsg = (f'Unknown beam pattern type {last_data.r.patterntype[siteMatch]}'
                               f' found for {iSiteInfo.network}:{iSiteInfo.name}'
                               ' in previous radial data structure loaded from '
-                              f'{fileLocObj.mpathfile}')
+                              f'{fileLocObj.input_file}')
                     _log.error(errmsg)
 
                 errmsg = (f"Modified {iSiteInfo.network }:{iSiteInfo.name} "
@@ -180,10 +172,13 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
                 nMod = nMod + 1
 
-            # Check that useMinutes is consistent
-            if iSiteInfo.useMinute != last.r[siteMatch].t.minute:
+            # FIX: Check that useMinutes is consistent
+            #FIX: just a guess, not sure what the minute actually is in the data structure
+            #Indices are to get the first value in the nested list of matlab structure
+            last_data_minute = last_data.r.t[siteMatch][0][3][1][0]
+            if iSiteInfo.useMinute != last_data_minute:
 
-                iSiteInfo.useMinute = last.r[siteMatch].t.minute
+                #iSiteInfo.useMinute = int(last_data_minute)
 
                 errmsg = (f'Modified {iSiteInfo.network}:{iSiteInfo.name} '
                           f'selection to use radials from {iSiteInfo.useMinute} '
@@ -203,134 +198,39 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                        'previous runs')
 
     # Build radial query
+    file_list_temp = []
+    results, nfiles = get_files_list_radialtable(configObj, calcTime, siteInfoObj)
 
     # Note: t +/- 30 min. is a query optimization
-    sqlquery = ('SELECT '
-                'FROM_UNIXTIME(r.time) AS t,n.net,s.sta,patterntype,file_arrival_time,'
-                'lat,lon,range_res,range_bin_end,manufacturer,dfile,dir '
-                'FROM radialfiles r '
-                'JOIN network n ON n.network_id = r.network_id '
-                'JOIN site s ON s.site_id = r.site_id '
-                f"WHERE FROM_UNIXTIME(r.time) >= '{ timeCalc - timedelta(minutes=30)}' "
-                f"AND FROM_UNIXTIME(r.time) < '{ timeCalc + timedelta(minutes=30)}' ")
-
-    if not reprocessing:
-        sqlquery = (f'{sqlquery}'
-                    f"AND r.file_arrival_time < '{rtvInfoObj.new_state}' ")
-
-    # Site conditions
-    nSite = len(siteInfoObj)
-
-    if nSite > 0:
-        sqlquery = f"{sqlquery}AND ( "
-    for I in range(nSite):
-
-        iSiteInfo = siteInfoObj[I]
-        # Network and site
-        sqlquery = (f'{sqlquery}'
-                    f"( n.net = '{iSiteInfo.network}' AND "
-                    f"s.sta = '{iSiteInfo.name}' ") ##ok<*AGROW>
-
-        # Beampattern
-        if iSiteInfo.beampattern == 'ideal':
-            sqlquery = f"{sqlquery}AND r.patterntype = 'i' "
-        elif iSiteInfo.beampattern == 'measured':
-            sqlquery = f"{sqlquery}AND r.patterntype = 'm' "
-        else:
-            errmsg = f'Unknown beam pattern type {iSiteInfo.beampattern}'
-            _log.error(errmsg)
-
-        DATE_FORMAT = "%Y-%m-%d"
-        TIME_FORMAT = "%H:%M:%S"
-        DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
-        currUseMinute = iSiteInfo.useMinute
-        # Radial timestamp
-        if currUseMinute == 0:
-            tr = timeCalc.strftime(DATETIME_FORMAT)
-        elif 0 <currUseMinute < 30:
-            tr = ((timeCalc + timedelta(minutes = currUseMinute )).
-                  strftime(DATETIME_FORMAT))
-        elif 30 <= currUseMinute < 60:
-            tr = ((timeCalc - timedelta(minutes = 60 - currUseMinute )).
-                  strftime(DATETIME_FORMAT))
-        else:
-            tr = ""
-            errmsg = (f'useMinute value of {currUseMinute} is out of range '
-                      f'for site {iSiteInfo.network}:{iSiteInfo.name}.'
-                      'Value must be [0-59]')
-            _log.error(errmsg)
-
-        sqlquery = f"{sqlquery}AND FROM_UNIXTIME(FLOOR(r.time/60)*60) = '{tr}')"
-
-        # End statement
-        if I == nSite - 1:
-            sqlquery = f"{sqlquery})"
-        else:
-            sqlquery = f"{sqlquery} OR "
-
-    # Submit Query
-    # Connect to radial database
-    conn = Database(user=configObj.raddb.user,
-                    password=configObj.raddb.password)
-    conn.connect()
-    conn.use('hfradar')
-
-    # Check connection is open
-    if not conn.is_open():
-        errmsg = 'Failed to connect to radial database'
-        _log.error(errmsg)
-
-    results = None
-    # Execute query
-    try:
-        results = conn.sql(sqlquery, as_dict=1)
-
-    except Exception as e:
-        errmsg = f'Database query error {str(e)}'
-        _log.error(errmsg)
-
-    conn.close()
-    nRows = 0
     if results:
-        nRows = len(results)
-
-    # Check results
-    if nRows == 0:
-        # No match
-        return radials
-
-    errmsg = f'Site query returned {nRows} record(s)'
-    _log.debug(errmsg)
-
-    q = []
-    if results:
-        q = results
+        file_list_temp = results
 
     # Log & remove any records that have NULL where data should be required
-    rmRecordIndex = np.zeros(len(q), dtype=bool)
+    rmRecordIndex = np.zeros(nfiles, dtype=bool)
 
-    for I in range(len(q)):
+    for I in range(nfiles):
+        
+        file_list_temp[I] = _update_key(file_list_temp[I])
+        Radialfile_record = file_list_temp[I]
 
-        q[I] = _update_key(q[I])
-
-        if (q[I].file == "" or q[I].dir == "" or
-            np.isnan(q[I].lat) or np.isnan(q[I].lon) or
-            (not reprocessing and (q[I].arrivaltime == ""))):
+        if (Radialfile_record.file == "" or Radialfile_record.dir == "" or
+            np.isnan(Radialfile_record.lat) or np.isnan(Radialfile_record.lon) or
+            (not configObj.reprocess and (Radialfile_record.arrivaltime == ""))):
             rmRecordIndex[I] = True
-            errmsg = (f'Radialfiles record {q[I].network}:{q[I].site} '
-                      f'({q[I].beampattern} {q[I].t} is missing required fields,'
-                      ' removing from processing')
+            errmsg = (f'Radialfiles record {Radialfile_record.network}:'
+                      f'{Radialfile_record.site} {Radialfile_record.beampattern} '
+                      f'{Radialfile_record.t} is missing required fields, removing from processing')
             _log.warning(errmsg)
 
     if np.any(rmRecordIndex):
         for I in range(nSite-1, -1, -1):
             if rmRecordIndex[I]:
-                del q[I]
+                del file_list_temp[I]
 
-    nq = len(q)
+    nq = len(file_list_temp)
     newRadialIndex = None
     # Index new radials
-    if reprocessing:
+    if configObj.reprocess:
         newRadialIndex = np.ones(nq, dtype=bool)
 
     else:
@@ -338,22 +238,22 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         for I in range(nq):
 
-            if q[I].arrivaltime >= rtvInfoObj.current_state:
+            if file_list_temp[I].arrivaltime >= rtvInfoObj.current_state:
 
                 newRadialIndex[I] = True
-                errmsg = (f'New radial from {q[I].network}:{q[I].site} '
-                          f'({q[I].beampattern}) arrived at {q[I].arrivaltime}')
+                errmsg = (f'New radial from {file_list_temp[I].network}:{file_list_temp[I].site} '
+                          f'({file_list_temp[I].beampattern}) arrived at {file_list_temp[I].arrivaltime}')
                 _log.debug(errmsg)
 
             else:
-                errmsg = (f'Obtained radial from {q(I).network}:{q(I).site}'
-                          f'({q[I].beampattern})')
+                errmsg = (f'Obtained radial from {file_list_temp[I].network}:{file_list_temp[I].site}'
+                          f'({file_list_temp[I].beampattern})')
                 _log.debug(errmsg)
 
     nNewRadials = np.count_nonzero(newRadialIndex)
     if nNewRadials:
 
-        if reprocessing:
+        if configObj.reprocess:
             errmsg = f'{nNewRadials} radial(s) to be reprocessed'
             _log.info(errmsg)
 
@@ -380,21 +280,21 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         # Site range
         #   If range resolution or end metadata are either NaN (NULL) or less than zero,
         #   assume metadata is bad or unavailable and fall back to a max range value
-        if (q[I].rangeend is None or q[I].rangeres is None or
-            q[I].rangeend <= 0 or q[I].rangeres <= 0):
+        if (file_list_temp[I].rangeend is None or file_list_temp[I].rangeres is None or
+            file_list_temp[I].rangeend <= 0 or file_list_temp[I].rangeres <= 0):
 
-            q[I].siterange = 300 + rtvInfoObj.grid_search_radius
+            file_list_temp[I].siterange = 300 + rtvInfoObj.grid_search_radius
 
-            errmsg = (f'Missing radial range resolution or end from {q[I].network}:'
-                      f'{q[I].site}, setting siterange to {q[I].siterange } km')
+            errmsg = (f'Missing radial range resolution or end from {file_list_temp[I].network}:'
+                      f'{file_list_temp[I].site}, setting siterange to {file_list_temp[I].siterange } km')
             _log.warning(errmsg)
         else:
-            q[I].siterange = q[I].rangeres * q[I].rangeend + buf * q[I].rangeres + \
+            file_list_temp[I].siterange = file_list_temp[I].rangeres * file_list_temp[I].rangeend + buf * file_list_temp[I].rangeres + \
                 rtvInfoObj.grid_search_radius
 
         # Small circle using WGS84, adding grid search radius and fraction of
         # range resolution
-        sc[I].lat, sc[I].lon = scircle1(q[I].lat, q[I].lon, q[I].siterange)
+        sc[I].lat, sc[I].lon = scircle1(file_list_temp[I].lat, file_list_temp[I].lon, file_list_temp[I].siterange)
 
 
     # Iterate over each new site
@@ -415,22 +315,22 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                 continue
 
             # Check if this site's origin is inside the new site's domain
-            is_in = inpolygon([q[J].lon], [q[J].lat], sc[I].lon, sc[I].lat)
+            is_in = inpolygon([file_list_temp[J].lon], [file_list_temp[J].lat], sc[I].lon, sc[I].lat)
             if is_in[0]:
                 loadRadialIndex[I] = True
                 loadRadialIndex[J] = True
                 continue
 
             # Check if the new site's origin is inside this site's domain
-            is_in = inpolygon([q[I].lon], [q[I].lat], sc[J].lon, sc[J].lat)
+            is_in = inpolygon([file_list_temp[I].lon], [file_list_temp[I].lat], sc[J].lon, sc[J].lat)
             if is_in[0]:
                 loadRadialIndex[I] = True
                 loadRadialIndex[J] = True
                 continue
 
             # Look for intersection of sites
-            ip1, ip2 = scxsc((q[I].lat, q[I].lon), km2deg(q[I].siterange),
-                (q[J].lat, q[J].lon), km2deg(q[J].siterange))
+            ip1, ip2 = scxsc((file_list_temp[I].lat, file_list_temp[I].lon), km2deg(file_list_temp[I].siterange),
+                (file_list_temp[J].lat, file_list_temp[J].lon), km2deg(file_list_temp[J].siterange))
 
             if ip1 is None:
                 # No intersection
@@ -450,7 +350,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             continue
 
         if not loadRadialIndex[I]:
-            errmsg = f'No overlap found with new data from {q[I].network}:{q[I].site}'
+            errmsg = f'No overlap found with new data from {file_list_temp[I].network}:{file_list_temp[I].site}'
             _log.info(errmsg)
 
 
@@ -471,22 +371,25 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             continue
 
         n = n + 1
-
-        # Define local path to radials
-        if (configObj.raddb == 'israddirregex' and
-            configObj.raddb == 'raddirreplace'):
-            q[I].dir = re.sub(configObj.raddb.raddirregex,
-                              configObj.raddb.raddirreplace, q[I].dir)
+        ifile = file_list_temp[I]
+        #--- Not sure what this is for?????????????????????
+        # # Define local path to radials
+        # if (configObj.raddb == 'israddirregex' and
+        #     configObj.raddb == 'raddirreplace'):
+        #     ifile.dir = re.sub(configObj.raddb.raddirregex,
+        #                       configObj.raddb.raddirreplace, ifile.dir)
+        
+        #------------------------------
         # FIX: to be removed
-        q[I].dir = q[I].dir.replace(str(fileLocObj.radial_remote_dir),
+        ifile.dir = ifile.dir.replace(str(fileLocObj.radial_remote_dir),
                                     str(fileLocObj.radial_local_dir))
-        q[I].fullfile = Path(f"{q[I].dir}/{q[I].file}")
+        ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
 
         # Load radial data
         d = None
         try:
-            d = rtvReadRadialFile(q[I])
-            msg = (f'Loaded {len(d.latitude)} radials from {q[I].file} '
+            d = rtvReadRadialFile(ifile)
+            msg = (f'Loaded {len(d.latitude)} radials from {ifile.file} '
                    f' ({n} of {nLoadRadials})')
             _log.info(msg)
 
@@ -514,7 +417,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                 _log.debug(errmsg)
 
                 if not d.latitude:
-                    errmsg = (f'No radial data left from {q[I].file}'
+                    errmsg = (f'No radial data left from {ifile.file}'
                               f' after velocity flag filtering')
                     _log.info(errmsg)
                     continue
@@ -540,7 +443,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             _log.debug(errmsg)
 
             if not d.latitude:
-                errmsg = f'No radial data left from {q[I].file} after speed thresholding'
+                errmsg = f'No radial data left from {ifile.file} after speed thresholding'
                 _log.info(errmsg)
                 continue
 
@@ -588,7 +491,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             _log.debug(errmsg)
 
             if len(d.latitude) == 0:
-                errmsg = f'No radial data left from {q[I].file} after land masking'
+                errmsg = f'No radial data left from {ifile.file} after land masking'
                 _log.info(errmsg)
                 continue
 
@@ -600,15 +503,15 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         radials.append(RadialInfo())
         radials[ri].isNew = newRadialIndex[I]
-        radials[ri].time = q[I].t
-        radials[ri].network = q[I].network
-        radials[ri].site = q[I].site
-        radials[ri].sitelatitude = q[I].lat
-        radials[ri].sitelongitude = q[I].lon
-        radials[ri].patterntype = q[I].beampattern
-        radials[ri].manufacturer = q[I].manufacturer
-        radials[ri].file = q[I].file
-        radials[ri].dir = q[I].dir
+        radials[ri].time = ifile.t
+        radials[ri].network = ifile.network
+        radials[ri].site = ifile.site
+        radials[ri].sitelatitude = ifile.lat
+        radials[ri].sitelongitude = ifile.lon
+        radials[ri].patterntype = ifile.beampattern
+        radials[ri].manufacturer = ifile.manufacturer
+        radials[ri].file = ifile.file
+        radials[ri].dir = ifile.dir
         radials[ri].latitude = d.latitude
         radials[ri].longitude = d.longitude
         radials[ri].speed = d.speed
@@ -616,25 +519,25 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         # maxrange field
         if hasattr(d, "range"):
-            if q[I].rangeres is None or q[I].rangeres <= 0:
+            if ifile.rangeres is None or ifile.rangeres <= 0:
 
                 # Use 6km as range resolution if unavailable
                 radials[ri].maxrange = np.max(d.range) + buf * 6
-                errmsg = (f'Missing radial range resolution from {q[I].network}:'
-                          f' {q[I].site}, using 6km range resolution to estimate maxrange')
+                errmsg = (f'Missing radial range resolution from {ifile.network}:'
+                          f' {ifile.site}, using 6km range resolution to estimate maxrange')
                 _log.warning(errmsg)
 
             else:
 
                 # Use all available information
-                radials[ri].maxrange = max(d.range) + buf * q[I].rangeres
+                radials[ri].maxrange = max(d.range) + buf * ifile.rangeres
 
 
         else:
 
             # Use 300km as overall max range when range isn't available
             radials[ri].maxrange = 300
-            errmsg = (f'Missing radial range data from {q[I].file}'
+            errmsg = (f'Missing radial range data from {ifile.file}'
                       ', setting maxrange to 300 km')
             _log.info(errmsg)
 

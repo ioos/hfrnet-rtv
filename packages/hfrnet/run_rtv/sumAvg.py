@@ -4,6 +4,7 @@ import logging
 from datetime import timedelta
 from pathlib import Path
 import calendar
+from copy import deepcopy
 import numpy as np
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
@@ -34,8 +35,8 @@ class SumAndAvg:
                 nGood: Number of observations
                 uSum:  Sum of u
                 vSum:  Sum of v
-                u2Sum: Sum of u^2
-                v2Sum: Sum of v^2
+                u2sum: Sum of u^2
+                v2sum: Sum of v^2
                 uMin:  Minimum u
                 uMax:  Maximum u
                 vMin:  Minimum v
@@ -103,7 +104,7 @@ class SumAndAvg:
                                                   self.rtvProcessObj,
                                                   self.fileLocObj, time,
                                                   subprocess=self.mode)
-            fileList2.append(fileLocTemp)
+            fileList2.append(deepcopy(fileLocTemp))
 
         return fileList2
 
@@ -111,7 +112,6 @@ class SumAndAvg:
         """
         Make the timestamp list +/- 12 hours
         """
-
         start_time = center_time - timedelta(hours=12)
         end_time = center_time + timedelta(hours=12)
         temp_time = start_time
@@ -189,8 +189,8 @@ class SumAndAvg:
         sumavgObj.nGood = np.zeros(nGridPts)
         sumavgObj.uSum = np.zeros(nGridPts)
         sumavgObj.vSum = np.zeros(nGridPts)
-        sumavgObj.u2Sum = np.zeros(nGridPts)
-        sumavgObj.v2Sum = np.zeros(nGridPts)
+        sumavgObj.u2sum = np.zeros(nGridPts)
+        sumavgObj.v2sum = np.zeros(nGridPts)
         sumavgObj.uMin = np.full(nGridPts, np.nan)
         sumavgObj.vMin = np.full(nGridPts, np.nan)
         sumavgObj.uMax = np.full(nGridPts, np.nan)
@@ -212,18 +212,44 @@ class SumAndAvg:
         sumavgObj.nGood = inFileTotObj.nGood.astype(np.float32)
         sumavgObj.uSum = inFileTotObj.uSum
         sumavgObj.vSum = inFileTotObj.vSum
-        sumavgObj.u2Sum = inFileTotObj.u2sum
-        sumavgObj.v2Sum = inFileTotObj.v2sum
+        sumavgObj.u2sum = inFileTotObj.u2sum
+        sumavgObj.v2sum = inFileTotObj.v2sum
         sumavgObj.uMin = inFileTotObj.uMin
         sumavgObj.vMin = inFileTotObj.vMin
         sumavgObj.uMax = inFileTotObj.uMax
         sumavgObj.vMax = inFileTotObj.vMax
-        #sumavgObj.uAvg = inFileTotObj.uAvg
-        #sumavgObj.vAvg = inFileTotObj.vAvg
-        #sumavgObj.uVar = inFileTotObj.uVar
-        #sumavgObj.vVar = inFileTotObj.vVar
 
         return sumavgObj
+
+    def get_intermed_sum_obj(self, inFile):
+        """Load the total sum object form file
+           Different logic for matlab and netcdf
+        """
+        inFileTotObj = None
+
+        fileExt = inFile.input_file.suffix
+        isMat = fileExt == '.mat'
+        isNC = fileExt == '.nc'
+
+        dataInObj = read_total_file(inFile.input_file)
+        if isMat:
+            dataInObj = dataInObj['data']
+
+        if self.isAnnual:
+            if isMat:
+                inFileTotObj = dataInObj.S
+            if isNC:
+                inFileTotObj = SumAvgInfo()
+                inFileTotObj.from_dict(**dataInObj['S'])
+        else:
+            if isMat:
+                inFileTotObj = dataInObj.U
+            if isNC:
+                inFileTotObj = SumAvgInfo()
+                inFileTotObj.from_dict(**dataInObj['U'])
+
+        return inFileTotObj
+
 
     def get_sum(self) -> SumAvgInfo:
         """
@@ -237,30 +263,21 @@ class SumAndAvg:
 
         for inFile in self.fileList:
 
-            rtvTotObj = RtvTotals()
-            if not Path(inFile.input_matfile).is_file():
-                msg = f"ERROR::sumAvg: could not load file {inFile.input_matfile}"
+            if not Path(inFile.input_file).is_file():
+                msg = f"ERROR::sumAvg: could not load file {inFile.input_file}"
                 _log.error(msg)
                 continue
 
-            dataInObj = read_total_file(inFile.input_matfile)['data']
-            inFileTotObj = None
-            if self.isAnnual:
-                inFileTotObj = dataInObj.S
-            else:
-                inFileTotObj = dataInObj.U
-                rtvTotObj.u_xvel = inFileTotObj.u
-                rtvTotObj.v_yvel = inFileTotObj.v
-                rtvTotObj.hdop = inFileTotObj.hdop
+            inFileTotObj = self.get_intermed_sum_obj(inFile)
 
             self.nLoadedFiles = self.nLoadedFiles + 1
 
             # Filter by HDOP
             if (self.is25Hr or self.isMonthly):
-                mask = rtvTotObj.hdop >= infoObj.stcInfo.max_error
+                mask = inFileTotObj.hdop >= infoObj.stcInfo.max_error
                 if np.any(mask):
-                    rtvTotObj.u_xvel[mask] = np.nan
-                    rtvTotObj.v_yvel[mask] = np.nan
+                    inFileTotObj.u[mask] = np.nan
+                    inFileTotObj.v[mask] = np.nan
 
             if len(self.sumavgObj.nGood) == 0 and not self.isAnnual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
@@ -279,9 +296,9 @@ class SumAndAvg:
                                                                inFileTotObj.uSum)), axis=0)
                     self.sumavgObj.vSum  = np.nansum(np.stack((self.sumavgObj.vSum,
                                                                inFileTotObj.vSum)), axis=0)
-                    self.sumavgObj.u2Sum = np.nansum(np.stack((self.sumavgObj.u2Sum,
+                    self.sumavgObj.u2sum = np.nansum(np.stack((self.sumavgObj.u2sum,
                                                                inFileTotObj.u2sum)), axis=0)
-                    self.sumavgObj.v2Sum = np.nansum(np.stack((self.sumavgObj.v2Sum,
+                    self.sumavgObj.v2sum = np.nansum(np.stack((self.sumavgObj.v2sum,
                                                                inFileTotObj.v2sum)), axis=0)
                     self.sumavgObj.uMin  = np.nanmin(np.stack((self.sumavgObj.uMin,
                                                                inFileTotObj.uMin)), axis=0)
@@ -292,23 +309,23 @@ class SumAndAvg:
                     self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
                                                                inFileTotObj.vMax)), axis=0)
             else:
-                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(rtvTotObj.u_xvel))
+                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(inFileTotObj.u))
                 self.sumavgObj.uSum  = np.nansum(np.stack((self.sumavgObj.uSum,
-                                                           rtvTotObj.u_xvel)), axis=0)
+                                                           inFileTotObj.u)), axis=0)
                 self.sumavgObj.vSum  = np.nansum(np.stack((self.sumavgObj.vSum,
-                                                           rtvTotObj.v_yvel)), axis=0)
-                self.sumavgObj.u2Sum = np.nansum(np.stack((self.sumavgObj.u2Sum,
-                                                           rtvTotObj.u_xvel**2)), axis=0)
-                self.sumavgObj.v2Sum = np.nansum(np.stack((self.sumavgObj.v2Sum,
-                                                           rtvTotObj.v_yvel**2)), axis=0)
+                                                           inFileTotObj.v)), axis=0)
+                self.sumavgObj.u2sum = np.nansum(np.stack((self.sumavgObj.u2sum,
+                                                           inFileTotObj.u**2)), axis=0)
+                self.sumavgObj.v2sum = np.nansum(np.stack((self.sumavgObj.v2sum,
+                                                           inFileTotObj.v**2)), axis=0)
                 self.sumavgObj.uMin  = np.nanmin(np.stack((self.sumavgObj.uMin,
-                                                           rtvTotObj.u_xvel)), axis=0)
+                                                           inFileTotObj.u)), axis=0)
                 self.sumavgObj.vMin  = np.nanmin(np.stack((self.sumavgObj.vMin,
-                                                           rtvTotObj.v_yvel)), axis=0)
+                                                           inFileTotObj.v)), axis=0)
                 self.sumavgObj.uMax  = np.nanmax(np.stack((self.sumavgObj.uMax,
-                                                           rtvTotObj.u_xvel)), axis=0)
+                                                           inFileTotObj.u)), axis=0)
                 self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
-                                                           rtvTotObj.v_yvel)), axis=0)
+                                                           inFileTotObj.v)), axis=0)
         self.completedSum = True
 
         return self.sumavgObj
@@ -338,18 +355,20 @@ class SumAndAvg:
 
         if self.isMonthly:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY
+            mask = (avgsumObj.nGood <
+                    infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if self.isAnnual:
             # Mask points below minimum temporal coverage
-            mask = avgsumObj.nGood < infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY 
+            mask = (avgsumObj.nGood <
+                    infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if np.any(mask):
             avgsumObj.nGood[mask] = np.nan
             avgsumObj.uSum[mask] = np.nan
             avgsumObj.vSum[mask] = np.nan
-            avgsumObj.u2Sum[mask] = np.nan
-            avgsumObj.v2Sum[mask] = np.nan
+            avgsumObj.u2sum[mask] = np.nan
+            avgsumObj.v2sum[mask] = np.nan
             avgsumObj.uMin[mask] = np.nan
             avgsumObj.vMin[mask] = np.nan
             avgsumObj.uMax[mask] = np.nan
@@ -362,12 +381,16 @@ class SumAndAvg:
         A = avgsumObj
         A.uAvg = A.uSum/A.nGood
         A.vAvg = A.vSum/A.nGood
-        A.uVar = ( 1./(A.nGood - 1) ) * (A.u2Sum - ((1./A.nGood) * (A.uSum**2)))
-        A.vVar = ( 1./(A.nGood - 1) ) * (A.v2Sum - ((1./A.nGood) * (A.vSum**2)))
+        A.uVar = ( 1./(A.nGood - 1) ) * (A.u2sum - ((1./A.nGood) * (A.uSum**2)))
+        A.vVar = ( 1./(A.nGood - 1) ) * (A.v2sum - ((1./A.nGood) * (A.vSum**2)))
 
-        avgsumObj = A
+        self.sumavgObj = A
 
-        return avgsumObj
+        #apply mask for random regions
+        if self.isMonthly or self.isAnnual:
+            self.qc_mask()
+
+        return self.sumavgObj
 
     def qc_mask(self):
         """
@@ -409,8 +432,5 @@ class SumAndAvg:
         """
         sumObj = self.get_sum()
         avgObj = self.get_avg()
-
-        if self.isMonthly or self.isAnnual:
-            self.qc_mask()
 
         return avgObj

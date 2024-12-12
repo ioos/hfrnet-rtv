@@ -9,9 +9,8 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, next_month_start,
-                                        set_history)
+                                        set_history, rtvNcid)
 import hfrnet.utils_funcs.constsHFR as constsHFR
-from hfrnet.run_rtv.rtvNcid import rtvNcid
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 

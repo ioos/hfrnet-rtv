@@ -5,13 +5,17 @@ from datetime import datetime, timedelta, timezone, date, time
 import calendar
 import logging
 import json
+from pathlib import Path
 import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
+import h5py
 
-
-from hfrnet.utils_funcs.lib_rtv import RtvProcess
+from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
+from hfrnet.utils_funcs import constsHFR
+from hfrnet.db_tools.db_tables import get_state_time
+from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
 
@@ -69,15 +73,15 @@ def read_total_file(filename):
     try:
         try:
             raw = loadmat(filename)
+            data['info']['version'] = raw.get('__version__', '')
+            data['info']['header'] = raw.get('__header__', '')
+            data['info']['globals'] = raw.get('__globals__', '')
+
+            data['data'] = process_record(raw)
         except Exception:
             _log.info("Loading netCDF4 file")
-            raw = nc4.Dataset(filename,'r')
+            data = loadNetcdf(filename)
 
-        data['info']['version'] = raw.get('__version__', '')
-        data['info']['header'] = raw.get('__header__', '')
-        data['info']['globals'] = raw.get('__globals__', '')
-
-        data['data'] = process_record(raw)
     except Exception as e:
         msg = f"Could not load {filename}: {e}"
         _log.error(msg)
@@ -98,7 +102,9 @@ def generate_time_spans(stime, etime):
     """
     # Convert the input strings to datetime objects
     start_date = datetime.strptime(stime, '%Y%m%d%H%M%S%f')
+    start_date = start_date.replace(tzinfo=timezone.utc)
     end_date = datetime.strptime(etime, '%Y%m%d%H%M%S%f')
+    end_date = end_date.replace(tzinfo=timezone.utc)
 
     # Generate the time spans
     time_spans = []
@@ -174,28 +180,33 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         _log.fatal(msg)
         raise ValueError(msg)
 
+    grid = Grid()
     with nc4.Dataset(f"{mfile}/{domain}{res}.nc", 'r') as ds:
-        rtvInfoObj.x_range = np.array(ds.variables["x_range"][:])
-        rtvInfoObj.y_range = np.array(ds.variables["y_range"][:])
+
+        grid.x_range = np.array(ds.variables["x_range"][:])
+        grid.y_range = np.array(ds.variables["y_range"][:])
 
         dd = np.array(ds.variables["dd"][:])
-        rtvInfoObj.dx = dd[0]
-        rtvInfoObj.dy = dd[1]
-        rtvInfoObj.size = np.array(ds.variables["size"][:])
-        rtvInfoObj.ocean_indices = np.array(ds.variables["ocean_indices"][:])
-        rtvInfoObj.ocean_xy = np.array(ds.variables["ocean_xy"][:,:])
-        setattr(rtvInfoObj, scircle_xfield,
+        grid.dx = dd[0]
+        grid.dy = dd[1]
+        grid.size = np.array(ds.variables["size"][:])
+        grid.ocean_indices = np.array(ds.variables["ocean_indices"][:])
+        grid.ocean_xy = np.array(ds.variables["ocean_xy"][:,:])
+        setattr(grid, scircle_xfield,
                 np.array(ds.variables[f"{scircle_xfield}"][:, :]))
-        setattr(rtvInfoObj, scircle_yfield,
+        setattr(grid, scircle_yfield,
                 np.array(ds.variables[f"{scircle_yfield}"][:, :]))
 
-        rtvInfoObj.resolution_km  = ds.getncattr('resolution_km')
-        rtvInfoObj.projection  = ds.getncattr('projection')
-        return rtvInfoObj
+        grid.resolution_km  = ds.getncattr('resolution_km')
+        grid.projection  = ds.getncattr('projection')
+        return grid
 
-def now_hour():
+def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
-    t = datetime.now(timezone.utc)
+    if inTime:
+        t = inTime
+    else:
+        t = datetime.now(timezone.utc)
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
 def eomday(t):
@@ -203,9 +214,12 @@ def eomday(t):
     days_in_month = calendar.monthrange(t.year, t.month)[1]
     return datetime(t.year, t.month, days_in_month)
 
-def now_second():
+def now_second(inTime = None):
     """ Returns current datetime to nearest second, no microsecond"""
-    t = datetime.now(timezone.utc)
+    if inTime:
+        t = inTime
+    else:
+        t = datetime.now(timezone.utc)
     return t.replace(second=t.second, microsecond=0, minute=t.minute,
                      hour=t.hour)
 
@@ -305,3 +319,158 @@ def get_processes():
     stdRtvProcess2.methoddesc = "Unweighted Least Squares"
     stdRtvProcess2.saveas = "ascii,netcdf"
     process_list.append(stdRtvProcess2)
+
+
+def load_mat(filename):
+    data = {'info': {}, 'data': {}}
+    try:
+        try:
+            raw = loadmat(filename)
+        except:
+            raw = h5py.File(filename,'r')
+
+        data['info']['version'] = raw.get('__version__', '')
+        data['info']['header'] = raw.get('__header__', '')
+        data['info']['globals'] = raw.get('__globals__', '')
+
+        data['data'] = process_record(raw)
+    except:
+        _log.info("Could not load file")
+
+    return data
+
+#########################################################################
+def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
+    """
+    :param config_dict: contains the yaml config file
+    :return: the ccap file name
+    """
+    # example file name
+    # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
+
+    ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+
+    file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
+    return file_name
+
+#########################################################################
+#########################################################################
+#########################################################################
+
+def setup_log_filename(my_pkgint, added_name=""):
+    """
+    :param my_pkgint: contains the interface of the unit object
+    It sets up the logfile for the entire unit logging object
+    :param added_name: any optional string added to the unit name
+    """
+    # --------------------- create the log file
+    log_dir = Path(my_pkgint.config['directory.log'])
+    stime = f"{my_pkgint.config['time.start_date']}"
+    etime = f"{my_pkgint.config['time.end_date']}"
+    algo_ver = f"{my_pkgint.config['production.version']}"
+
+    run_logfile = create_CCAP_filename_s_e(stime, etime,
+                                           algo_ver,
+                                           f"{added_name}", ".log")
+    handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
+    date_format = '%Y-%m-%d %H:%M:%S'
+    full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
+
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(fmt=full_format, datefmt=date_format))
+
+    my_log = logging.getLogger()
+    my_log.addHandler(handler)
+
+    return handler
+
+def rtvNcid(metadataObj, configObj, rtvProcessObj, currTime):
+    """
+    %    Generates NetCDF ACDD ID attribute value
+    %
+    %    id = rtvNcid(metadataObj, configObj, rtvProcessObj, time) returns
+    %    an id string for the NetCDF Attribute Convention for Data 
+    %    Discovery (ACDD) metadata standard.
+    %
+    %    The id is comprised of the data timestamp (t) and metadata contained
+    %    in the configuration structures including the institution acronym,
+    %    process method, process name, subprocess (if defined), domain and
+    %    resolution.
+    %
+    %    Used in RTVSAVENETCDF, STCSAVENETCDF, LTASAVENETCDF
+    %
+    %    HF-Radar Network
+    %    Scripps Institution of Oceanography
+    %    Coastal Observing Research and Development Center
+    """
+
+    if rtvProcessObj.subprocess and rtvProcessObj.subprocess_name:
+
+        ncid = (f"{currTime.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+                f"hfr{rtvProcessObj.method}{rtvProcessObj.name}{rtvProcessObj.subprocess_name}"
+                f"{configObj.domain}{configObj.resolution}")
+    else:
+
+        ncid = (f"{currTime.strftime('%Y%m%d%H%M')}{metadataObj.institution_acronym.lower()}"
+                f"hfr{rtvProcessObj.method}{rtvProcessObj.name}"
+                f"{configObj.domain}{configObj.resolution}")
+
+    return ncid
+
+
+
+def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
+    """Determine if need to do monthly/yearly average"""
+
+    reprocessing = configObj.reprocess
+    doMonthly = False
+    doYearly = False
+    timeNow = datetime.now(timezone.utc)
+    timeMonthly = rtvTime
+    timeYearly = rtvTime
+
+    if reprocessing:
+
+        #if timeNow is a month more than the reprocess date, then do monthly avg
+        if (timeNow.month - rtvTime.month) >= 1:
+            doMonthly = True
+
+        #if reprocess date if previous year, then do yearly avg
+        if (timeNow.year - rtvTime.year) >= 1:
+            doYearly = True
+
+    else:#NRT
+
+        #have to get state from database to see if it's already been done
+        state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+
+        if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
+            doMonthly = True
+
+            month_diff = timeNow.month - state_time.month
+            # Average has already been done this month
+            if month_diff == 0:
+                doMonthly = False
+            elif month_diff == 1:
+                doMonthly = True
+            else:
+                msg = ("Error: time difference in month between db state time"
+                       f"and current time inproper: {month_diff}")
+                _log.error(msg)
+
+            if doMonthly:
+                #replace the month in the datetime to do previous month's average
+                timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
+
+        if rtvTime > constsHFR.YEAR_AVG_MIN_DATE:
+            doYearly = True
+
+            #check if average has been done
+            if state_time.year == timeNow.year:
+                doYearly = False
+
+            if doYearly:
+                #replace year to do previous year's average
+                timeYearly = rtvTime.replace(year=rtvTime.year -1)
+
+    return (doMonthly, doYearly, timeMonthly, timeYearly)
