@@ -104,23 +104,23 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Check if a file already exists
     last = None
 
-    if fileLocObj.mpathfile.is_file():
-
+    if fileLocObj.input_file.is_file():
+        
         # Load previous radial dataset
         try:
-            last = read_total_file(fileLocObj.mpathfile)
-            errmsg = f'Loaded radial structure from prior run ({fileLocObj.mpathfile})'
+            last = read_total_file(fileLocObj.input_file)
+            errmsg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
             _log.info(errmsg)
 
         except Exception as e:
             errmsg = (f'Failed to load radial structure from prior run ('
-                      f'{fileLocObj.mpathfile}): {str(e)}')
+                      f'{fileLocObj.input_file}): {str(e)}')
             _log.warning(errmsg)
             _log.warning('Cannot ensure consistent radial selection if results are '
                          'combined with previous run(s)')
 
     else:
-        errmsg = f'{fileLocObj.mpathfile} not found, no pre-existing radial data'
+        errmsg = f'{fileLocObj.input_file} not found, no pre-existing radial data'
         _log.debug(errmsg)
 
     # Modify radial selection as needed based on previous run(s)
@@ -144,7 +144,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
                 errmsg = (f'Found two records of radial data from {iSiteInfo.network}:'
                           f'{iSiteInfo.name} in previous radial data structure '
-                          f'loaded from {fileLocObj.mpathfile}')
+                          f'loaded from {fileLocObj.input_file}')
                 _log.error(errmsg)
 
             # Check that the patterntypes are consistent
@@ -162,7 +162,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                     errmsg = (f'Unknown beam pattern type {last_data.r.patterntype[siteMatch]}'
                               f' found for {iSiteInfo.network}:{iSiteInfo.name}'
                               ' in previous radial data structure loaded from '
-                              f'{fileLocObj.mpathfile}')
+                              f'{fileLocObj.input_file}')
                     _log.error(errmsg)
 
                 errmsg = (f"Modified {iSiteInfo.network }:{iSiteInfo.name} "
@@ -174,6 +174,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
             # FIX: Check that useMinutes is consistent
             #FIX: just a guess, not sure what the minute actually is in the data structure
+            #Indices are to get the first value in the nested list of matlab structure
             last_data_minute = last_data.r.t[siteMatch][0][3][1][0]
             if iSiteInfo.useMinute != last_data_minute:
 
