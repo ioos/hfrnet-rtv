@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from hfrnet.utils_funcs.lib_rtv import FileLocations
 from hfrnet.utils_funcs import constsHFR
+from hfrnet.db_tools.db_tables import get_files_list_intem_table
 
 _log = logging.getLogger()
 
@@ -159,6 +160,12 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.input_file = retObj.mpathfile
 
+    find_proc_name = 'rtv'
+    fileList, row = get_files_list_intem_table(configObj, t, find_proc_name)
+    if fileList['dir'] and fileList['name']:
+        retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
+        retObj.mpathfile = Path(fileList['dir'][0], fileList['name'][0])
+
     # ASCII
     retObj.asciidir = retObj.output_dir
 
@@ -189,6 +196,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.ncfilename = retObj.asciifilename.replace(".asc", ".nc")
     retObj.output_ncfile = Path(retObj.output_dir, retObj.ncfilename)
+
     retObj.intermed_filepath = Path(retObj.output_dir, retObj.intermed_filename)
 
     return retObj
@@ -254,7 +262,6 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
 
-
     # ASCII (average)
     retObj.asciidir = fileLocObj.output_dir
 
@@ -305,6 +312,11 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     if not temp_file:
         temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'nc')
     retObj.input_file = temp_file
+
+    find_proc_name = "lta-month"
+    fileList, row = get_files_list_intem_table(configObj, t, find_proc_name)
+    if fileList['dir'] and fileList['name']:
+        retObj.input_dir = Path(fileList['dir'][0], fileList['name'][0])
 
     # Mat-file
     retObj.mdir = Path(fileLocObj.output_dir, 'long_term_averages',

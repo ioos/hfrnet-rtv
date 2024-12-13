@@ -112,7 +112,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                    fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
-
+                
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
                                          fileLocObj, center_time)
@@ -137,11 +137,11 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
         if process.name.casefold() == 'lta':
             newRtvFiles = [configObj.runTime]
             for iTime in newRtvFiles:
-
+                
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
-
+                
                 if doMonthly:
-
+                    
                     #calculation
                     sumAvg = SumAndAvg("monthly", configObj, process,
                                        fileLocObj, monthTime, stcLtaInfoObj)
@@ -171,20 +171,19 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
                 if doYearly:
                     #calculation
-                    sumAvg = SumAndAvg("annual", configObj, process,
+                    sumAvgYear = SumAndAvg("annual", configObj, process,
                                        fileLocObj, yearTime, stcLtaInfoObj)
-                    sumObj = sumAvg.get_sum()
-                    avgObj = sumAvg.get_avg()
+                    sumObjYear = sumAvgYear.get_sum()
+                    avgObjYear = sumAvgYear.get_avg()
 
                     #metadata and filenames for output
-                    avgObj.land = land
-                    avgObj.grid = grid
+                    avgObjYear.land = land
+                    avgObjYear.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, yearTime)
-
                     #save final file
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
-                                  process, iTime, avgObj)
-                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
+                                  process, iTime, avgObjYear)
+                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObjYear)
