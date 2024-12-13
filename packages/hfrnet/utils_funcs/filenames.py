@@ -161,10 +161,13 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.input_file = retObj.mpathfile
 
     find_proc_name = 'rtv'
-    fileList, row = get_files_list_intem_table(configObj, t, find_proc_name)
-    if fileList['dir'] and fileList['name']:
+    fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
+    if nRows == 1:
         retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
         retObj.mpathfile = Path(fileList['dir'][0], fileList['name'][0])
+    else:
+        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
+        _log.error(msg)
 
     # ASCII
     retObj.asciidir = retObj.output_dir
@@ -314,9 +317,12 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.input_file = temp_file
 
     find_proc_name = "lta-month"
-    fileList, row = get_files_list_intem_table(configObj, t, find_proc_name)
-    if fileList['dir'] and fileList['name']:
+    fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
+    if nRows == 1:
         retObj.input_dir = Path(fileList['dir'][0], fileList['name'][0])
+    else:
+        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
+        _log.error(msg)
 
     # Mat-file
     retObj.mdir = Path(fileLocObj.output_dir, 'long_term_averages',
