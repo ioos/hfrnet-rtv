@@ -131,6 +131,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         last_network = np.array([rr for rr in last_data.r.network])
         last_site = np.array([rr for rr in last_data.r.site])
         for iSiteInfo in siteInfoObj:
+            _log.info(f" -- Processing site:: {iSiteInfo.network} :: {iSiteInfo.name}")
 
             # Look for a site/network match in existing radial data
             siteMatch = ((iSiteInfo.network == last_network) &
@@ -212,6 +213,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         
         file_list_temp[I] = _update_key(file_list_temp[I])
         Radialfile_record = file_list_temp[I]
+        _log.info(f" -- Processing file:: {file_list_temp[I].file}")
 
         if (Radialfile_record.file == "" or Radialfile_record.dir == "" or
             np.isnan(Radialfile_record.lat) or np.isnan(Radialfile_record.lon) or

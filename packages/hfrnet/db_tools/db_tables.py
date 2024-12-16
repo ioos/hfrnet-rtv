@@ -437,3 +437,37 @@ def get_files_list_intem_table(configObj, calcTime, process_name):
 
 		nrow = len(next(iter(file_list.values())))
 		return file_list, nrow
+
+
+def update_state_time(configObj, process_name, state_time):
+	# Connect to the configuration database
+	
+	with db_manager(configObj.dbObject) as db_class:
+		# Build & execute query
+		sqlquery = ('SELECT COUNT(*) '
+		            'FROM state '
+		            f"WHERE name = '{process_name}' "
+		            f"AND domain_id = '{configObj.domain_id}' "
+		            f"AND resolution_id = '{configObj.resolution_id}'")
+		
+		results = db_class.get_query(sqlquery)
+		nRows = len(next(iter(results.values())))
+		if nRows > 0:
+			_log.info(f" Updating the state time of {process_name}::"
+			           f"{configObj.domain}::{configObj.resolution}")
+			update_query = (f"UPDATE state SET time = '{state_time}' "
+				            f"WHERE name = '{process_name}' "
+				            f"AND domain_id = '{configObj.domain_id}' "
+				            f"AND resolution_id = '{configObj.resolution_id}'")
+			try:
+				db_class.write_query(update_query)
+			except Exception as err:
+				msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+				       f", Can't update the state time for  {process_name}::"
+			           f"{configObj.domain}::{configObj.resolution}")
+				_log.fatal(msg)
+		else:
+			_log.info(f" No updates needed for the state time of {process_name}::"
+			           f"{configObj.domain}::{configObj.resolution}")
+	
+	return

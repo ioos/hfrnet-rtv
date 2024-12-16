@@ -69,10 +69,14 @@ class db_manager:
     def write_query(self, query):
         _log.info(" -------->>>>>>>>>>>>>>------------------ ")
         _log.info(query)
+        
         with self.conn_handel.cursor() as cursor:
-            cursor.execute(query)
+            nNpdated_rows = cursor.execute(query)
+            if nNpdated_rows>0:
+                _log.info(f" Database table is updated")
+                self.conn_handel.commit()
 
-        return datasetdict
+        return
 
     # ----------------------------------------------------------
     def check_dict(self, my_dict, key, add, value):
