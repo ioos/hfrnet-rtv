@@ -1,0 +1,63 @@
+algorithm:
+  logging_level: DEBUG
+  coverage:
+    start: '20230101000000'
+    end: '20230101000000'
+  site:
+    domain: "USHI"
+    resolution: "6km"
+  io:
+    outdir: /home/WORKING_DIR/output/
+    logdir: /home/WORKING_DIR/logs/
+  production:
+    environment: DEV
+    site: T4
+  ref:
+    work_dir: /home/WORKING_DIR/work
+    packages: /home/WORKING_DIR/packages/
+    ancillary: /home/WORKING_DIR/ancillary/
+    wrapper: /home/WORKING_DIR/wrapper/
+    config_dir: /home/WORKING_DIR/config/
+    input: /home/WORKING_DIR/input/
+
+docker:
+  image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.0
+  action:
+    bin: python3
+    config: /home/WORKING_DIR/config/config.yaml
+    script: /home/WORKING_DIR/wrapper/hfrnet_rtv.py
+  mount:
+    external:
+    - &packages /data/data311/tqiao/hfrnet/git_hfrnet/packages
+    - &ancillary /data/data311/tqiao/hfrnet/git_hfrnet/ancillary_data
+    - &wrapper /data/data311/tqiao/hfrnet/git_hfrnet/wrappers
+    - &config /data/data311/tqiao/hfrnet/git_hfrnet/wrappers/config
+    - &output /data/smcd12/ASSISTT_DATA/HFRnet/output3
+    - &logs /data/data311/tqiao/hfrnet/DATA/logs
+    - &input /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+    options:
+      readonly: false
+    pairs:
+      /home/WORKING_DIR/packages/: *packages
+      /home/WORKING_DIR/ancillary/: *ancillary
+      /home/WORKING_DIR/wrapper/: *wrapper
+      /home/WORKING_DIR/config/: *config
+      /home/WORKING_DIR/output/: *output
+      /home/WORKING_DIR/logs/: *logs
+      /home/WORKING_DIR/input/: *input
+  args:
+    memory: 10Gb
+    ulimit:
+      stack: -1
+    #user:
+    group-add: keep-groups
+    network: host
+  container:
+    product: hfrnet_rtv
+    proj: v1_prelim
+    sat: GOES16
+
+info:
+  alg_version: v1r0
+  name: HFRNet
+version: 2.0

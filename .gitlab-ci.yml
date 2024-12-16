@@ -1,0 +1,43 @@
+variables:
+  GIT_STRATEGY: clone
+
+stages:
+    - pre
+    - build
+    - test
+
+include:
+  - template: Jobs/SAST.latest.gitlab-ci.yml
+
+create_process_container:
+  stage: pre
+  script:
+    - echo "Creating the process container"
+    - version=$(echo "$CI_COMMIT_MESSAGE" | sed -n 's/.*\[process container':' \([^]]*\)\].*/\1/p')
+    - docker build -t $CI_REGISTRY_IMAGE/process:$version -f docker/process/Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/process:$version
+    - docker tag $CI_REGISTRY_IMAGE/process:$version $CI_REGISTRY_IMAGE/process:latest
+    - docker push $CI_REGISTRY_IMAGE/process:latest
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /^\[process container/'
+
+build-job:
+    stage: build
+    before_script:
+        - git submodule sync
+        - git submodule update --init
+    script:
+        - echo “Linting the HFR Algorithm”
+        - docker run
+            -u $(id -u)
+            -v $PWD:$PWD
+            -w $PWD
+            git.star.nesdis.noaa.gov:4567/assistt/docker_image/assistt-ci-utils:v0.1
+            
+test-job:
+    stage: test
+    script:
+        - echo “No test has been created yet”
+
+sast:
+  tags: [container]
