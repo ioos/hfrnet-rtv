@@ -6,7 +6,6 @@ import numpy as np
 from hfrnet.run_rtv.rtvGetProcessTimes import rtvGetProcessTimes
 from hfrnet.run_rtv.rtvGetSiteConfig import rtvGetSiteConfig
 from hfrnet.run_rtv.rtvLoadRadials import rtvLoadRadials
-from hfrnet.utils_funcs.utility import load_land, load_grid
 from hfrnet.run_rtv.rtvComputeTotals import rtvComputeTotals
 from hfrnet.run_rtv.rtvMergeData import rtvMergeData
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
@@ -14,10 +13,12 @@ from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveAscii import saveAscii
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
+from hfrnet.db_tools.db_tables import update_state_time
 
 _log = logging.getLogger()
 
-def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotObj) -> str:
+def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotObj, land_list
+        , grid) -> str:
     """
     RTV Process radials to totals
 
@@ -66,21 +67,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         return None
 
     #------- this uses the json and netcdf file
-    land_list = load_land(fileLocObj.landfile, configObj.domain)
     compTotObj.land = land_list
     landInfoObj_list = land_list
 
-    # ------- Load the grid from a netcdf file
-    gridvar = f"{configObj.domain}{configObj.resolution}"
-    try:
-        grid = load_grid(fileLocObj.gridfile, configObj.domain,
-                         configObj.resolution, rtvInfoObj)
-        if len(grid.size) < 1:
-            grid.size = np.array([0, 0], dtype=int)
-
-    except Exception as e:
-        errmsg = f'Error loading variable {gridvar} from {fileLocObj.gridfile}: {str(e)}'
-        _log.error(errmsg)
 
     compTotObj.grid = grid
 
@@ -89,13 +78,12 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
 
     #Loop over all the processing times
     for CalcTime in processTimes:
-
+        _log.info(f"------------- Processing Time :: {CalcTime}")
         #increment index
         index = index + 1
 
         # Get/generate filename
-        fileNameList = filenames(configObj, rtvProcessObj,
-                                 fileLocObj, CalcTime)
+        fileNameList = filenames(configObj, rtvProcessObj, fileLocObj, CalcTime)
 
         siteInfoObj = rtvGetSiteConfig(configObj, siteInfoObj, CalcTime)
 
@@ -117,14 +105,21 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         nSites = len(radials)
         #do checks on nSites
         if nSites < 2:
+            log_message = (f"No of sites = {nSites} which is not enough to proceed this"
+                           f" time:: {CalcTime}. continue to next time interval")
+            _log.warning(log_message)
             continue
+
+        _log.info(f"------------- Done rtvLoadRadials")
 
         #compute totals
         U_tot = rtvComputeTotals(compTotObj, radials, rtvInfoObj)
 
         if len(U_tot.nRads) == 0:
-            _log.info("No total solutions returned")
+            _log.warning("No total solutions returned")
             continue
+            
+        _log.info(f"------------- Done rtvComputeTotals")
 
         # Add history and merge with previous solutions
         radials, U_tot =  rtvMergeData(fileLocObj, configObj,
@@ -132,12 +127,16 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
 
         metaDataObj = rtvProcessMetadata(rtvProcessObj, configObj)
         if np.any(U_tot.hdop <= rtvInfoObj.uwls_max_hdop_nc):
-
+            
+            _log.info(f"------------- Saving uwls total files in netcdf format")
             rtvSaveNetcdf(metaDataObj, configObj, fileNameList,
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
+            _log.info(f"Saving uwls total files in ascii format")
             saveAscii(rtvProcessObj, fileNameList, rtvInfoObj, U_tot)
 
+
+            _log.info(f"Saving uwls total intermemedaite files in netcdf format")
             #save intermediate file (greater precision)
             allInfo = {'metaDataObj': metaDataObj.to_dict(),
                        'configObj': configObj.to_dict(),
@@ -147,9 +146,13 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                             'r': [r.to_dict() for r in radials]}
             saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
+            _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
+            update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)
+
         else:
             _log.info( 'No total solutions below netcdf hdop threshold' )
-
+        
+        _log.info(f" Set the processing time:: {CalcTime} for averages processes")
         newFileMask[index] = True
 
     # FIX: update state in database

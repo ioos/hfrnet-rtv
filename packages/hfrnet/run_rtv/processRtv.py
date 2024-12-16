@@ -16,6 +16,7 @@ from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.saveAscii import saveAscii
 from hfrnet.utils_funcs.utility import load_land, load_grid, ltaRunConfig
+from hfrnet.db_tools.db_tables import update_state_time
 
 _log = logging.getLogger()
 
@@ -96,7 +97,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
         if process.name.casefold() == 'rtv':
 
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
-                                  process, rtvInfoObj, compTotObj)
+                                  process, rtvInfoObj, compTotObj, land, grid)
             if len(newRtvFiles) == 0:
                 _log.info('No rtv files created or updated')
             else:
@@ -126,13 +127,17 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                            'stcInfoObj': stcInfoObj.to_dict(),
                            'process': process.to_dict()}
                 allInfo_dict = {'c': allInfo, 'tc': center_time, 'A': sumObj.to_dict()}
-
+                
+                _log.info(f"Saving stc total files in ascii format")
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
                 stcSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcInfoObj,
                               process, center_time, avgObj)
+                _log.info(f"Saving stc total intermemedaite files in netcdf format")
                 saveAscii(process, fileNameList, stcInfoObj, avgObj)
+                _log.info(f"Update the process {process.name} time in the state table")
+                update_state_time(configObj, process.name.casefold(), center_time)
 
         if process.name.casefold() == 'lta':
             newRtvFiles = [configObj.runTime]
@@ -161,13 +166,24 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                'stcLtaInfoObj': stcLtaInfoObj.to_dict(),
                                'process': process.to_dict()}
                     allInfo_dict = {'c': allInfo, 't': iTime, 'S': sumObj.to_dict()}
+                    
+                    _log.info(f"------------- Saving monthly total files in netcdf "
+                              f"format")
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
                     #save final file
+                    _log.info(f"------------- Saving intermmediate monthly total files "
+                              f"in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObj)
+
+                    _log.info(f"Saving monthly total files in ascii format")
                     saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
+
+                    _log.info(
+                        f"Update the process {process.name} time in the state table")
+                    update_state_time(configObj, process.name.casefold(), iTime)
 
                 if doYearly:
                     #calculation
@@ -183,7 +199,14 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, yearTime)
                     #save final file
+                    _log.info(f"------------- Saving annual total files in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObjYear)
+                    
+                    _log.info(f"Saving annual total files in ascii format")
                     saveAscii(process, fileNameList, stcLtaInfoObj, avgObjYear)
+                    
+                    _log.info(
+                        f"Update the process {process.name} time in the state table")
+                    update_state_time(configObj, process.name.casefold(), iTime)
