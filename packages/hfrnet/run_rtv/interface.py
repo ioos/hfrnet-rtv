@@ -126,7 +126,7 @@ class Interface(aim.Interface):
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        os.environ['PRODUCT_VERSION'] = self.config['production.version']
+        self.mconfigureVals.product_version = self.config['production.version']
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                                              f"_{self.mconfigureVals.resolution}")
