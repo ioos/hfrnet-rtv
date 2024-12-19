@@ -11,7 +11,6 @@ from hfrnet.run_rtv.rtvMergeData import rtvMergeData
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
-from hfrnet.run_rtv.saveAscii import saveAscii
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.db_tools.db_tables import update_state_time
 
@@ -132,9 +131,6 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
             rtvSaveNetcdf(metaDataObj, configObj, fileNameList,
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
-            _log.info(f"Saving uwls total files in ascii format")
-            saveAscii(rtvProcessObj, fileNameList, rtvInfoObj, U_tot)
-
 
             _log.info(f"Saving uwls total intermemedaite files in netcdf format")
             #save intermediate file (greater precision)
