@@ -353,7 +353,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     end_time = (t.replace(month=12, day=31, hour=23, minute=59, second=59)
                 .strftime(constsHFR.NCCF_FORMAT))
     creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
-    retObj.asciifilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr"
+    retObj.asciifilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr_"
                             f"s{start_time}_e{end_time}_c{creation_time}.asc")
 
     retObj.asciipathfile = Path(retObj.asciidir, retObj.asciifilename)
