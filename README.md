@@ -1,26 +1,111 @@
-# *PROJECT NAME (okay to use acronyms)*
-__*Full project name - spell out acronyms*__  
-*Brief description of the project*
+# HFRNet
+HFRNet is a python package designed to process radial velocities measured by HF-RADAR to total solutions and other derived products.
 
-__[Google Drive](https://drive.google.com/drive/u/1/folders/1nrRfjxZRV1tmvOqTT8BgMDlDGsoEAXI3)__ - *update this link to the project folder within the ASSISTT All Projects Documents Folder (current link) - ask Lifecycle QA to create if it doesn't already exist.*
+[[_TOC_]]
 
-__Submodules:__ 
-- *[submodule/path/in/this/repo](link to submodule gitLab repo url)*
+## Important Resources
+- __[Google Drive](https://drive.google.com/drive/folders/12joE1XzYbQWOT3Yez3ye7HmyPhhYnNPF)__
+- __[Algorithm Support Document](https://docs.google.com/document/d/1QUiUwgeGr3LINf9lBWBIfja_m__yLKfTMWHam_f_Ooo/edit?tab=t.0#heading=h.gjdgxs)__
+- __[Software Code Review Summary]()__
+- __[ASSISTT Delivery Schedule](https://docs.google.com/spreadsheets/d/107vHNeHh7s_z-1HO9KGt1te7pxqu-h7eMuOyrDKvQd8/edit?pli=1#gid=1641027802)__
+- __[R2O Team Lookup](https://docs.google.com/spreadsheets/d/1u42Lu2QawJOKzCguXlfWYdcWOYyotDFGkkXkeyXCJCk/edit#gid=616569363)__
 
-__Uses GitLFS:__ *yes or no*
+## Code Base Requirements
+- Uses gitLFS: Yes
+- Uses submodules: Yes
 
-## Team
+### System Requirements
+### Library Packages Required
+#### Needed in the Run Time Environment
+- __Python__: see `conda_environment.yaml
 
-[R2O Team Lookup](https://docs.google.com/spreadsheets/d/1u42Lu2QawJOKzCguXlfWYdcWOYyotDFGkkXkeyXCJCk/edit?pli=1#gid=523128869)
+#### Needed in the Compiled Time Environment
+- N/A
 
-## Library Packages Required
-*NOTE: Compiled with compiler_version_here_if_not_gcc8.3*
+### Extra Files Needed
+- N/A
 
-### List of OTS libraries
-- *List of OTS libraries needed*
+## Compiling the Code
+- N/A
 
-### List of 3-rd Party libraries Included in this repository
-- *List of any 3-rd Party libraries in this repo*
+## Running the Code
+Find the current Production rules in the Google Drive Folder above.
 
-## Extra Files Needed
-*Are there any files needed to run this code that are NOT included in the repo?  Put a description of the file and where it can be found on the STAR linux boxes*
+### HFRNet:
+#### Command Line Interface
+```bash
+conda activate hfrnet_env
+export PYTHONPATH=/path/to/repo/packages
+python -m hfrnet.run_rtv /path/to/config.yaml
+```
+
+#### Config Yaml
+```yaml
+processing:
+   domain: ushi
+   resolution: 6km
+   batch_processing: 'true'
+time:
+   start_date: '202301040000000'
+   end_date:   '202301040000000'
+production:
+   site: PLAIT
+   environment: INT
+   version: v1r0
+directory:
+   algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
+   log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
+   output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
+   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/radials
+   interm_local_dir: ''
+
+databases:
+   run_env: 'rhw' # 'aws'
+   user: 'rt'
+   host: ''
+   port: 0
+   password: 'token'
+   ssl_ca: './us-east-1-bundle.pem'
+   ssl_verify_identity: True
+   ssl_verify_cert: True
+   auth_plugin_map: {'mysql_clear_password': None}
+   config_dbname: 'rtvproc'
+   radial_dbname: 'hfradar'
+```
+
+#### Input Files Needed
+| File Type | Desired Location in Working Directory |
+| --- | --- |
+| .ruv | $radial_local_dir |
+| .nc | $interm_local_dir |
+
+
+#### Output Files Produced
+All output files will be printed to the output.txt file, which is just a dump of the output handoff object from the AIM.  This handoff object gives every output file a "Label" which is what we are describing here.
+| File Type | File Token Label | Type of Output<br>(Primary, Intermediate, Diagnostic) |
+| --- | --- | --- |
+| output netCDF files | | Primary |
+| log  |  | Diagnositc |
+| intermediate netCDF files|  | Intermediate |
+
+
+## Test Cases
+A full suite of test cases can be found at `/data/smcd12/ASSISTT_DATA/HFRnet/test_cases`.
+There are different directories for each release version, please use the most current one.  Copy the files in the `input/` directory to your working directory and then compare your outputs with those found in the `output/` directory.  Do not run your test directly in these directories.
+
+| Test Case Path | Purpose | Config YAML specifications |
+| --- | --- | --- |
+| USHI_20230104 | Test case for USHI domeain 2023/01/04 | test_data/config_hfr.yaml |
+
+
+*(Because of markdown limitations, show configuration needs in key=value pair notation instead of yaml notation.)*
+
+## Dependencies
+### Upstream
+- N/A
+
+### Downstream
+- N/A
+
+## Appendix
+- N/A
