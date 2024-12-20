@@ -306,7 +306,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.format_version = nc.formatVersion
 
     # RTV Product Version (ACDD)
-    ncid.product_version = os.environ['PRODUCT_VERSION']
+    ncid.product_version = configObj.product_version
 
     ## Define Data Variables & Add Attributes
 

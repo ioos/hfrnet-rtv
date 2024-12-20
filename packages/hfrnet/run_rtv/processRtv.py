@@ -3,7 +3,7 @@
 """processRtv"""
 
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
@@ -14,9 +14,9 @@ from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
-from hfrnet.run_rtv.saveAscii import saveAscii
 from hfrnet.utils_funcs.utility import load_land, load_grid, ltaRunConfig
 from hfrnet.db_tools.db_tables import update_state_time
+import hfrnet.utils_funcs.constsHFR as constsHFR
 
 _log = logging.getLogger()
 
@@ -128,16 +128,16 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                            'process': process.to_dict()}
                 allInfo_dict = {'c': allInfo, 'tc': center_time, 'A': sumObj.to_dict()}
                 
-                _log.info(f"Saving stc total files in ascii format")
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
-
+                _log.info(f"Saving stc total intermemedaite files in netcdf format")
                 stcSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcInfoObj,
                               process, center_time, avgObj)
-                _log.info(f"Saving stc total intermemedaite files in netcdf format")
-                saveAscii(process, fileNameList, stcInfoObj, avgObj)
-                _log.info(f"Update the process {process.name} time in the state table")
-                update_state_time(configObj, process.name.casefold(), center_time)
+
+                time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+                _log.info(f"Update the process {process.name} time {time_curr} in the state table")                
+                update_state_time(configObj, process.name.casefold(), time_curr)
+
 
         if process.name.casefold() == 'lta':
             newRtvFiles = [configObj.runTime]
@@ -178,13 +178,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObj)
 
-                    _log.info(f"Saving monthly total files in ascii format")
-                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObj)
-
-                    _log.info(
-                        f"Update the process {process.name} time in the state table")
-                    update_state_time(configObj, process.name.casefold(), iTime)
-
+                    time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+                    _log.info(f"Update the process {process.name} time {time_curr} in the state table")
+                    update_state_time(configObj, process.name.casefold(), time_curr)
+   
                 if doYearly:
                     #calculation
                     sumAvgYear = SumAndAvg("annual", configObj, process,
@@ -203,10 +200,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObjYear)
-                    
-                    _log.info(f"Saving annual total files in ascii format")
-                    saveAscii(process, fileNameList, stcLtaInfoObj, avgObjYear)
-                    
+
+                    time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
                     _log.info(
-                        f"Update the process {process.name} time in the state table")
-                    update_state_time(configObj, process.name.casefold(), iTime)
+                        f"Update the process {process.name} time {time_curr} in the state table")
+                    update_state_time(configObj, process.name.casefold(), time_curr)

@@ -114,6 +114,7 @@ class ConfigureVals(BaseObject):
         # This will be the now time whenever the current time is needed
         # This will be set to the start time in the yml file
         self.runTime = None
+        self.product_version = ''
 
     def to_dict(self):
         """return the dict for all attributes in the object"""
@@ -132,9 +133,6 @@ class FileLocations(BaseObject):
         self.mdir = ""
         self.mfilename = ""
         self.mpathfile = ""
-        self.asciidir = ""
-        self.asciifilename = ""
-        self.asciipathfile = ""
         self.ncdir = ""
         self.ncfilename = ""
         self.ncpathfile = ""
