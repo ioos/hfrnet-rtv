@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 from . import interface
 from hfrnet.utils_funcs.utility import setup_log_filename
 
+_log = logging.getLogger()
 
 def main(my_args):
     """Command line options."""
@@ -76,3 +77,5 @@ if __name__ == '__main__':
     print('===========================================')
     print('===========================================')
     print(f" Execution time:: {(etime - stime)}")
+    msg = '\n' + '='*80 + f"\nExecution time:: {(etime - stime)}\n" + "="*80
+    _log.info(msg)
