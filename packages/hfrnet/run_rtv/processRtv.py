@@ -14,7 +14,7 @@ from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
-from hfrnet.utils_funcs.utility import load_land, load_grid, ltaRunConfig
+from hfrnet.utils_funcs.utility import load_land, load_grid, ltaRunConfig, current_time
 from hfrnet.db_tools.db_tables import update_state_time
 import hfrnet.utils_funcs.constsHFR as constsHFR
 
@@ -134,7 +134,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                               fileNameList, stcInfoObj,
                               process, center_time, avgObj)
 
-                time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+                time_curr = current_time()
                 _log.info(f"Update the process {process.name} time {time_curr} in the state table")                
                 update_state_time(configObj, process.name.casefold(), time_curr)
 
@@ -178,7 +178,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObj)
 
-                    time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+                    time_curr = current_time()
                     _log.info(f"Update the process {process.name} time {time_curr} in the state table")
                     update_state_time(configObj, process.name.casefold(), time_curr)
    
@@ -201,7 +201,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObjYear)
 
-                    time_curr = datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+                    time_curr = current_time()
                     _log.info(
                         f"Update the process {process.name} time {time_curr} in the state table")
                     update_state_time(configObj, process.name.casefold(), time_curr)

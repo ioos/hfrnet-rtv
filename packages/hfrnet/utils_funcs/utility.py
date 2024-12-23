@@ -201,6 +201,10 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         grid.projection  = ds.getncattr('projection')
         return grid
 
+def current_time():
+    """Return the current time in format for database"""
+    return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+    
 def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
     if inTime:
