@@ -1,40 +1,63 @@
 algorithm:
   logging_level: DEBUG
+  processing:
+     domain: 'ushi'
+     resolution: '6km'
+     batch_processing: 'True' #'False'
   coverage:
-    start: '20230101000000'
-    end: '20230101000000'
-  site:
-    domain: "USHI"
-    resolution: "6km"
-  io:
-    outdir: /home/WORKING_DIR/output/
-    logdir: /home/WORKING_DIR/logs/
+     start: '202301040000000'
+     end:   '202301040059599'
   production:
-    environment: DEV
-    site: T4
+     site: PLAIT
+     environment: INT
+  io:
+     logdir: /home/WORKING_DIR/logs
+     outdir: /home/WORKING_DIR/output
   ref:
-    work_dir: /home/WORKING_DIR/work
-    packages: /home/WORKING_DIR/packages/
-    ancillary: /home/WORKING_DIR/ancillary/
-    wrapper: /home/WORKING_DIR/wrapper/
-    config_dir: /home/WORKING_DIR/config/
-    input: /home/WORKING_DIR/input/
+     packages: /home/WORKING_DIR/packages
+     log: /home/WORKING_DIR/logs
+     output: /home/WORKING_DIR/output
+     radial_local_dir: /home/WORKING_DIR/input/radials
+     interm_local_dir: /home/WORKING_DIR/intermediate
+  databases:
+     run_env: 'rhw' # 'aws'
+     user: 'rt' # 'hfrnet'
+     host: '' #'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
+     port: 3306
+     password: 'token'
+     ssl_ca: './us-east-1-bundle.pem'
+     ssl_verify_identity: True
+     ssl_verify_cert: True
+     auth_plugin_map: {'mysql_clear_password': null}
+     config_dbname: 'rtvproc'
+     radial_dbname: 'hfradar'
 
 docker:
-  image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.0
+  image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.1
+  #image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet/process:v1.1
   action:
     bin: python3
     config: /home/WORKING_DIR/config/config.yaml
     script: /home/WORKING_DIR/wrapper/hfrnet_rtv.py
   mount:
     external:
-    - &packages /data/data311/tqiao/hfrnet/git_hfrnet/packages
-    - &ancillary /data/data311/tqiao/hfrnet/git_hfrnet/ancillary_data
-    - &wrapper /data/data311/tqiao/hfrnet/git_hfrnet/wrappers
-    - &config /data/data311/tqiao/hfrnet/git_hfrnet/wrappers/config
-    - &output /data/smcd12/ASSISTT_DATA/HFRnet/output3
-    - &logs /data/data311/tqiao/hfrnet/DATA/logs
-    - &input /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+      #- &packages /home/ec2-user/environment/hfrnet
+      #- &ancillary /home/ec2-user/environment/hfrnet/ancillary_data
+      #- &wrapper /home/ec2-user/environment/hfrnet/wrappers
+      #- &config /home/ec2-user/environment/hfrnet/wrappers/config
+      #- &output /home/ec2-user/environment/DATA/USHI_20230104/output
+      #- &logs /home/ec2-user/environment/DATA/USHI_20230104/logs
+      #- &input /home/ec2-user/environment/DATA/USHI_20230104/input
+      #- &intermediate /home/ec2-user/environment/DATA/USHI_20230104/input/intermediate
+     - &packages /data/data311/tqiao/hfrnet2/git_hfrnet
+     - &ancillary /data/data311/tqiao/hfrnet2/git_hfrnet/ancillary_data
+     - &wrapper /data/data311/tqiao/hfrnet2/git_hfrnet/wrappers
+     - &config /data/data311/tqiao/hfrnet2/git_hfrnet/wrappers/config
+     - &output /data/data311/tqiao/hfrnet2/DATA/output
+     - &logs /data/data311/tqiao/hfrnet2/DATA/logs
+     #- &input /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+     - &input /data/smcd12/ASSISTT_DATA/HFRnet/prelim_delivery/DATA/USHI_20230104/input
+     - &intermediate /data/smcd12/ASSISTT_DATA/HFRnet/prelim_delivery/DATA/USHI_20230104/input/intermediate
     options:
       readonly: false
     pairs:
@@ -45,13 +68,18 @@ docker:
       /home/WORKING_DIR/output/: *output
       /home/WORKING_DIR/logs/: *logs
       /home/WORKING_DIR/input/: *input
+      /home/WORKING_DIR/intermediate/: *intermediate
   args:
     memory: 10Gb
     ulimit:
       stack: -1
     #user:
-    group-add: keep-groups
+    #group-add: keep-groups
     network: host
+  env_vars:
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_SESSION_TOKEN
   container:
     product: hfrnet_rtv
     proj: v1_prelim
