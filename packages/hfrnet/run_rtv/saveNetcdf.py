@@ -73,7 +73,6 @@ def saveNetcdf(filename, d):
     for k in ['t', 'tc']:
         datetime_to_timestamp(d, k)
     if 'c' in d:
-
         d['c'] = copy.deepcopy(d['c'])
         ncid = d['c'].pop('ncid', None)
         if 'reprocess' in d['c']:
@@ -84,6 +83,9 @@ def saveNetcdf(filename, d):
         if 'runTime' in d['c']['configObj']:
             datetime_to_timestamp(d['c']['configObj'], 'runTime')
         d['c'] = json.dumps(d['c'])
+    if 'r' in d:
+        for iRad in d['r']:
+            datetime_to_timestamp(iRad, 'time')
 
     # same the dict to netcdf file
     _save_dict(nc, d)
@@ -103,6 +105,9 @@ def saveNetcdf(filename, d):
             timestamp_to_datetime(d['c']['lta'], 'annual_min_date')
         if 'runTime' in d['c']['configObj']:
             timestamp_to_datetime(d['c']['configObj'], 'runTime')
+    if 'r' in d:
+        for iRad in d['r']:
+            timestamp_to_datetime(iRad, 'time')
 
     msg = f"Saved file: {filename}"
     _log.info(msg)
@@ -154,6 +159,9 @@ def loadNetcdf(filename):
                 timestamp_to_datetime(data['c']['reprocess'], k)
         if 'lta' in data['c']:
             timestamp_to_datetime(data['c']['lta'], 'annual_min_date')
+    if 'r' in data:
+        for iRad in data['r']:
+            timestamp_to_datetime(iRad, 'time')
 
     ncid.close()
 

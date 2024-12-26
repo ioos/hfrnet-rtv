@@ -46,6 +46,7 @@ class _dict(dict):
 
 def process_record(d):
     """gets info of processes"""
+
     if hasattr(d, 'keys'):
         keys = [k for k in d.keys() if not k.startswith('__')]
         data = _dict()
@@ -55,6 +56,7 @@ def process_record(d):
 
     if not hasattr(d, 'dtype'):
         return d
+
     if d.dtype.names is None:
         if len(d) == 1 and d.dtype.name == 'object':
             return process_record(d[0])
@@ -65,18 +67,19 @@ def process_record(d):
     data = _dict()
     for name in d.dtype.names:
         data[name] = process_record(d[name])
+
     return data
 
 def read_total_file(filename):
     """read total radial file"""
     data = {'info': {}, 'data': {}}
+    raw = None
     try:
         try:
             raw = loadmat(filename)
             data['info']['version'] = raw.get('__version__', '')
             data['info']['header'] = raw.get('__header__', '')
             data['info']['globals'] = raw.get('__globals__', '')
-
             data['data'] = process_record(raw)
         except Exception:
             _log.info("Loading netCDF4 file")
@@ -204,7 +207,7 @@ def load_grid(mfile, domain, res, rtvInfoObj):
 def current_time():
     """Return the current time in format for database"""
     return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
-    
+
 def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
     if inTime:
@@ -326,6 +329,8 @@ def get_processes():
 
 
 def load_mat(filename):
+    """load matlab or netcdf file"""
+
     data = {'info': {}, 'data': {}}
     try:
         try:
@@ -478,3 +483,31 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 timeYearly = rtvTime.replace(year=rtvTime.year -1)
 
     return (doMonthly, doYearly, timeMonthly, timeYearly)
+
+
+def prev_radial_data(fileName, last):
+    """ Get the array of info from previous radials.
+        Still kept the Matlab file in case needed.
+    """
+    last_radial = None
+    last_network = None
+    last_site = None
+    last_time = None
+    last_patterntype = None
+    if fileName.suffix == '.mat':
+        last_radial = last['data']['r']
+        # Loop over each site defined in the config
+        last_network = np.array(list(last_radial.network))
+        last_site = np.array(list(last_radial.site))
+        last_patterntype = np.array(list(last_radial.patterntype))
+        last_time = [datetime(2024, 12, 25, tzinfo=timezone.utc) for rr in last_radial.network]
+        last_time = np.array(last_time)
+    if fileName.suffix == '.nc':
+        last_radial = last['r']
+        # Loop over each site defined in the config
+        last_network = np.array([rr['network'] for rr in last_radial])
+        last_site = np.array([rr['site'] for rr in last_radial])
+        last_patterntype = np.array([rr['patterntype'] for rr in last_radial])
+        last_time = np.array([rr['time'] for rr in last_radial])
+
+    return last_network, last_site, last_patterntype, last_time
