@@ -172,10 +172,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
                 nMod = nMod + 1
 
-            # FIX: Check that useMinutes is consistent
-            #FIX: just a guess, not sure what the minute actually is in the data structure
-            #Indices are to get the first value in the nested list of matlab structure
-            # ASK science team cuz python can't handle reading the Matlab Datetime
+            # Python can't handle reading the Matlab Datetime
             # Matlab useMinute is set to 0, hasn't affected the results
             last_data_minute = last_time[siteMatch].minute
             if iSiteInfo.useMinute != last_data_minute:
