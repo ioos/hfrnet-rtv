@@ -165,7 +165,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     if nRows == 1:
         retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
         retObj.mpathfile = Path(fileList['dir'][0], fileList['name'][0])
-        if retObj.interm_local_dir.is_dir():
+        if retObj.interm_local_dir:
             retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
             retObj.mpathfile = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
@@ -176,7 +176,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     end_time = t.strftime(constsHFR.NCCF_FORMAT)
     creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
     name_nccf = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
-                                f"_s{start_time}_e{end_time}_c{creation_time}.nc")
+                 f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     # NetCDF
     retObj.ncdir = Path(retObj.mdir, 'NetCDF')
@@ -185,9 +185,8 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
                          f"_hfr_{domain}_{resolution}"
                          f"_rtv_{method}.nc")
 
-    retObj.intermed_filename = (f"{t.strftime('%Y%m%d%H%M')}"
-                                f"_hfr_{domain}_{resolution}"
-                                f"_rtv_{method}_intermediate.nc")
+    retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
+                                f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     retObj.ncpathfile = find_file(domain, resolution, method, t, retObj.ncdir, 'nc')
     if retObj.ncpathfile == "":
@@ -222,8 +221,8 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #intermediate file
     retObj.intermed_filename = (f"rtv-25HrSum_{configObj.domain}_"
-                                f"{configObj.resolution}_{rtvProcessObj.method}_"
-                                f"{t.strftime('%Y%m')}.nc")
+                                f"{configObj.resolution}_{rtvProcessObj.method}"
+                                f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
@@ -257,13 +256,13 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)
     creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
     retObj.ncfilename = (f"rtv-{domain}-{resolution}"
-                            "-month-avg_v1r0_hfr"
-                            f"_s{start_time}_e{end_time}_c{creation_time}.nc")
+                         "-month-avg_v1r0_hfr"
+                         f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     #intermediate file
     retObj.intermed_filename = (f"rtv-monthSum_{domain}_"
-                                f"{resolution}_{rtvProcessObj.method}_"
-                                f"{t.strftime('%Y%m')}.nc")
+                                f"{resolution}_{rtvProcessObj.method}"
+                                f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
@@ -283,6 +282,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     resolution = configObj.resolution.casefold()
 
     retObj.output_dir = fileLocObj.output_dir
+    retObj.interm_local_dir = fileLocObj.interm_local_dir
 
     retObj.input_dir = Path(fileLocObj.input_dir, 'long_term_averages',
                             t.strftime('%Y'), t.strftime('%m'))
@@ -299,7 +299,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
     if nRows == 1:
         retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
-        if retObj.interm_local_dir.is_dir():
+        if retObj.interm_local_dir:
             retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
         msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"

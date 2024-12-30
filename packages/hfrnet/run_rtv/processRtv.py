@@ -3,7 +3,7 @@
 """processRtv"""
 
 import logging
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
@@ -14,9 +14,9 @@ from hfrnet.run_rtv.stcSaveNetcdf import stcSaveNetcdf
 from hfrnet.run_rtv.ltaSaveNetcdf import ltaSaveNetcdf
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
 from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
-from hfrnet.utils_funcs.utility import load_land, load_grid, ltaRunConfig, current_time
+from hfrnet.utils_funcs.utility import (load_land, load_grid, ltaRunConfig,
+                                        current_time, current_datetime)
 from hfrnet.db_tools.db_tables import update_state_time
-import hfrnet.utils_funcs.constsHFR as constsHFR
 
 _log = logging.getLogger()
 
@@ -96,6 +96,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'rtv':
 
+            stime = current_datetime()
+
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
                                   process, rtvInfoObj, compTotObj, land, grid)
             if len(newRtvFiles) == 0:
@@ -104,9 +106,16 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 msg = f'Created or updated {len(newRtvFiles)} rtv files'
                 _log.info(msg)
 
+            rtvTime = current_datetime()
+            msg = f"Rtv processing time:  {(rtvTime - stime)}"
+            _log.info(msg)
+
         if process.name.casefold() == 'stc':
 
             for iTime in newRtvFiles:
+                #for execution time logging
+                stime = current_datetime()
+
                 #offset time to the center of the 25 hr window
                 center_time = iTime - timedelta(hours=12)
                 sumAvg = SumAndAvg('25 Hour', configObj, process,
@@ -127,17 +136,19 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                            'stcInfoObj': stcInfoObj.to_dict(),
                            'process': process.to_dict()}
                 allInfo_dict = {'c': allInfo, 'tc': center_time, 'A': sumObj.to_dict()}
-                
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
-                _log.info(f"Saving stc total intermemedaite files in netcdf format")
+                _log.info("Saving stc total intermediate files in netcdf format")
                 stcSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcInfoObj,
                               process, center_time, avgObj)
 
-                time_curr = current_time()
-                _log.info(f"Update the process {process.name} time {time_curr} in the state table")                
-                update_state_time(configObj, process.name.casefold(), time_curr)
+                stcTime = current_time()
+                _log.info(f"Update the process {process.name} time {stcTime} in the state table")
+                update_state_time(configObj, process.name.casefold(), stcTime)
 
+                stcTime = current_datetime()
+                msg = f"STC processing time:  {(stcTime - stime)}"
+                _log.info(msg)
 
         if process.name.casefold() == 'lta':
             newRtvFiles = [configObj.runTime]
@@ -146,6 +157,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
 
                 if doMonthly:
+
+                    #for execution time logging
+                    stime = current_datetime()
 
                     #calculation
                     sumAvg = SumAndAvg("monthly", configObj, process,
@@ -166,23 +180,31 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                'stcLtaInfoObj': stcLtaInfoObj.to_dict(),
                                'process': process.to_dict()}
                     allInfo_dict = {'c': allInfo, 't': iTime, 'S': sumObj.to_dict()}
-                    
-                    _log.info(f"------------- Saving monthly total files in netcdf "
-                              f"format")
+
+                    _log.info("------------- Saving monthly total files in netcdf "
+                              "format")
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
 
                     #save final file
-                    _log.info(f"------------- Saving intermmediate monthly total files "
-                              f"in netcdf format")
+                    _log.info("------------- Saving intermediate monthly total files "
+                              "in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObj)
 
-                    time_curr = current_time()
-                    _log.info(f"Update the process {process.name} time {time_curr} in the state table")
-                    update_state_time(configObj, process.name.casefold(), time_curr)
-   
+                    monthlyTime = current_datetime()
+                    _log.info(f"Update the process {process.name} time "
+                              f"{monthlyTime} in the state table")
+                    update_state_time(configObj, process.name.casefold(), monthlyTime)
+
+                    msg = f"Monthly average processing time:  {(monthlyTime - stime)}"
+                    _log.info(msg)
+
                 if doYearly:
+
+                    #for execution time logging
+                    stime = current_datetime()
+
                     #calculation
                     sumAvgYear = SumAndAvg("annual", configObj, process,
                                        fileLocObj, yearTime, stcLtaInfoObj)
@@ -196,12 +218,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, yearTime)
                     #save final file
-                    _log.info(f"------------- Saving annual total files in netcdf format")
+                    _log.info("------------- Saving annual total files in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObjYear)
 
-                    time_curr = current_time()
+                    yearlyTime = current_datetime()
                     _log.info(
-                        f"Update the process {process.name} time {time_curr} in the state table")
-                    update_state_time(configObj, process.name.casefold(), time_curr)
+                        f"Update the process {process.name} time {yearlyTime} in the state table")
+                    update_state_time(configObj, process.name.casefold(), yearlyTime)
+
+                    msg = f"Yearly average processing time:  {(yearlyTime - stime)}"
+                    _log.info(msg)

@@ -208,6 +208,10 @@ def current_time():
     """Return the current time in format for database"""
     return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
 
+def current_datetime():
+    """Return the datetime of current time"""
+    return datetime.now(timezone.utc)
+
 def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
     if inTime:

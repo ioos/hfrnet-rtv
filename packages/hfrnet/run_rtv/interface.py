@@ -130,7 +130,7 @@ class Interface(aim.Interface):
         self.mconfigureVals.product_version = self.config['production.version']
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
-                                             f"_{self.mconfigureVals.resolution}")
+                           f"_{self.mconfigureVals.resolution}")
         
         _log.info("-------------------------------------- ")
         _log.info(f"Star processing HFRnet for domain::"
@@ -232,4 +232,7 @@ class Interface(aim.Interface):
         
         fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
         fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
-        fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
+        if self.config['directory.interm_local_dir']:
+            fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
+        else:
+            fileLocObj.interm_local_dir = None
