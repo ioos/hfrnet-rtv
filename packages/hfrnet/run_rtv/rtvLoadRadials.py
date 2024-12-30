@@ -121,7 +121,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     else:
         errmsg = f'{fileLocObj.input_file} not found, no pre-existing radial data'
         _log.debug(errmsg)
-
+        
     # Modify radial selection as needed based on previous run(s)
     if last is not None:
         nMod = 0
@@ -180,7 +180,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             last_data_minute = last_time[siteMatch].minute
             if iSiteInfo.useMinute != last_data_minute:
 
-                #iSiteInfo.useMinute = int(last_data_minute)
+                iSiteInfo.useMinute = int(last_data_minute)
 
                 errmsg = (f'Modified {iSiteInfo.network}:{iSiteInfo.name} '
                           f'selection to use radials from {iSiteInfo.useMinute} '

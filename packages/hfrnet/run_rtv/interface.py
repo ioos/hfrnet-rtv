@@ -75,6 +75,7 @@ class Interface(aim.Interface):
             'lta_file': str,
             'radial_remote_dir': str,
             'radial_local_dir': str,
+            'interm_local_dir': str,
         },
         'databases': {
             'run_env': str,
@@ -231,3 +232,4 @@ class Interface(aim.Interface):
         
         fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
         fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+        fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])

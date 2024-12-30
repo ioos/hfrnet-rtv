@@ -150,6 +150,7 @@ class FileLocations(BaseObject):
         self.output_ncfile = ""
         self.intermed_ncfilename = ""
         self.intermed_ncfilepath = ""
+        self.interm_local_dir = ""
 
 class RtvProcess(BaseObject):
     """

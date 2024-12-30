@@ -165,6 +165,9 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     if nRows == 1:
         retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
         retObj.mpathfile = Path(fileList['dir'][0], fileList['name'][0])
+        if retObj.interm_local_dir.is_dir():
+            retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
+            retObj.mpathfile = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
         msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
         _log.error(msg)
@@ -296,6 +299,8 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
     if nRows == 1:
         retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
+        if retObj.interm_local_dir.is_dir():
+            retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
         msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
         _log.error(msg)
