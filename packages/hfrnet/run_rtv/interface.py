@@ -71,8 +71,6 @@ class Interface(aim.Interface):
             'input': str,
             'log': str,
             'output': str,
-            'lta_dir': str,
-            'lta_file': str,
             'radial_remote_dir': str,
             'radial_local_dir': str,
             'interm_local_dir': str,
@@ -121,7 +119,7 @@ class Interface(aim.Interface):
         working_dir = Path(self.config['directory.working'])
         if not working_dir.is_dir():
             _log.fatal(f" ---- FATAL ERROR: The directory {working_dir} does not "
-                             f"exist")
+                       f"exist")
             raise SetupError(f"The directory {working_dir} does not exist")
         # ------ Check the log dir
         log_dir = Path(self.config['directory.log'])
