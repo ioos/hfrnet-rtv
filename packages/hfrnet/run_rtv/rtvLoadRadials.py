@@ -381,13 +381,6 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         n = n + 1
         ifile = file_list_temp[I]
-        #--- Not sure what this is for?????????????????????
-        # # Define local path to radials
-        # if (configObj.raddb == 'israddirregex' and
-        #     configObj.raddb == 'raddirreplace'):
-        #     ifile.dir = re.sub(configObj.raddb.raddirregex,
-        #                       configObj.raddb.raddirreplace, ifile.dir)
-        #------------------------------
         # FIX: to be removed
         ifile.dir = ifile.dir.replace(str(fileLocObj.radial_remote_dir),
                                     str(fileLocObj.radial_local_dir))

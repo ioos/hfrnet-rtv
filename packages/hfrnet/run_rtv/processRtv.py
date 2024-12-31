@@ -107,7 +107,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 _log.info(msg)
 
             rtvTime = current_datetime()
-            msg = f"Rtv processing time:  {(rtvTime - stime)}"
+            msg = "\n" + "="*80 + f"\nRtv processing time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
 
         if process.name.casefold() == 'stc':
@@ -147,7 +147,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 update_state_time(configObj, process.name.casefold(), stcTime)
 
                 stcTime = current_datetime()
-                msg = f"STC processing time:  {(stcTime - stime)}"
+                msg = "\n" + "="*80 + f"\nSTC processing time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
 
         if process.name.casefold() == 'lta':
@@ -192,12 +192,14 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObj)
 
-                    monthlyTime = current_datetime()
+                    monthlyTime = current_time()
                     _log.info(f"Update the process {process.name} time "
                               f"{monthlyTime} in the state table")
                     update_state_time(configObj, process.name.casefold(), monthlyTime)
 
-                    msg = f"Monthly average processing time:  {(monthlyTime - stime)}"
+                    monthlyTime = current_datetime()
+                    msg = ("\n" + "="*80 + "\nMonthly average processing time:"
+                           f"{(monthlyTime - stime)}\n" + "="*80)
                     _log.info(msg)
 
                 if doYearly:
@@ -223,10 +225,12 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcLtaInfoObj,
                                   process, iTime, avgObjYear)
 
-                    yearlyTime = current_datetime()
+                    yearlyTime = current_time()
                     _log.info(
                         f"Update the process {process.name} time {yearlyTime} in the state table")
                     update_state_time(configObj, process.name.casefold(), yearlyTime)
 
-                    msg = f"Yearly average processing time:  {(yearlyTime - stime)}"
+                    yearlyTime = current_datetime()
+                    msg = ("\n" + "="*80 + "\nYearly average processing time:"
+                           f"{(yearlyTime - stime)}\n" + "="*80)
                     _log.info(msg)
