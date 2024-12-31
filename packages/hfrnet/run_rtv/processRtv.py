@@ -107,7 +107,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 _log.info(msg)
 
             rtvTime = current_datetime()
-            msg = "\n" + "="*80 + f"\nRtv processing time:  {(rtvTime - stime)}\n" + "="*80
+            msg = "\n" + "="*80 + f"\nRtv execution time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
 
         if process.name.casefold() == 'stc':
@@ -147,7 +147,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 update_state_time(configObj, process.name.casefold(), stcTime)
 
                 stcTime = current_datetime()
-                msg = "\n" + "="*80 + f"\nSTC processing time:  {(stcTime - stime)}\n" + "="*80
+                msg = "\n" + "="*80 + f"\nSTC execution time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
 
         if process.name.casefold() == 'lta':
@@ -198,7 +198,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     update_state_time(configObj, process.name.casefold(), monthlyTime)
 
                     monthlyTime = current_datetime()
-                    msg = ("\n" + "="*80 + "\nMonthly average processing time:"
+                    msg = ("\n" + "="*80 + "\nMonthly average execution time:"
                            f"{(monthlyTime - stime)}\n" + "="*80)
                     _log.info(msg)
 
@@ -231,6 +231,6 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     update_state_time(configObj, process.name.casefold(), yearlyTime)
 
                     yearlyTime = current_datetime()
-                    msg = ("\n" + "="*80 + "\nYearly average processing time:"
+                    msg = ("\n" + "="*80 + "\nYearly average execution time:"
                            f"{(yearlyTime - stime)}\n" + "="*80)
                     _log.info(msg)
