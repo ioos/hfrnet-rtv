@@ -71,10 +71,9 @@ class Interface(aim.Interface):
             'input': str,
             'log': str,
             'output': str,
-            'lta_dir': str,
-            'lta_file': str,
             'radial_remote_dir': str,
             'radial_local_dir': str,
+            'interm_local_dir': str,
         },
         'databases': {
             'run_env': str,
@@ -120,7 +119,7 @@ class Interface(aim.Interface):
         working_dir = Path(self.config['directory.working'])
         if not working_dir.is_dir():
             _log.fatal(f" ---- FATAL ERROR: The directory {working_dir} does not "
-                             f"exist")
+                       f"exist")
             raise SetupError(f"The directory {working_dir} does not exist")
         # ------ Check the log dir
         log_dir = Path(self.config['directory.log'])
@@ -129,7 +128,7 @@ class Interface(aim.Interface):
         self.mconfigureVals.product_version = self.config['production.version']
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
-                                             f"_{self.mconfigureVals.resolution}")
+                           f"_{self.mconfigureVals.resolution}")
         
         _log.info("-------------------------------------- ")
         _log.info(f"Star processing HFRnet for domain::"
@@ -231,3 +230,7 @@ class Interface(aim.Interface):
         
         fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
         fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+        if self.config['directory.interm_local_dir']:
+            fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
+        else:
+            fileLocObj.interm_local_dir = None
