@@ -31,15 +31,15 @@ class db_manager:
             else:
                 #--- connect on AWS
                 self.conn_handel = pymysql.connect(
-                user = USER,
-                database = DBNAME,
-                host = ENDPOINT,
-                port = PORT,
-                password = token,
-                ssl_ca = './us-east-1-bundle.pem',
-                ssl_verify_identity = True,
-                ssl_verify_cert = True,
-                auth_plugin_map = {'mysql_clear_password': None},)
+                user = self.dbConfig.user,
+                database = self.dbConfig.db_name,
+                host = self.dbConfig.host,
+                port = self.dbConfig.port,
+                password = self.dbConfig.password,
+                ssl_ca = self.dbConfig.ssl_ca,
+                ssl_verify_identity = self.dbConfig.ssl_verify_identity,
+                ssl_verify_cert = self.dbConfig.ssl_verify_cert,
+                auth_plugin_map = self.dbConfig.auth_plugin_map)
         
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
