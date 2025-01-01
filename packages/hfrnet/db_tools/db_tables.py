@@ -52,7 +52,7 @@ def read_resolution(db_class, configureVals):
 
 
 def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
-                 mltaparameters, process_list):
+				mltaparameters, process_list):
 	# Get realtime process(es) to run, the methods table
 	sqlquery = f"SELECT p.name,m.name,m.description,rp.save_as FROM realtime_process rp " \
 	           f"JOIN domain d ON d.id = rp.domain_id " \
@@ -403,10 +403,10 @@ def get_state_time(configObj, process_name):
 	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT time,csv '
-                            'FROM state '
-                            f"WHERE name = '{process_name}' "
-                            f"AND domain_id = '{configObj.domain_id}' "
-                            f"AND resolution_id = '{configObj.resolution_id}' ")
+					'FROM state '
+					f"WHERE name = '{process_name}' "
+					f"AND domain_id = '{configObj.domain_id}' "
+					f"AND resolution_id = '{configObj.resolution_id}' ")
 		
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
