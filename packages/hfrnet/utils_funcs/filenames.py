@@ -4,8 +4,8 @@ import logging
 import calendar
 from pathlib import Path
 from copy import deepcopy
-from datetime import datetime, timezone
 from hfrnet.utils_funcs.lib_rtv import FileLocations
+from hfrnet.utils_funcs.utility import current_datetime
 from hfrnet.utils_funcs import constsHFR
 from hfrnet.db_tools.db_tables import get_files_list_intem_table
 
@@ -174,7 +174,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     start_time = t.strftime(constsHFR.NCCF_FORMAT)
     end_time = t.strftime(constsHFR.NCCF_FORMAT)
-    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
     name_nccf = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
                  f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
@@ -209,7 +209,7 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     start_time = t.strftime(constsHFR.NCCF_FORMAT)
     end_time = t.strftime(constsHFR.NCCF_FORMAT)
-    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
     retObj.ncfilename = (f"rtv-{domain}-{resolution}-25h-avg"
                          "_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
@@ -254,7 +254,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     dayOfWeek, last = calendar.monthrange(t.year, t.month)
     start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)
     end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)
-    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
     retObj.ncfilename = (f"rtv-{domain}-{resolution}"
                          "-month-avg_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
@@ -290,9 +290,9 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     fileForm = (f"rtv-monthSum_{domain}_"
                 f"*{resolution}_{rtvProcessObj.method}_"
                 f"*{t.strftime('%Y%m')}")
-    temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'mat')
+    temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'nc')
     if not temp_file:
-        temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'nc')
+        temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'mat')
     retObj.input_file = temp_file
 
     find_proc_name = "lta-month"
@@ -330,7 +330,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
                   .strftime(constsHFR.NCCF_FORMAT))
     end_time = (t.replace(month=12, day=31, hour=23, minute=59, second=59)
                 .strftime(constsHFR.NCCF_FORMAT))
-    creation_time = datetime.now(timezone.utc).strftime(constsHFR.NCCF_FORMAT)
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
     retObj.ncfilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr_"
                          f"s{start_time}_e{end_time}_c{creation_time}.nc")
 

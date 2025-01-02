@@ -217,7 +217,7 @@ def now_hour(inTime = None):
     if inTime:
         t = inTime
     else:
-        t = datetime.now(timezone.utc)
+        t = current_datetime()
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
 def eomday(t):
@@ -230,7 +230,7 @@ def now_second(inTime = None):
     if inTime:
         t = inTime
     else:
-        t = datetime.now(timezone.utc)
+        t = current_datetime()
     return t.replace(second=t.second, microsecond=0, minute=t.minute,
                      hour=t.hour)
 
@@ -280,7 +280,7 @@ DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
 def get_datetime(datetime_str=None):
     """get datetime in different instances"""
     if not datetime_str:
-        return datetime.now(timezone.utc)
+        return current_datetime()
 
     if isinstance(datetime_str, (datetime, timedelta)):
         return datetime_str
@@ -306,7 +306,7 @@ def set_history(A, msg):
     if not hasattr(A, 'history'):
         A.history = []
         h = _dict()
-        h.timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        h.timestamp = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
         h.program = os.path.basename(__file__)
         h.user = os.getenv('USER') or 'unknown user'
         h.message = msg
@@ -438,7 +438,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     reprocessing = configObj.reprocess
     doMonthly = False
     doYearly = False
-    timeNow = datetime.now(timezone.utc)
+    timeNow = current_datetime()
     timeMonthly = rtvTime
     timeYearly = rtvTime
 

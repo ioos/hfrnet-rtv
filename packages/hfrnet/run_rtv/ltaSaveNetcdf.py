@@ -1,6 +1,5 @@
 """Saves LTA data to a NetCDF file"""
 
-import os
 from datetime import datetime
 import textwrap
 import logging
@@ -9,7 +8,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, next_month_start,
-                                        set_history, rtvNcid)
+                                        set_history, rtvNcid, current_datetime)
 import hfrnet.utils_funcs.constsHFR as constsHFR
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
@@ -254,7 +253,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.id = f"{uuid.uuid4()}"
 
     # Date Created (ACDD)
-    ncid.date_created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
     ncid.source = metaDataObj.source
