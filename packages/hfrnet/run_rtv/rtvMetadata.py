@@ -54,14 +54,12 @@ def rtvMetadata(ncid, configObj):
     # Naming Authority (REQUIRED)
     ncid.naming_authority = 'edu.ucsd.cordc'
 
-
     #% Source & Instrument Definition
 
     if configObj.domain == "glna":
         ncid.source = 'surface water velocity field from hf-radar'
     else:
         ncid.source = 'surface ocean velocity field from hf-radar'
-
 
     ncid.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 8.6'
 

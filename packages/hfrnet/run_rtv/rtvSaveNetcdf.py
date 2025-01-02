@@ -1,6 +1,6 @@
+"""rtvSaveNetcdf"""
 
-import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 import textwrap
 import logging
 import uuid
@@ -8,7 +8,8 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.run_rtv.rtvMetadata import rtvMetadata
-from hfrnet.utils_funcs.utility import _dict, set_history, rtvNcid
+from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
+                                        current_datetime)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -234,7 +235,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.id = f"{uuid.uuid4()}"
 
     # Date Created (ACDD)
-    ncid.date_created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
     ncid.source = metaDataObj.source
