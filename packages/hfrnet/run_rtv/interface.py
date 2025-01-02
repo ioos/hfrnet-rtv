@@ -15,7 +15,6 @@ __updated__ = "2024-07-23"
 
 from pathlib import Path
 import aim
-import os
 from datetime import datetime
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
@@ -23,7 +22,7 @@ from hfrnet.db_tools.db_tables import read_domain, read_resolution, read_methods
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo, 
                                         FileLocations, RtvProcess, RtvTotals,
                                         SetupError, DatabaseError)
-from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo, StcInfo, LtaInfo
+from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo
 from hfrnet.utils_funcs.utility import generate_time_spans
 import hfrnet.run_rtv.processRtv as processRtv
 from hfrnet.db_tools.db_manager import db_manager, set_db_info
