@@ -1,0 +1,32 @@
+processing:
+   domain: ushi
+   resolution: 6km
+   batch_processing: 'true'
+time:
+   start_date: '202301040000000'
+   end_date:   '202301040000000'
+production:
+   site: PLAIT
+   environment: INT
+   version: v1r0
+directory:
+   algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
+   log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
+   output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
+   radial_remote_dir: /data/hfrnet-fs/hfrnet/db/files
+   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+   interm_local_dir: ''
+   #interm_local_dir: '/data/smcd12/ASSISTT_DATA/HFRnet/prelim_delivery/DATA/USHI_20230104/input/intermediate'
+   
+databases:
+   run_env: 'rhw' # 'aws'
+   user: 'rt'
+   host: ''
+   port: 0
+   password: 'token'
+   ssl_ca: './us-east-1-bundle.pem'
+   ssl_verify_identity: True
+   ssl_verify_cert: True
+   auth_plugin_map: {'mysql_clear_password': None}
+   config_dbname: 'rtvproc'
+   radial_dbname: 'hfradar'
