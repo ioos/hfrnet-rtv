@@ -130,7 +130,6 @@ class FileLocations(BaseObject):
     def __init__(self):
         self.landfile = ""
         self.gridfile = ""
-        self.radial_remote_dir = ""
         self.radial_local_dir = ""
         self.input_file = ""
         self.output_dir = ""

@@ -70,7 +70,6 @@ class Interface(aim.Interface):
             'algorithm_dir': str,
             'log': str,
             'output': str,
-            'radial_remote_dir': str,
             'radial_local_dir': str,
             'interm_local_dir': str,
         },
@@ -213,8 +212,11 @@ class Interface(aim.Interface):
         fileLocObj.output_dir = Path(self.config['directory.output'])
         fileLocObj.output_dir.mkdir(parents=True, exist_ok=True)
 
-        fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
-        fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+        if self.config['directory.radial_local_dir']:
+            fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+        else:
+            fileLocObj.radial_local_dir = None
+
         if self.config['directory.interm_local_dir']:
             fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
         else:

@@ -13,10 +13,9 @@ directory:
    algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
    log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
    output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   radial_remote_dir: /data/hfrnet-fs/hfrnet/db/files
    radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
    interm_local_dir: ''
-   #interm_local_dir: '/data/smcd12/ASSISTT_DATA/HFRnet/prelim_delivery/DATA/USHI_20230104/input/intermediate'
+
    
 databases:
    run_env: 'rhw' # 'aws'
