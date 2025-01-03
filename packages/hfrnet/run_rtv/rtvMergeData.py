@@ -1,3 +1,4 @@
+"""rtvMergeData"""
 
 import logging
 import numpy as np
@@ -24,30 +25,30 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
 
     # Check for data file from previous run(s)
     last = None
-    if fileLocObj.mpathfile.is_file():
+    if fileLocObj.input_file.is_file():
 
         if configObj.reprocess:
             # Warning if we're reprocessing
-            msg = (f'Total mat-file {fileLocObj.mpathfile} exists. Should '
+            msg = (f'Total mat-file {fileLocObj.input_file} exists. Should '
                       'have been removed to ensure consistent results.')
             _log.warning(msg)
 
         else:
             # Load existing data
             try:
-                last = load_mat(fileLocObj.mpathfile)
-                msg = f'Loaded prior solutions from {fileLocObj.mpathfile}'
+                last = load_mat(fileLocObj.input_file)
+                msg = f'Loaded prior solutions from {fileLocObj.input_file}'
                 _log.debug(msg)
 
             except Exception as e:
-                msg = (f'Failed to load prior data from {fileLocObj.mpathfile}:'
+                msg = (f'Failed to load prior data from {fileLocObj.input_file}:'
                        f' {str(e)} \n'
                        'Plan to overwrite existing file, data from previous '
                        'run(s) will be lost')
                 _log.warning(msg)
 
     else:
-        msg = f'{fileLocObj.mpathfile} not found, no prior solutions'
+        msg = f'{fileLocObj.input_file} not found, no prior solutions'
         _log.debug(msg)
 
 

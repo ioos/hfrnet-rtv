@@ -132,7 +132,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
 
-            _log.info(f"Saving uwls total intermemedaite files in netcdf format")
+            _log.info(f"Saving uwls total intermediate files in netcdf format")
             #save intermediate file (greater precision)
             allInfo = {'metaDataObj': metaDataObj.to_dict(),
                        'configObj': configObj.to_dict(),

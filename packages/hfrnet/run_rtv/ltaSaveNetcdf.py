@@ -62,10 +62,10 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
                     rtvProcessObj, time, A_totObj)
 
     except Exception as e:
-        message = f'Error saving {fileLocObj.ncpathfile}: \n {e}'
+        message = f'Error saving {fileLocObj.output_ncfile}: \n {e}'
         raise RuntimeError(message) from e
 
-    success = f"Saved {fileLocObj.ncpathfile}"
+    success = f"Saved {fileLocObj.output_ncfile}"
     _log.info(success)
 
 def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,

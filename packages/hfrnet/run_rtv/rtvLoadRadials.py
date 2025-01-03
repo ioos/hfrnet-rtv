@@ -381,11 +381,12 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         n = n + 1
         ifile = file_list_temp[I]
-        # FIX: to be removed
-        ifile.dir = ifile.dir.replace(str(fileLocObj.radial_remote_dir),
-                                    str(fileLocObj.radial_local_dir))
         ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
-
+        if fileLocObj.radial_local_dir:
+            ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
+                                  f"{ifile.network}", f"{ifile.site}",
+                                  f"{ifile.t.strftime('%Y-%m')}",
+                                  f"{ifile.file}")
         # Load radial data
         d = None
         try:
