@@ -1,3 +1,30 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:51f91005db3d6b6daaf2cbbdd1e9edb3ade711cac728f090d1b37cc418263b96
-size 860
+processing:
+   domain: 'ushi'
+   resolution: '6km'
+   batch_processing: 'True' #'False'
+time:
+   start_date: '202301040000000'
+   end_date:   '202301040059599'
+production:
+   site: PLAIT
+   environment: INT
+   version: v1r0
+directory:
+   algorithm_dir: /data/data564/ismail/hfrnet
+   log: /data/smcd12/ASSISTT_DATA/HFRnet/ismail_sandbox/working_dir/logs
+   output: /data/smcd12/ASSISTT_DATA/HFRnet/ismail_sandbox/working_dir/output
+   radial_remote_dir: /data/hfrnet-fs/hfrnet/db/files
+   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+   interm_local_dir: ''
+databases:
+   run_env: 'rhw' # 'aws'
+   user: 'rt'
+   host: ''
+   port: 0
+   password: 'token'
+   ssl_ca: './us-east-1-bundle.pem'
+   ssl_verify_identity: True
+   ssl_verify_cert: True
+   auth_plugin_map: {'mysql_clear_password': None}
+   config_dbname: 'rtvproc'
+   radial_dbname: 'hfradar'
