@@ -444,12 +444,15 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
     if reprocessing:
 
+        monthDiff = timeNow.month - rtvTime.month
+        yearDiff = timeNow.year - rtvTime.year
+
         #if timeNow is a month more than the reprocess date, then do monthly avg
-        if (timeNow.month - rtvTime.month) >= 1:
+        if monthDiff >= 1 or yearDiff >= 1:
             doMonthly = True
 
         #if reprocess date if previous year, then do yearly avg
-        if (timeNow.year - rtvTime.year) >= 1:
+        if yearDiff >= 1:
             doYearly = True
 
     else:#NRT

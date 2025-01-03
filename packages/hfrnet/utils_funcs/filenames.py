@@ -135,6 +135,19 @@ def find_intermediate_file(directory, search_par, file_format):
     _log.warning(msg)
     return ""
 
+def get_database_interm_file(retObj, configObj, t, find_proc_name):
+    """Get the intermediate input file"""
+
+    fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
+    if nRows == 1:
+        retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
+        if retObj.interm_local_dir:
+            retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
+    else:
+        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
+        _log.error(msg)
+
+
 # RTV paths & files
 def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     """files needed for the 'rtv' running mode"""
@@ -144,55 +157,20 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     resolution = configObj.resolution.casefold()
     method = rtvProcessObj.method.casefold()
 
-    # Mat-file
-    retObj.mdir = Path(fileLocObj.input_dir, t.strftime("%Y_%m"))
+    get_database_interm_file(retObj, configObj, t, 'rtv')
 
-    retObj.mfilename = (f"rtv_{domain}_{resolution}_"
-                        f"{method}_{t.strftime('%Y_%m_%d_%H%M')}.mat")
-
-    # Get the relevant file
-    retObj.mpathfile = find_file(domain, resolution, method, t, retObj.mdir, 'mat')
-
-    if retObj.mpathfile == "":
-        retObj.mpathfile = find_file(domain, resolution, method, t, retObj.mdir, 'nc')
-    if retObj.mpathfile == "":
-        retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
-
-    retObj.input_file = retObj.mpathfile
-
-    find_proc_name = 'rtv'
-    fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
-    if nRows == 1:
-        retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
-        retObj.mpathfile = Path(fileList['dir'][0], fileList['name'][0])
-        if retObj.interm_local_dir:
-            retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
-            retObj.mpathfile = Path(retObj.interm_local_dir, fileList['name'][0])
-    else:
-        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
-        _log.error(msg)
-
+    # Output NetCDF
     start_time = t.strftime(constsHFR.NCCF_FORMAT)
     end_time = t.strftime(constsHFR.NCCF_FORMAT)
     creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
     name_nccf = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
                  f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
-    # NetCDF
-    retObj.ncdir = Path(retObj.mdir, 'NetCDF')
+    retObj.output_ncfile = Path(retObj.output_dir, name_nccf)
 
-    retObj.ncfilename = (f"{t.strftime('%Y%m%d%H%M')}"
-                         f"_hfr_{domain}_{resolution}"
-                         f"_rtv_{method}.nc")
-
+    # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
                                 f"_s{start_time}_e{end_time}_c{creation_time}.nc")
-
-    retObj.ncpathfile = find_file(domain, resolution, method, t, retObj.ncdir, 'nc')
-    if retObj.ncpathfile == "":
-        retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
-
-    retObj.output_ncfile = Path(retObj.output_dir, name_nccf)
 
     retObj.intermed_filepath = Path(retObj.output_dir, retObj.intermed_filename)
 
@@ -214,9 +192,10 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
                          "_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
+    #input NetCDF
+    get_database_interm_file(retObj, configObj, t, 'rtv')
 
-    # NetCDF
-    retObj.ncdir = Path(retObj.mdir, 'NetCDF')
+    # Output NetCDF
     retObj.output_ncfile = Path(fileLocObj.output_dir, retObj.ncfilename)
 
     #intermediate file
@@ -237,20 +216,9 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     resolution = configObj.resolution.casefold()
 
     # Input rtv file
-    retObj = getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t)
-    retObj.input_dir = fileLocObj.input_dir
-    retObj.input_file = retObj.mpathfile
+    get_database_interm_file(retObj, configObj, t, 'rtv')
 
     ### Output files
-    # Mat-file (average)
-    retObj.mdir = fileLocObj.output_dir
-
-    retObj.mfilename = (f"rtv-monthAvg_{domain}_"
-                        f"{resolution}_{rtvProcessObj.method}_"
-                        f"{t.strftime('%Y%m')}.mat")
-
-    retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
-
     dayOfWeek, last = calendar.monthrange(t.year, t.month)
     start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)
     end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)
@@ -267,9 +235,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
     # NetCDF (average)
-    retObj.ncdir = fileLocObj.output_dir
-    retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
-    retObj.output_ncfile = retObj.ncpathfile
+    retObj.output_ncfile = Path(retObj.output_dir, retObj.ncfilename)
 
     return retObj
 
@@ -280,40 +246,11 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj = FileLocations()
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
-
     retObj.output_dir = fileLocObj.output_dir
     retObj.interm_local_dir = fileLocObj.interm_local_dir
 
-    retObj.input_dir = Path(fileLocObj.input_dir, 'long_term_averages',
-                            t.strftime('%Y'), t.strftime('%m'))
-
-    fileForm = (f"rtv-monthSum_{domain}_"
-                f"*{resolution}_{rtvProcessObj.method}_"
-                f"*{t.strftime('%Y%m')}")
-    temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'nc')
-    if not temp_file:
-        temp_file = find_intermediate_file(retObj.input_dir, fileForm, 'mat')
-    retObj.input_file = temp_file
-
-    find_proc_name = "lta-month"
-    fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
-    if nRows == 1:
-        retObj.input_file = Path(fileList['dir'][0], fileList['name'][0])
-        if retObj.interm_local_dir:
-            retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
-    else:
-        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
-        _log.error(msg)
-
-    # Mat-file
-    retObj.mdir = Path(fileLocObj.output_dir, 'long_term_averages',
-                       t.strftime('%Y'))
-
-    retObj.mfilename = (f"rtv-annualAvg_{domain}_"
-                        f"{resolution}_{rtvProcessObj.method}_"
-                        f"{t.strftime('%Y')}.mat")
-
-    retObj.mpathfile = Path(retObj.mdir, retObj.mfilename)
+    #find_proc_name = "lta-month"
+    get_database_interm_file(retObj, configObj, t, 'lta-month')
 
     #intermediate file
     retObj.intermed_filename = (f"rtv-annualSum_{domain}_"
@@ -322,10 +259,7 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.intermed_filepath = Path(fileLocObj.output_dir, retObj.intermed_filename)
 
-    retObj.mfilename = (f"rtv_{domain}_{resolution}_"
-                        f"{rtvProcessObj.method}_" 
-                        f"{t.strftime('%Y_%m_%d_%H%M')}.mat")
-
+    #Output NetCDF
     start_time = (t.replace(month=1, day=1, hour=0, minute=0, second=0)
                   .strftime(constsHFR.NCCF_FORMAT))
     end_time = (t.replace(month=12, day=31, hour=23, minute=59, second=59)
@@ -334,9 +268,6 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.ncfilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr_"
                          f"s{start_time}_e{end_time}_c{creation_time}.nc")
 
-    # NetCDF
-    retObj.ncdir = retObj.output_dir
-    retObj.ncpathfile = Path(retObj.ncdir, retObj.ncfilename)
-    retObj.output_ncfile = retObj.ncpathfile
+    retObj.output_ncfile = Path(retObj.output_dir, retObj.ncfilename)
 
     return retObj

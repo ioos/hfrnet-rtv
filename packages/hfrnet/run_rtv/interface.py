@@ -13,21 +13,23 @@
 # *** Update to today ***
 __updated__ = "2024-07-23"
 
+import logging
 from pathlib import Path
-import aim
 from datetime import datetime
+
+import aim
+
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
 from hfrnet.db_tools.db_tables import read_domain, read_resolution, read_methods
-from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo, 
+from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
-                                        SetupError, DatabaseError)
+                                        DatabaseError)
 from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo
 from hfrnet.utils_funcs.utility import generate_time_spans
 import hfrnet.run_rtv.processRtv as processRtv
 from hfrnet.db_tools.db_manager import db_manager, set_db_info
 
-import logging
 _log = logging.getLogger()
 
 
@@ -66,8 +68,6 @@ class Interface(aim.Interface):
         },
         'directory': {
             'algorithm_dir': str,
-            'working': str,
-            'input': str,
             'log': str,
             'output': str,
             'radial_remote_dir': str,
@@ -78,28 +78,28 @@ class Interface(aim.Interface):
             'run_env': str,
             'user': str,
             'host': str,
-            'port': str,
+            'port': int,
             'password': str,
             'ssl_ca': str,
-            'ssl_verify_identity': str,
-            'ssl_verify_cert': str,
+            'ssl_verify_identity': bool,
+            'ssl_verify_cert': bool,
             'auth_plugin_map': {},
             'config_dbname': str,
             'radial_dbname': str,
         },
     }
-    
+
     mconfigureVals = ConfigureVals("", "")
     mrtvInfo = RtvInfo()
     mstcLtaInfo = StcLtaInfo()
-    mstcInfo = mstcLtaInfo.stcInfo 
-    mltaInfo = mstcLtaInfo.ltaInfo 
+    mstcInfo = mstcLtaInfo.stcInfo
+    mltaInfo = mstcLtaInfo.ltaInfo
     mnetcdf_metadata = Metadata()
     fileLocObj = FileLocations()
     siteInfoObj = []
     rtvProcessObj = RtvProcess()
     compTotObj = RtvTotals()
-    
+
     def setup(self):
         """ Generate a configuration for the science code.
         This method exists to transform the incoming configuration
@@ -114,13 +114,6 @@ class Interface(aim.Interface):
         self.mconfigureVals.domain = self.config['processing.domain']
         self.mconfigureVals.resolution = self.config['processing.resolution']
 
-        # ------ Check the working dir
-        working_dir = Path(self.config['directory.working'])
-        if not working_dir.is_dir():
-            _log.fatal(f" ---- FATAL ERROR: The directory {working_dir} does not "
-                       f"exist")
-            raise SetupError(f"The directory {working_dir} does not exist")
-        # ------ Check the log dir
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -128,13 +121,12 @@ class Interface(aim.Interface):
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                            f"_{self.mconfigureVals.resolution}")
-        
+
         _log.info("-------------------------------------- ")
         _log.info(f"Star processing HFRnet for domain::"
                   f"{self.mconfigureVals.domain} "
                   f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
-        _log.info(working_dir)
         # set the runtime to the start time
         self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
                                           '%Y%m%d%H%M%S%f')
@@ -153,13 +145,12 @@ class Interface(aim.Interface):
         *** Update docstring to be descriptive and useful ****
         python -m hfrnet.run_config /data/smcd12/ASSISTT_DATA/HFRnet/test2/config_hfr_run_config.yml
         """
-               
         # ------ setup the rtvproc connection
-
         set_db_info(self.config, self.mconfigureVals)
+
         # get the analysis parametrers for domain, res, rtv,stc,lta
         with db_manager(self.mconfigureVals.dbObject) as db_class:
-    
+
             # Check for valid domain
             try:
                 read_domain(db_class, self.mconfigureVals)
@@ -167,7 +158,7 @@ class Interface(aim.Interface):
                 _log.info(f"No domain {self.mconfigureVals.domain} decsription were found or "
                           f"database connection failed")
                 return
-            
+
             # ---------------------------------
             # Check for valid resolution
             try:
@@ -181,9 +172,9 @@ class Interface(aim.Interface):
             process_list = []
             read_methods(db_class, self.mconfigureVals, self.mrtvInfo,
                          self.mstcInfo, self.mltaInfo,process_list)
-        
+
         self.set_file_locations(self.fileLocObj)
-        
+
         processStatus = processRtv.processRtv(self.mconfigureVals,
                                               self.siteInfoObj,
                                               self.fileLocObj,
@@ -208,25 +199,20 @@ class Interface(aim.Interface):
 
         *** Update docstring to be descriptive and useful ****
         """
-    
+
     def set_file_locations(self, fileLocObj):
         """
             Set all the directory locations
         """
-        
-        fileLocObj.mdir = Path(self.config['directory.input'])
-        
+
         algo_dir = Path(self.config['directory.algorithm_dir'])
         fileLocObj.landfile = algo_dir / 'ancillary_data/land_data'
         fileLocObj.gridfile = algo_dir / 'ancillary_data/grid_data'
-        
+
         # --- output dirs to save the nc, asc, intermediate files
-        fileLocObj.domaindir = Path(self.config['directory.output'])
-        fileLocObj.input_dir = Path(self.config['directory.input'])
         fileLocObj.output_dir = Path(self.config['directory.output'])
-        
-        fileLocObj.domaindir.mkdir(parents=True, exist_ok=True)
-        
+        fileLocObj.output_dir.mkdir(parents=True, exist_ok=True)
+
         fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
         fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
         if self.config['directory.interm_local_dir']:
