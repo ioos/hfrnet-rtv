@@ -13,9 +13,8 @@ directory:
    algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
    log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
    output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP
+   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/radials
    interm_local_dir: ''
-
    
 databases:
    run_env: 'rhw' # 'aws'
