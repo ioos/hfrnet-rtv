@@ -48,22 +48,23 @@ register:
       IMAGE_LOC: $ECR_IMAGE:$CI_COMMIT_TAG
     parallel:
       matrix:
-        - ALGORITHM_NAME: HFRNet
+      - ALGORITHM_NAME: HFRNet
         PR_YAML: OPS/HFRNet-Production-Rules.yml
     before_script:
       - !reference [.set_token]
     script:
       - !reference [.set_token]
       - |
-      pip install ao_register --index-url https://gitlab-ci-token:$%7BCI_JOB_TOKEN%7D@git.services.nesdis.noaa.gov/api/v4/projects/10095/packages/pypi/simple
+        pip install ao_register --index-url \
+        https://gitlab-ci-token:$%7BCI_JOB_TOKEN%7D@git.services.nesdis.noaa.gov/api/v4/projects/10095/packages/pypi/simple
       - |
-      ao_register CREATE -v \
-      --version $CI_COMMIT_TAG \
-      --rule_file $PR_YAML \
-      --container_location $IMAGE_LOC \
-      --artifacts_location None \
-      --env $ENV \
-      --rule_bucket ${ENV}-ao-algorithm-shared
+        ao_register CREATE -v \
+        --version $CI_COMMIT_TAG \
+        --rule_file $PR_YAML \
+        --container_location $IMAGE_LOC \
+        --artifacts_location None \
+        --env $ENV \
+        --rule_bucket ${ENV}-ao-algorithm-shared
     rules:
       # =~ means 'evaluate as a regular expression' could be something like 0.0.9 or v1.2.34
       # Initially tagged as v0.0.11
