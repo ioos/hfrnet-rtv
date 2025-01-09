@@ -4,6 +4,7 @@ variables:
 stages:
     - pre
     - test
+    - register
 
 include:
   - component: ${CI_SERVER_HOST}/ci-catalog/security/secret_detection@~latest
@@ -37,3 +38,33 @@ test-job:
     stage: test
     script:
         - echo “No test has been created yet”
+
+register:
+    stage: register
+    image: "$CI_REGISTRY_IMAGE/public.ecr.aws/docker/library/python:3.10"
+    id_tokens: !reference [.get_token]
+    variables:
+      AWS_PROFILE: nesdis-osgs-nccf-dev-5006
+      IMAGE_LOC: $ECR_IMAGE:$CI_COMMIT_TAG
+    parallel:
+      matrix:
+        - ALGORITHM_NAME: HFRNet
+	  PR_YAML: OPS/HFRNet-Production-Rules.yml
+    before_script:
+      - !reference [.set_token]
+    script:
+      - !reference [.set_token]
+      - |
+      pip install ao_register --index-url https://gitlab-ci-token:$%7BCI_JOB_TOKEN%7D@git.services.nesdis.noaa.gov/api/v4/projects/10095/packages/pypi/simple
+      - |
+      ao_register CREATE -v \
+      --version $CI_COMMIT_TAG \
+      --rule_file $PR_YAML \
+      --container_location $IMAGE_LOC \
+      --artifacts_location None \
+      --env $ENV \
+      --rule_bucket ${ENV}-ao-algorithm-shared
+    rules:
+      # =~ means 'evaluate as a regular expression' could be something like 0.0.9 or v1.2.34
+      # Initially tagged as v0.0.11
+    - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+$/'
