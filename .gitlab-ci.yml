@@ -49,7 +49,7 @@ register:
     parallel:
       matrix:
         - ALGORITHM_NAME: HFRNet
-          PR_YAML: OPS/HFRNet-Production-Rules.yml
+        PR_YAML: OPS/HFRNet-Production-Rules.yml
     before_script:
       - !reference [.set_token]
     script:
