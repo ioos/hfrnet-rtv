@@ -8,7 +8,7 @@ production_rule:
       cpu: "1"
       memory: "2Gi"
       shm: "0Ki"
-      command: ["python -m hfrnet.run_rtv ../test_data/config_hfr.yml"]
+      command: ["python", "-m", "hfrnet.run_rtv", "../test_data/config_hfr.yml"]
     retry:
       limit: 2
       backoff: 5min
