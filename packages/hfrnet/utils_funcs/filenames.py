@@ -160,9 +160,9 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     get_database_interm_file(retObj, configObj, t, 'rtv')
 
     # Output NetCDF
-    start_time = t.strftime(constsHFR.NCCF_FORMAT)
-    end_time = t.strftime(constsHFR.NCCF_FORMAT)
-    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
+    start_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
+    end_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     name_nccf = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
                  f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
@@ -185,9 +185,9 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
 
-    start_time = t.strftime(constsHFR.NCCF_FORMAT)
-    end_time = t.strftime(constsHFR.NCCF_FORMAT)
-    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
+    start_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
+    end_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     retObj.ncfilename = (f"rtv-{domain}-{resolution}-25h-avg"
                          "_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
@@ -220,9 +220,9 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     ### Output files
     dayOfWeek, last = calendar.monthrange(t.year, t.month)
-    start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)
-    end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)
-    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
+    start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)[:-5]
+    end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)[:-5]
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     retObj.ncfilename = (f"rtv-{domain}-{resolution}"
                          "-month-avg_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
@@ -261,10 +261,10 @@ def getLtaYearFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #Output NetCDF
     start_time = (t.replace(month=1, day=1, hour=0, minute=0, second=0)
-                  .strftime(constsHFR.NCCF_FORMAT))
+                  .strftime(constsHFR.NCCF_FORMAT))[:-5]
     end_time = (t.replace(month=12, day=31, hour=23, minute=59, second=59)
-                .strftime(constsHFR.NCCF_FORMAT))
-    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)
+                .strftime(constsHFR.NCCF_FORMAT))[:-5]
+    creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     retObj.ncfilename = (f"rtv-{domain}-{resolution}-ann-avg_v1r0_hfr_"
                          f"s{start_time}_e{end_time}_c{creation_time}.nc")
 
