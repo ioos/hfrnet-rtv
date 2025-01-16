@@ -10,7 +10,6 @@ from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, next_month_start,
                                         set_history, rtvNcid, current_datetime)
 import hfrnet.utils_funcs.constsHFR as constsHFR
-from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -167,9 +166,6 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # aren't using features specific to the NetCDF-4.0 model.
     ncid = Dataset(fileLocObj.output_ncfile, 'w', data_mode='NETCDF4_CLASSIC')
 
-    #set the project, sensor, and institutional metadata
-    rtvMetadata(ncid, configObj)
-
     ## Define Dimensions
     # Add in order of T, Z, Y, X for CF/COARDS compliance
     dimid_t = ncid.createDimension('time', None)
@@ -303,9 +299,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     if hasattr(metaDataObj, 'references'):
         ncid.references = textwrap.fill(metaDataObj.references, 70)
 
-
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
+    ncid.institution_acronym = metaDataObj.institution_acronym
 
     # Creator (ACDD)
     ncid.creator_type = metaDataObj.creator_type
@@ -578,8 +574,6 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         msg = ('max_error metadata description is undefined for processing '
                f"method:  {rtvProcessObj.method}")
         _log.error(msg)
-
-    metaDataObj.depth_bottom = ncid.depth_bottom
 
     ## Add Data Values
     varid_lat[:] = all_range(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy)

@@ -7,7 +7,6 @@ import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
-from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
                                         current_datetime)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
@@ -155,9 +154,6 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # aren't using features specific to the NetCDF-4.0 model.
     ncid = Dataset(fileLocObj.output_ncfile, 'w', data_mode='NETCDF4_CLASSIC')
 
-    #set the project, sensor, and institutional metadata
-    rtvMetadata(ncid, configObj)
-
     # Define Dimensions
     # Add in order of T, Z, Y, X for CF/COARDS compliance
     dimid_t = ncid.createDimension('time', None)
@@ -243,7 +239,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
         ncid.program = metaDataObj.program
-
+   
     # Project (ACDD)
     if hasattr(metaDataObj, 'project'):
         ncid.project = metaDataObj.project
@@ -288,6 +284,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
+    ncid.institution_acronym = metaDataObj.institution_acronym
 
     # Creator (ACDD)
     ncid.creator_type = metaDataObj.creator_type
@@ -516,8 +513,6 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_rm.files_loaded = '\n'.join([rr.file for rr in r])
     varid_rm.files_loaded_description = 'Radial file names loaded'
-
-    metaDataObj.depth_bottom = ncid.depth_bottom
 
     ## Add Data Values
     varid_lat[:] = all_range(U.grid.y_range[0], U.grid.y_range[1], U.grid.dy )

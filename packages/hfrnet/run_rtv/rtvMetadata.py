@@ -37,7 +37,7 @@ def rtvMetadata(ncid, configObj):
 
     # Organization descriptive name (REQUIRED)
     ncid.institution = ('Coastal Observing Research and Development Center, '
-                                 'Scripps Institution of Oceanography')
+                        'Scripps Institution of Oceanography')
 
     # Organization contact name (REQUIRED)
     ncid.creator_name = 'HFRNet Administrators'
@@ -64,28 +64,4 @@ def rtvMetadata(ncid, configObj):
     ncid.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 8.6'
 
     ncid.instrument = ('Earth Remote Sensing Instruments, Active Remote Sensing, '
-                                'Profilers/Sounders, Radar Sounders, Doppler RADAR')
-
-
-    #% Sampling Depth Bounds
-
-    # Define nominal average and profile depth using resolution as proxy for
-    # operating frequency and corresponding sampling depth
-    if configObj.resolution == '500m':
-        ncid.depth_mean = 0.15
-        ncid.depth_bottom = 0.3
-
-    elif configObj.resolution == '1km':
-        ncid.depth_mean = 0.3
-        ncid.depth_bottom = 0.5
-
-    elif configObj.resolution == '2km':
-        ncid.depth_mean = 0.55
-        ncid.depth_bottom = 1.0
-
-    elif configObj.resolution == '6km':
-        ncid.depth_mean = 1.4
-        ncid.depth_bottom = 2.4
-    else:
-        errmsg = f'Resolution {configObj.resolution} not recognized in defining vertical bounds'
-        _log.error(errmsg)
+                       'Profilers/Sounders, Radar Sounders, Doppler RADAR')
