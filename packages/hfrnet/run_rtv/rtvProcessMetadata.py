@@ -41,6 +41,8 @@ def rtvProcessMetadata(processObj, configObj):
         _log.error(msg)
         raise ValueError(msg)
 
+    set_common_metadata(configObj, metaDataObj)
+
     return metaDataObj
 
     #% RTV specific metadata
@@ -335,3 +337,67 @@ def appendLocationKeywords(configObj, metaDataObj):
     metaDataObj.keywords = f"{metaDataObj.keywords}{locationKeywords}"
 
     return metaDataObj
+
+def set_common_metadata(configObj, metaDataObj):
+    """ Set the metadata that is common to all processes"""
+    
+    # Program (OPTIONAL)
+    #    The overarching program(s) of which the dataset is a part
+    metaDataObj.program = 'Integrated Ocean Observing System (IOOS)'
+
+    #% Institution & Contact
+
+    # Organization acronym (REQUIRED)
+    metaDataObj.institution_acronym = 'SIO'
+
+    # Organization descriptive name (REQUIRED)
+    metaDataObj.institution = ('Coastal Observing Research and Development Center, '
+                        'Scripps Institution of Oceanography')
+
+    # Organization contact name (REQUIRED)
+    metaDataObj.creator_name = 'HFRNet Administrators'
+
+    # Organization contact email (REQUIRED)
+    metaDataObj.creator_email = 'hfrnet.administrators@sio.ucsd.edu'
+
+    # Organization contact type; 'person', 'group', 'institution', or 'position' (REQUIRED)
+    metaDataObj.creator_type = 'group'
+
+    # Organization URL (REQUIRED)
+    metaDataObj.creator_url = 'http://cordc.ucsd.edu/projects/mapping/'
+
+    # Naming Authority (REQUIRED)
+    metaDataObj.naming_authority = 'edu.ucsd.cordc'
+
+    #% Source & Instrument Definition
+
+    if configObj.domain == "glna":
+        metaDataObj.source = 'surface water velocity field from hf-radar'
+    else:
+        metaDataObj.source = 'surface ocean velocity field from hf-radar'
+
+    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 8.6'
+
+    metaDataObj.instrument = ('Earth Remote Sensing Instruments, Active Remote Sensing, '
+                       'Profilers/Sounders, Radar Sounders, Doppler RADAR')
+    
+    # Define nominal average and profile depth using resolution as proxy for
+    # operating frequency and corresponding sampling depth
+    if configObj.resolution == '500m':
+        metaDataObj.depth_mean = 0.15
+        metaDataObj.depth_bottom = 0.3
+
+    elif configObj.resolution == '1km':
+        metaDataObj.depth_mean = 0.3
+        metaDataObj.depth_bottom = 0.5
+
+    elif configObj.resolution == '2km':
+        metaDataObj.depth_mean = 0.55
+        metaDataObj.depth_bottom = 1.0
+
+    elif configObj.resolution == '6km':
+        metaDataObj.depth_mean = 1.4
+        metaDataObj.depth_bottom = 2.4
+    else:
+        errmsg = f'Resolution {configObj.resolution} not recognized in defining vertical bounds'
+        _log.error(errmsg)
