@@ -91,11 +91,11 @@ All output files will be printed to the output.txt file, which is just a dump of
 
 ## Test Cases
 A full suite of test cases can be found at `/data/smcd12/ASSISTT_DATA/HFRnet/test_cases`.
-There are different directories for each release version, please use the most current one.  Copy the files in the `input/` directory to your working directory and then compare your outputs with those found in the `output/` directory.  Do not run your test directly in these directories.
+There are different directories for each release version; please use the most current one.  Copy the files in the `input/` directory to your working directory and then compare your outputs with those found in the `output/` directory.  Do not run your test directly in these directories.
 
 | Test Case Path | Purpose | Config YAML specifications |
 | --- | --- | --- |
-| USHI_20230104 | Test case for USHI domeain 2023/01/04 | test_data/config_hfr.yaml |
+| USHI_20230104 | Test case for USHI domain 2023/01/04 | test_data/config_hfr.yaml |
 
 
 *(Because of markdown limitations, show configuration needs in key=value pair notation instead of yaml notation.)*
