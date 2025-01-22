@@ -6,7 +6,7 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 ## Important Resources
 - __[Google Drive](https://drive.google.com/drive/folders/12joE1XzYbQWOT3Yez3ye7HmyPhhYnNPF)__
 - __[Algorithm Support Document](https://docs.google.com/document/d/1QUiUwgeGr3LINf9lBWBIfja_m__yLKfTMWHam_f_Ooo/edit?tab=t.0#heading=h.gjdgxs)__
-- __[Software Code Review Summary]()__
+- __[Code Update Summary](https://docs.google.com/spreadsheets/d/1LFEU2PCXZDM0KcnGfjPqYXrtLYVtOh98xbwcV25BseE/edit?usp=sharing)__
 - __[ASSISTT Delivery Schedule](https://docs.google.com/spreadsheets/d/107vHNeHh7s_z-1HO9KGt1te7pxqu-h7eMuOyrDKvQd8/edit?pli=1#gid=1641027802)__
 - __[R2O Team Lookup](https://docs.google.com/spreadsheets/d/1u42Lu2QawJOKzCguXlfWYdcWOYyotDFGkkXkeyXCJCk/edit#gid=616569363)__
 
