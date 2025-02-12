@@ -2,7 +2,7 @@ production_rule:
   sa_name: "HFRNet"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet"
-  version: "1.0.0"
+  version: "1.0.1"
   runtime:
     resources:
       cpu: "1"
@@ -29,8 +29,8 @@ production_rule:
     search:
       type: "system.temporal"
       temporal_search_boundaries:
-        left: "-20min"
-        right: "15min"
+        left_offset: 20min
+        right_offset: 15min
     metadata:
       create:
         format: '%Y%m%d%H%M%S%f'
