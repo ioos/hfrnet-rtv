@@ -29,7 +29,7 @@ production_rule:
     search:
       type: "system.temporal"
       temporal_search_boundaries:
-        left_offset: 20min
+        left_offset: -20min
         right_offset: 15min
     metadata:
       create:
