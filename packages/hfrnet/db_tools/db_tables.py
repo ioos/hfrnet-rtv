@@ -489,51 +489,57 @@ def check_lock_process(configObj):
 		sqlquery = (f"SELECT exe_time FROM lock_process WHERE domain = "
 		            f"'{configObj.domain}' AND resolution = '{configObj.resolution}' ")
 		
-		results = db_class.get_query(sqlquery)
-		nRows = len(next(iter(results.values())))
-		ct = current_datetime()
-		
-		if nRows > 0:
-			ct_temp = results['exe_time'][0]
-			process_stime = ct_temp.replace(tzinfo=timezone.utc)
+		try:
+			results = db_class.get_query(sqlquery)
+			nRows = len(next(iter(results.values())))
+			ct = current_datetime()
 			
-			time_diff = ct - process_stime
-			if time_diff < process_time:
-				_log.fatal(f"Process of Domain = {configObj.domain}:: and resolution ="
-						f" {configObj.resolution} already running.  Can't run")
-				return True
-			else:
-				_log.info(f" Locking process for "
-							f"Domain = {configObj.domain}:: and resolution ="
-							f" {configObj.resolution}.")
+			if nRows > 0:
+				ct_temp = results['exe_time'][0]
+				process_stime = ct_temp.replace(tzinfo=timezone.utc)
 				
-				update_query = (f"UPDATE lock_process SET exe_time = '{ct}' "
-								f"WHERE domain = '{configObj.domain}' "
-								f"AND resolution = '{configObj.resolution}'")
+				time_diff = ct - process_stime
+				if time_diff < process_time:
+					_log.fatal(f"Process of Domain = {configObj.domain}:: and resolution ="
+							f" {configObj.resolution} already running.  Can't run")
+					return True
+				else:
+					_log.info(f" Locking process for "
+								f"Domain = {configObj.domain}:: and resolution ="
+								f" {configObj.resolution}.")
+					
+					update_query = (f"UPDATE lock_process SET exe_time = '{ct}' "
+									f"WHERE domain = '{configObj.domain}' "
+									f"AND resolution = '{configObj.resolution}'")
+					try:
+						db_class.write_query(update_query)
+						return False
+					except Exception as err:
+						msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+								f", Can't update the lock_process for "
+								f"{configObj.domain}::{configObj.resolution}")
+						_log.fatal(msg)
+						return True
+			else:
+				_log.info(f" Adding process Locking for "
+							f"Domain = {configObj.domain}:: and resolution ="
+							f" {configObj.resolution}")
+				
+				lock_query = (f"INSERT into lock_process (domain, resolution, exe_time) "
+							f"values ('{configObj.domain}', '{configObj.resolution}',"
+							f"'{ct}' )")
 				try:
-					db_class.write_query(update_query)
+					db_class.write_query(lock_query)
 					return False
 				except Exception as err:
 					msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-							f", Can't update the lock_process for "
-							f"{configObj.domain}::{configObj.resolution}")
+					       f", Can't update the lock_process for "
+					       f"{configObj.domain}::{configObj.resolution}")
 					_log.fatal(msg)
 					return True
-		else:
-			_log.info(f" Adding process Locking for "
-						f"Domain = {configObj.domain}:: and resolution ="
-						f" {configObj.resolution}")
-			
-			lock_query = (f"INSERT into lock_process (domain, resolution, exe_time) "
-						f"values ('{configObj.domain}', '{configObj.resolution}',"
-						f"'{ct}' )")
-			try:
-				db_class.write_query(lock_query)
-				return False
-			except Exception as err:
-				msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-				       f", Can't update the lock_process for "
-				       f"{configObj.domain}::{configObj.resolution}")
-				_log.fatal(msg)
-				return True
-	
+		except Exception as err:
+			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+			       f", The lock_process does not exist in the database "
+			       f"The process is terminated")
+			_log.fatal(msg)
+			return True

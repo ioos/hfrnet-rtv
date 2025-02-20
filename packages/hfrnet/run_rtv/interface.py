@@ -118,6 +118,7 @@ class Interface(aim.Interface):
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
         
+        #Check if the process is locked
         _log.info("=============================================")
         _log.info("=============================================")
         if check_lock_process( self.mconfigureVals):
@@ -157,6 +158,7 @@ class Interface(aim.Interface):
         *** Update docstring to be descriptive and useful ****
         python -m hfrnet.run_config config_hfr_run_config.yml
         """
+        # Terminate if the process is locked
         _log.info("=============================================")
         _log.info("=============================================")
         self.output_info['status'] = "good"
@@ -164,13 +166,11 @@ class Interface(aim.Interface):
             _log.info(f" Process lock = true, Run can't be executed")
             return
         
-        
         _log.info(f" Process lock is set, Process is running")
         _log.info("=============================================")
         _log.info("=============================================")
-        return
+        
         # ------ setup the rtvproc connection
-        # set_db_info(self.config, self.mconfigureVals)
 
         # get the analysis parametrers for domain, res, rtv,stc,lta
         with db_manager(self.mconfigureVals.dbObject) as db_class:
