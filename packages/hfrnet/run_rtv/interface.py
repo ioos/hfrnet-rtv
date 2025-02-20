@@ -115,6 +115,13 @@ class Interface(aim.Interface):
         """
         self.mconfigureVals.domain = self.config['processing.domain']
         self.mconfigureVals.resolution = self.config['processing.resolution']
+        log_dir = Path(self.config['directory.log'])
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        self.mconfigureVals.product_version = self.config['production.version']
+
+        setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
+                           f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
         
@@ -127,13 +134,6 @@ class Interface(aim.Interface):
         _log.info("=============================================")
         _log.info("=============================================")
         
-        log_dir = Path(self.config['directory.log'])
-        log_dir.mkdir(parents=True, exist_ok=True)
-
-        self.mconfigureVals.product_version = self.config['production.version']
-
-        setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
-                           f"_{self.mconfigureVals.resolution}")
 
         _log.info("-------------------------------------- ")
         _log.info(f"Start processing HFRnet for domain::"
