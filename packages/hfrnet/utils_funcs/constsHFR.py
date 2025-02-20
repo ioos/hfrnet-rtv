@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 """
    Project level constants
@@ -19,3 +19,6 @@ RIGHT_ANGLE = 90
 #minimum dates for when to do the averages
 YEAR_AVG_MIN_DATE = datetime(datetime.now(timezone.utc).year, 1, 20, 0, 0, tzinfo=timezone.utc)
 MONTH_AVG_MIN_DAY = 13
+#--------
+# Waiting time for locking a process
+process_time = timedelta(minutes=5)

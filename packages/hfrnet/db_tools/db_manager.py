@@ -107,26 +107,28 @@ class db_manager:
     def close(self):
         self.conn_handel.close()
     #----------------------------------------------------------
-
+#------------------ new stuff here \/
     def table_exists(self, table_name):
         self.cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
         result = self.cursor.fetchone()
         return result is not None
     #----------------------------------------------------------
-
-    def create_table(self, table_name):
+    def create_lock_process_table(self, table_name):
         create_table_query = f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
+        CREATE TABLE IF NOT EXISTS lock_process (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            file_name VARCHAR(255),
-            file_arrival_time DATETIME,
+            exe_time DATETIME,
             domain VARCHAR(255),
             resolution VARCHAR(255)
         )
         """
-        self.get_query(create_table_query)
-        # self.connection.commit()
+        self.write_query(create_table_query)
     #----------------------------------------------------------
+
+
+
+
+# ----------------------------------------------------------
 def set_db_info( config, configObj):
     """
     Set DB info to be used later...?

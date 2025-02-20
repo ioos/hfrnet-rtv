@@ -14,6 +14,7 @@
 __updated__ = "2024-07-23"
 
 import logging
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -21,7 +22,8 @@ import aim
 
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
-from hfrnet.db_tools.db_tables import read_domain, read_resolution, read_methods
+from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
+                                       check_lock_process)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
                                         DatabaseError)
@@ -55,7 +57,7 @@ class Interface(aim.Interface):
         'processing': {
                 'domain': str,
                 'resolution': str,
-                'batch_processing': str,
+                'batch_processing': bool,
         },
         'time': {
                 'start_date': str,
@@ -98,6 +100,7 @@ class Interface(aim.Interface):
     siteInfoObj = []
     rtvProcessObj = RtvProcess()
     compTotObj = RtvTotals()
+    lock_process_flag = False
 
     def setup(self):
         """ Generate a configuration for the science code.
@@ -112,7 +115,6 @@ class Interface(aim.Interface):
         """
         self.mconfigureVals.domain = self.config['processing.domain']
         self.mconfigureVals.resolution = self.config['processing.resolution']
-
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -120,9 +122,21 @@ class Interface(aim.Interface):
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                            f"_{self.mconfigureVals.resolution}")
+        # ------ setup the rtvproc connection
+        set_db_info(self.config, self.mconfigureVals)
+        
+        #Check if the process is locked
+        _log.info("=============================================")
+        _log.info("=============================================")
+        if check_lock_process( self.mconfigureVals):
+            self.lock_process_flag = True
+            return
+        _log.info("=============================================")
+        _log.info("=============================================")
+        
 
         _log.info("-------------------------------------- ")
-        _log.info(f"Star processing HFRnet for domain::"
+        _log.info(f"Start processing HFRnet for domain::"
                   f"{self.mconfigureVals.domain} "
                   f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
@@ -131,7 +145,7 @@ class Interface(aim.Interface):
                                           '%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
-        if self.config['processing.batch_processing'].casefold() == 'true':
+        if self.config['processing.batch_processing']:
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True
@@ -142,10 +156,21 @@ class Interface(aim.Interface):
         """ This executes the algorithm's executable (for this unit).
 
         *** Update docstring to be descriptive and useful ****
-        python -m hfrnet.run_config /data/smcd12/ASSISTT_DATA/HFRnet/test2/config_hfr_run_config.yml
+        python -m hfrnet.run_config config_hfr_run_config.yml
         """
+        # Terminate if the process is locked
+        _log.info("=============================================")
+        _log.info("=============================================")
+        self.output_info['status'] = "good"
+        if self.lock_process_flag:
+            _log.info(f" Process lock = true, Run can't be executed")
+            return
+        
+        _log.info(f" Process lock is set, Process is running")
+        _log.info("=============================================")
+        _log.info("=============================================")
+        
         # ------ setup the rtvproc connection
-        set_db_info(self.config, self.mconfigureVals)
 
         # get the analysis parametrers for domain, res, rtv,stc,lta
         with db_manager(self.mconfigureVals.dbObject) as db_class:
