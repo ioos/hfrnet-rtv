@@ -2,7 +2,7 @@ production_rule:
   sa_name: "HFRNet"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet"
-  version: "1.0.1"
+  version: "1.0.2"
   runtime:
     resources:
       cpu: "1"
@@ -21,8 +21,7 @@ production_rule:
       maximum_observation_gap_interval: 30min
 
   outputs:
-  - catalog: CMR
-    catalog_name: HFRNet
+  - catalog_name: HFRNet
     copy_location: hfrnet/output
     file_pattern:
       regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
