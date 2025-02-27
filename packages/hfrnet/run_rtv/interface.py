@@ -55,7 +55,7 @@ class Interface(aim.Interface):
         'processing': {
                 'domain': str,
                 'resolution': str,
-                'batch_processing': str,
+                'batch_processing': bool,
         },
         'time': {
                 'start_date': str,
@@ -131,7 +131,7 @@ class Interface(aim.Interface):
                                           '%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
-        if self.config['processing.batch_processing'].casefold() == 'true':
+        if self.config['processing.batch_processing']:
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True
