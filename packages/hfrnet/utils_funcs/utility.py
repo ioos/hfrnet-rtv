@@ -377,7 +377,8 @@ def setup_log_filename(my_pkgint, added_name=""):
     :param added_name: any optional string added to the unit name
     """
     # --------------------- create the log file
-    log_dir = Path(my_pkgint.config['directory.log'])
+    #log_dir = Path(my_pkgint.config['directory.log'])
+    log_dir = Path(os.environ['AO_WORKFLOW_DATA_DIR'], 'logs')
     stime = f"{my_pkgint.config['time.start_date']}"
     etime = f"{my_pkgint.config['time.end_date']}"
     algo_ver = f"{my_pkgint.config['production.version']}"
