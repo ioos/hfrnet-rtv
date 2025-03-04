@@ -10,14 +10,14 @@ production:
    environment: INT
    version: v1r0
 directory:
-   algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
-   log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/radials
+   algorithm_dir: /home/WORKING_DIR/hfrnet
+   log: /workflow/data/logs
+   output: /home/WORKING_DIR/output
+   radial_local_dir: /home/WORKING_DIR/hfrnet
    interm_local_dir: ''
    
 databases:
-   run_env: 'rhw' # 'aws'
+   run_env: 'aws' # 'rhw'
    user: 'rt'
    host: ''
    port: 0
