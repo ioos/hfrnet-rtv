@@ -8,7 +8,7 @@ import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
-                                        current_datetime)
+                                        current_datetime, get_timestamp_from_filename)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -19,8 +19,8 @@ def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     % STCSAVENETCDF Saves STC data to a NetCDF file
     %
     %    stcSaveNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
-                       time, A_tot ) 
-    %    saves sub-tidal current solutions and corresponding metadata in 
+                       time, A_tot )
+    %    saves sub-tidal current solutions and corresponding metadata in
     %    NetCDF format using the Climate and Foecast (CF) and Attribute Convention
     %    for Data Discovery (ACDD) metadata standards.
     %
@@ -76,15 +76,15 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # Changes to the way data are encoded (types, new vars, new metadata, updates in metadata, ...)
     # should be reflected here
     nc = _dict()
-    nc.formatVersion = '1.1.00' # major.minor.maintenance
+    nc.formatVersion = '2.0.00' # major.minor.maintenance
 
     # Metadata conventions used
     nc.conventions = _dict()
-    nc.conventions['CF'] = 'CF-1.7'
+    nc.conventions['CF'] = 'CF-1.12'
     nc.conventions['ACDD'] = 'ACDD-1.3'
 
     # CF Standard Name Version
-    nc.cfStdNameVersion = 'CF Standard Name Table, Version 51'
+    nc.cfStdNameVersion = 'CF Standard Name Table, Version 89'
 
 
     #% Define default deflation parameters
@@ -268,24 +268,18 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(A.grid.y_range[0])
     ncid.geospatial_lat_max = np.float32(A.grid.y_range[1])
+    ncid.geospatial_lat_resolution = configObj.resolution
+    ncid.geospatial_lat_units = 'degrees_north'
     ncid.geospatial_lon_min = np.float32(A.grid.x_range[0])
     ncid.geospatial_lon_max = np.float32(A.grid.x_range[1])
+    ncid.geospatial_lon_resolution = configObj.resolution
+    ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
     ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
 
     # History (CF, ACDD)
-    ncHistory = []
-    if hasattr(A, 'history') and len(A.history) > 0:
-
-        for I in range(len(A.history)):
-
-            ncHistory.append((f'{A.history[I].timestamp} {A.history[I].user} '
-                f'{A.history[I].program}: {A.history[I].message}')) ##ok<AGROW>
-
-
-        ncid.history = '\n'.join([textwrap.fill(h, 70) for h in ncHistory])
-
+    ncid.history = metaDataObj.history
 
     # References (CF, ACDD)
     if hasattr(metaDataObj, 'references'):
@@ -314,6 +308,25 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
 
     # STC Product Version (ACDD)
     ncid.product_version = configObj.product_version
+
+    # time converage
+    start, end = get_timestamp_from_filename(fileLocObj.output_ncfile.name)
+    ncid.time_coverage_start = start
+    ncid.time_coverage_end = end
+
+    #
+    ncid.cdm_data_type = metaDataObj.cdm_data_type
+    ncid.day_night_data_flag = metaDataObj.day_night_data_flag
+    ncid.metadata_link = metaDataObj.metadata_link
+    ncid.platform = metaDataObj.platform
+    ncid.platform_vocabulary = metaDataObj.platform_vocabulary
+    ncid.production_environment = configObj.production_environment
+    ncid.production_site = configObj.production_site
+    ncid.project = metaDataObj.project
+    ncid.publisher_email = metaDataObj.publisher_email
+    ncid.publisher_type = metaDataObj.publisher_type
+    ncid.publisher_name = metaDataObj.publisher_name
+    ncid.publisher_url = metaDataObj.publiser_url
 
     # Define Data Variables & Add Attributes
 
