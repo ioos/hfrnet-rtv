@@ -2,13 +2,13 @@ production_rule:
   sa_name: "HFRNet"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet"
-  version: "1.0.0"
+  version: "1.0.8"
   runtime:
     resources:
       cpu: "1"
       memory: "2Gi"
       shm: "0Ki"
-      command: ["python", "-m", "hfrnet.run_rtv", "../test_data/config_hfr.yml"]
+    command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml"]
     retry:
       limit: 2
       backoff: 5min
@@ -21,16 +21,15 @@ production_rule:
       maximum_observation_gap_interval: 30min
 
   outputs:
-  - catalog: CMR
-    catalog_name: HFRNet
+  - catalog_name: HFRNet
     copy_location: hfrnet/output
     file_pattern:
       regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
     search:
       type: "system.temporal"
       temporal_search_boundaries:
-        left: "-20min"
-        right: "15min"
+        left_offset: -20min
+        right_offset: 15min
     metadata:
       create:
         format: '%Y%m%d%H%M%S%f'
