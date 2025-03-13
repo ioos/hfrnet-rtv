@@ -187,10 +187,10 @@ def set_db_info( config, configObj):
         print("========================================")
         print(token)
         print("========================================")
-        import os
-        print("========================================")
-        print(os.environ["AWS_ACCESS_KEY_ID"])
-        print(os.environ["AWS_SECRET_ACCESS_KEY"])
-        print(os.environ["AWS_SESSION_TOKEN"])
+        # import os
+        # print("========================================")
+        # print(os.environ["AWS_ACCESS_KEY_ID"])
+        # print(os.environ["AWS_SECRET_ACCESS_KEY"])
+        # print(os.environ["AWS_SESSION_TOKEN"])
         #================================= debugging
 
