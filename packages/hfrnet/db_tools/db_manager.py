@@ -23,6 +23,7 @@ class db_manager:
         self.close()
 
     def connect(self):
+        _log.info(f"-- Running in {self.dbConfig.run_env }")
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux
@@ -168,7 +169,7 @@ def set_db_info( config, configObj):
     #---- set the environment parameters
     configObj.config_dbname = config['databases.config_dbname']
     configObj.radial_dbname = config['databases.radial_dbname']
-    
+    _log.info(f"-- in set_db_info ")
     if configObj.dbObject.run_env == 'aws':
         # Initialize a session using Amazon RDS
         session = boto3.Session()
