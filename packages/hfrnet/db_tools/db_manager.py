@@ -1,6 +1,8 @@
 """db_manager"""
 
 from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
+import boto3
+import ssl
 import pymysql
 import logging
 _log = logging.getLogger()
@@ -30,16 +32,23 @@ class db_manager:
                     database=self.dbConfig.db_name)
             else:
                 #--- connect on AWS
-                self.conn_handel = pymysql.connect(
-                user = self.dbConfig.user,
-                database = self.dbConfig.db_name,
-                host = self.dbConfig.host,
-                port = self.dbConfig.port,
-                password = self.dbConfig.password,
-                ssl_ca = self.dbConfig.ssl_ca,
-                ssl_verify_identity = self.dbConfig.ssl_verify_identity,
-                ssl_verify_cert = self.dbConfig.ssl_verify_cert,
-                auth_plugin_map = self.dbConfig.auth_plugin_map)
+                context = ssl.create_default_context()
+                context.check_hostname = True
+                context.verify_mode = ssl.CERT_REQUIRED
+                context.load_verify_locations(self.dbConfig.ssl_ca)
+                context.verify_identity = self.dbConfig.verify_identity
+                context.verify_cert = self.dbConfig.verify_cert
+                context.auth_plugin_map = self.dbConfig.auth_plugin_map
+                # context.ca = ssl_cert_loc
+                # ssl={"ca":"us-east-1-bundle.pem"}
+                
+                print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>connected")
+                self.conn_handel = pymysql.connect(host = self.dbConfig.host,
+                                                user = self.dbConfig.user,
+                                                password = self.dbConfig.password,
+                                                database = self.dbConfig.db_name,
+                                                port =self.dbConfig.port,
+                                                ssl=context)
         
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
@@ -145,4 +154,28 @@ def set_db_info( config, configObj):
     #---- set the environment parameters
     configObj.config_dbname = config['databases.config_dbname']
     configObj.radial_dbname = config['databases.radial_dbname']
+    
+    if configObj.dbObject.run_env == 'aws':
+        # Initialize a session using Amazon RDS
+        session = boto3.Session()
+        client = session.client('rds')
+        
+        # Generate the authentication token
+        REGION = "us-east-1"
+        token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
+                                              Port=configObj.dbObject.port,
+                                              DBUsername=configObj.dbObject.user,
+                                              Region=REGION)
+        configObj.dbObject.password = token
+        
+        #================================= debugging
+        print("========================================")
+        print(token)
+        print("========================================")
+        import os
+        print("========================================")
+        print(os.environ["AWS_ACCESS_KEY_ID"])
+        print(os.environ["AWS_SECRET_ACCESS_KEY"])
+        print(os.environ["AWS_SESSION_TOKEN"])
+        #================================= debugging
 

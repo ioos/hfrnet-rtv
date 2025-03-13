@@ -18,13 +18,21 @@ directory:
    
 databases:
    run_env: 'aws' # 'rhw'
-   user: 'rt'
-   host: ''
-   port: 0
+   user: 'hfrnet'
+   host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
+   port: 3306
    password: 'token'
    ssl_ca: './us-east-1-bundle.pem'
    ssl_verify_identity: True
    ssl_verify_cert: True
-   auth_plugin_map: {'mysql_clear_password': None}
+   auth_plugin_map: {'mysql_clear_password': null}
    config_dbname: 'rtvproc'
    radial_dbname: 'hfradar'
+#   user: 'rt'
+#   host: ''
+#   port: 0
+#   password: 'token'
+#   ssl_ca: './us-east-1-bundle.pem'
+#   ssl_verify_identity: True
+#   ssl_verify_cert: True
+#   auth_plugin_map: {'mysql_clear_password': None}
