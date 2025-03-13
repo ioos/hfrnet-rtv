@@ -20,7 +20,7 @@ algorithm:
      radial_local_dir: /home/WORKING_DIR/input/radials
      interm_local_dir: /home/WORKING_DIR/intermediate
   databases:
-     run_env: 'aws'
+     run_env: 'dev_docker' # 'rhw' 'dev_docker'
      user: 'hfrnet'
      host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
      port: 3306
