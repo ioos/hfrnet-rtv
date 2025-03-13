@@ -30,6 +30,20 @@ class db_manager:
                     host=self.dbConfig.host,
                     user=self.dbConfig.user,
                     database=self.dbConfig.db_name)
+            elif self.dbConfig.run_env == 'dev_docker':
+                #--- connect on AWS
+                self.conn_handel = pymysql.connect(
+                user = self.dbConfig.user,
+                database = self.dbConfig.db_name,
+                host = self.dbConfig.host,
+                port = self.dbConfig.port,
+                password = self.dbConfig.password,
+                ssl_ca = self.dbConfig.ssl_ca,
+                ssl_verify_identity = self.dbConfig.ssl_verify_identity,
+                ssl_verify_cert = self.dbConfig.ssl_verify_cert,
+                auth_plugin_map = self.dbConfig.auth_plugin_map)
+
+
             else:
                 #--- connect on AWS
                 context = ssl.create_default_context()
