@@ -17,7 +17,7 @@ directory:
    interm_local_dir: ''
    
 databases:
-   run_env: 'dev_docker' # 'rhw' 'dev_docker'
+   run_env: 'aws' # 'aws' 'rhw' 'dev_docker'
    user: 'hfrnet'
    host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
    port: 3306
