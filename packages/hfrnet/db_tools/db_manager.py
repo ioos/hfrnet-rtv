@@ -47,6 +47,10 @@ class db_manager:
 
             else:
                 #--- connect on AWS
+                _log.info(f"---------------------------------------------")
+                _log.info(f" ::self.dbConfig.run_env::{self.dbConfig.run_env}")
+
+                _log.info(f"------ setting context")
                 context = ssl.create_default_context()
                 context.check_hostname = True
                 context.verify_mode = ssl.CERT_REQUIRED
@@ -57,7 +61,7 @@ class db_manager:
                 # context.ca = ssl_cert_loc
                 # ssl={"ca":"us-east-1-bundle.pem"}
                 
-                print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>connected")
+                _log.info(f"-------- pymysql.connect ")
                 self.conn_handel = pymysql.connect(host = self.dbConfig.host,
                                                 user = self.dbConfig.user,
                                                 password = self.dbConfig.password,
@@ -65,11 +69,12 @@ class db_manager:
                                                 port =self.dbConfig.port,
                                                 ssl=context)
         
+                _log.info(f"---------------------------- connected")
+                _log.info(f"---------------------------------------------")
         except Exception as err:
-            msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+            msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
                    f", Can't connect to the database: user={self.dbConfig.user}, "
-                   f"database={self.dbConfig.db_name} , "
-                   f"exist")
+                   f"database={self.dbConfig.db_name})
             _log.fatal(msg)
     #----------------------------------------------------------
     def get_query(self, query):
@@ -172,6 +177,7 @@ def set_db_info( config, configObj):
     _log.info(f"-- in set_db_info ")
     if configObj.dbObject.run_env == 'aws':
         # Initialize a session using Amazon RDS
+        _log.info(f" ::configObj.dbObject.run_env::{configObj.dbObject.run_env}")
         session = boto3.Session()
         client = session.client('rds')
         
@@ -184,9 +190,10 @@ def set_db_info( config, configObj):
         configObj.dbObject.password = token
         
         #================================= debugging
-        print("========================================")
-        print(token)
-        print("========================================")
+        _log.info("cGeneraating --> token = client.generate_db_auth_token")
+        _log.info("======= token =================================")
+        _log.info(f"{token}")
+        _log.info("========================================")
         # import os
         # print("========================================")
         # print(os.environ["AWS_ACCESS_KEY_ID"])
