@@ -7,6 +7,7 @@ import logging
 import json
 import re
 from pathlib import Path
+import textwrap
 import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
@@ -537,3 +538,11 @@ def get_timestamp_from_filename(filename):
     else:
         end = ""
     return start, end
+
+
+def wrap_text(text, width=None):
+    """wrap the text to certain line width"""
+    if width is None:
+        return text
+
+    return textwrap.fill(text, width)

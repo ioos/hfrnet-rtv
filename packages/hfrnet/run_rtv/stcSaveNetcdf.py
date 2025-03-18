@@ -2,13 +2,13 @@
 
 from datetime import timedelta
 import uuid
-import textwrap
 import logging
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
-                                        current_datetime, get_timestamp_from_filename)
+                                        current_datetime, get_timestamp_from_filename,
+                                        wrap_text)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -258,13 +258,13 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     ncid.title = metaDataObj.title
 
     # Summary (ACDD)
-    ncid.summary = textwrap.fill(metaDataObj.summary, 70)
+    ncid.summary = wrap_text(metaDataObj.summary)
 
     # Instrument (ACDD)
-    ncid.instrument = textwrap.fill(metaDataObj.instrument, 70)
+    ncid.instrument = wrap_text(metaDataObj.instrument)
 
     # Keywords (ACDD)
-    ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
+    ncid.keywords = wrap_text(metaDataObj.keywords)
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(A.grid.y_range[0])
     ncid.geospatial_lat_max = np.float32(A.grid.y_range[1])
@@ -276,14 +276,14 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
-    ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
+    ncid.processing_level = wrap_text(metaDataObj.processing_level)
 
     # History (CF, ACDD)
     ncid.history = metaDataObj.history
 
     # References (CF, ACDD)
     if hasattr(metaDataObj, 'references'):
-        ncid.references = textwrap.fill(metaDataObj.references, 70)
+        ncid.references = wrap_text(metaDataObj.references)
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
@@ -344,7 +344,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     varid_z.units = 'm'
     varid_z.bounds = 'depth_bnds'
     zComment = 'Nominal depth (and corresponding bounds) based on contributing radars'
-    varid_z.comment = f"\n {textwrap.wrap(zComment, 70 )}"
+    varid_z.comment = wrap_text(zComment)
 
     # Depth Bounds (cell boundaries)
     varid_z_bnds = ncid.createVariable('depth_bnds', 'f4', dimid_nv,

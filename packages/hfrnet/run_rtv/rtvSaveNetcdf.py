@@ -1,14 +1,14 @@
 """rtvSaveNetcdf"""
 
 from datetime import timedelta
-import textwrap
 import logging
 import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
-                                        current_datetime, get_timestamp_from_filename)
+                                        current_datetime, get_timestamp_from_filename,
+                                        wrap_text)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -248,13 +248,13 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.title = metaDataObj.title
 
     # Summary (ACDD)
-    ncid.summary = textwrap.fill(metaDataObj.summary, 70)
+    ncid.summary = wrap_text(metaDataObj.summary)
 
     # Instrument (ACDD)
-    ncid.instrument = textwrap.fill(metaDataObj.instrument, 70)
+    ncid.instrument = wrap_text(metaDataObj.instrument)
 
     # Keywords (ACDD)
-    ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
+    ncid.keywords = wrap_text(metaDataObj.keywords)
 
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(U.grid.y_range[0])
@@ -267,14 +267,14 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
-    ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
+    ncid.processing_level = wrap_text(metaDataObj.processing_level)
 
     # History (CF, ACDD)
     ncid.history = metaDataObj.history
 
     # References (CF, ACDD)
     if hasattr(metaDataObj, 'references'):
-        ncid.references = textwrap.fill(metaDataObj.references, 70)
+        ncid.references = wrap_text(metaDataObj.references)
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
@@ -337,7 +337,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_z.units = 'm'
     varid_z.bounds = 'depth_bnds'
     zComment = 'Nominal depth (and corresponding bounds) based on contributing radars'
-    varid_z.comment = textwrap.fill(zComment, 70)
+    varid_z.comment = wrap_text(zComment)
 
 
     # Depth Bounds (cell boundaries)
@@ -408,7 +408,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_dopx.set_auto_scale(False)
 
     varid_dopx.long_name = 'longitudinal dilution of precision'
-    varid_dopx.comment = textwrap.fill(dopxComment, 70)
+    varid_dopx.comment = wrap_text(dopxComment)
     varid_dopx.scale_factor = np.float32(0.01)
     varid_dopx.grid_mapping = 'wgs84'
     varid_dopx.coordinates = 'depth'
@@ -425,7 +425,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_dopy.set_auto_scale(False)
 
     varid_dopy.long_name = 'latitudinal dilution of precision'
-    varid_dopy.comment = textwrap.fill(dopyComment, 70)
+    varid_dopy.comment = wrap_text(dopyComment)
     varid_dopy.scale_factor = np.float32(0.01)
     varid_dopy.grid_mapping = 'wgs84'
     varid_dopy.coordinates = 'depth'
@@ -445,7 +445,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_hdop.set_auto_scale(False)
 
     varid_hdop.long_name = 'horizontal dilution of precision'
-    varid_hdop.comment = textwrap.fill(hdopComment, 70)
+    varid_hdop.comment = wrap_text(hdopComment)
     varid_hdop.scale_factor = np.float32(0.01)
     varid_hdop.grid_mapping = 'wgs84'
     varid_hdop.coordinates = 'depth'
@@ -462,7 +462,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
                                        fill_value=netCDF4.default_fillvals['i1'])
     varid_nsites.long_name = 'number of contributing radars'
     varid_nsites.units = 'count'
-    varid_nsites.comment = textwrap.fill(nSitesComment, 70)
+    varid_nsites.comment = wrap_text(nSitesComment)
     varid_nsites.grid_mapping = 'wgs84'
     varid_nsites.coordinates = 'depth'
 
@@ -477,7 +477,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_nrads.long_name = 'number of contributing radials'
     varid_nrads.units = 'count'
-    varid_nrads.comment = textwrap.fill(nRadsComment, 70)
+    varid_nrads.comment = wrap_text(nRadsComment)
     varid_nrads.grid_mapping = 'wgs84'
     varid_nrads.coordinates = 'depth'
 
