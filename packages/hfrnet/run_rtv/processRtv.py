@@ -4,6 +4,7 @@
 
 import logging
 from datetime import timedelta
+from pathlib import Path
 import numpy as np
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess
@@ -32,7 +33,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
     in near real-time processing.  Process locking is mandatory and
     prevents concurrent instances for the given domain and resulution from
     running.
-    
+
     processRtv( ..., reprocessTimes, reprocessLock ) is the form used
     during reprocessing where additional inputs reprocessTimes and
     reprocessLock define the times to be reprocessed and whether or not
@@ -122,6 +123,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                    fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
+                inputs = [Path(f.input_file).name for f in sumAvg.fileList]
 
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
@@ -140,7 +142,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 _log.info("Saving stc total intermediate files in netcdf format")
                 stcSaveNetcdf(metaDataObj, configObj,
                               fileNameList, stcInfoObj,
-                              process, center_time, avgObj)
+                              process, center_time, avgObj, inputs)
 
                 stcTime = current_time()
                 _log.info(f"Update the process {process.name} time {stcTime} in the state table")
@@ -166,6 +168,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, monthTime, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
+                    inputs = [Path(f.input_file).name for f in sumAvg.fileList]
 
                     #metadata and filenames for output
                     avgObj.land = land
@@ -190,7 +193,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                               "in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
-                                  process, iTime, avgObj)
+                                  process, iTime, avgObj, inputs)
 
                     monthlyTime = current_time()
                     _log.info(f"Update the process {process.name} time "
@@ -212,6 +215,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, yearTime, stcLtaInfoObj)
                     sumObjYear = sumAvgYear.get_sum()
                     avgObjYear = sumAvgYear.get_avg()
+                    inputs = [Path(f.input_file).name for f in sumAvgYear.fileList]
 
                     #metadata and filenames for output
                     avgObjYear.land = land
@@ -223,7 +227,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     _log.info("------------- Saving annual total files in netcdf format")
                     ltaSaveNetcdf(metaDataObj, configObj,
                                   fileNameList, stcLtaInfoObj,
-                                  process, iTime, avgObjYear)
+                                  process, iTime, avgObjYear, inputs)
 
                     yearlyTime = current_time()
                     _log.info(

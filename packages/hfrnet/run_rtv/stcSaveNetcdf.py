@@ -14,7 +14,7 @@ from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 _log = logging.getLogger()
 
 def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
-                  time, A_tot):
+                  time, A_tot, inputs):
     '''
     % STCSAVENETCDF Saves STC data to a NetCDF file
     %
@@ -58,7 +58,7 @@ def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     # Save
     try:
         writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj,
-                    rtvProcessObj, time, A_tot)
+                    rtvProcessObj, time, A_tot, inputs)
 
     except Exception as e:
         message = f'Error saving {fileLocObj.output_ncfile}: {str(e)}'
@@ -68,7 +68,7 @@ def stcSaveNetcdf(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     _log.info(success)
 
 def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
-                t, A):
+                t, A, inputs):
     """ Formats STC data and writes NetCDF file """
 
     # Define conventions & versions
@@ -244,7 +244,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = metaDataObj.source
+    ncid.source = '\n'.join(inputs)
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
