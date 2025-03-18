@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, timezone, date, time
 import calendar
 import logging
 import json
+import re
 from pathlib import Path
+import textwrap
 import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
@@ -96,12 +98,12 @@ def read_total_file(filename):
 #------------------------------------------------
 def generate_time_spans(stime, etime):
     """
-    
+
     :param stime: start time
     :param etime: end time
     :return: numpy array of times
     # Function to generate numpy array of 1 hr time spans
- 
+
     """
     # Convert the input strings to datetime objects
     start_date = datetime.strptime(stime, '%Y%m%d%H%M%S%f')
@@ -127,7 +129,7 @@ def generate_time_spans(stime, etime):
 
 def convert_numbers(dictobj):
     """
-    
+
     :param dictobj: is the class of a single region with parameters:
     region, polygon, length in string format
     :return: dictobj with all strs converted into numbers
@@ -402,7 +404,7 @@ def rtvNcid(metadataObj, configObj, rtvProcessObj, currTime):
     %    Generates NetCDF ACDD ID attribute value
     %
     %    id = rtvNcid(metadataObj, configObj, rtvProcessObj, time) returns
-    %    an id string for the NetCDF Attribute Convention for Data 
+    %    an id string for the NetCDF Attribute Convention for Data
     %    Discovery (ACDD) metadata standard.
     %
     %    The id is comprised of the data timestamp (t) and metadata contained
@@ -518,3 +520,29 @@ def prev_radial_data(fileName, last):
         last_time = np.array([rr['time'] for rr in last_radial])
 
     return last_network, last_site, last_patterntype, last_time
+
+def get_timestamp_from_filename(filename):
+    """
+    Get the start/end timestamp from the filename (output netCDF file) if available
+    """
+    start = re.search(r'_s(?P<start>\d*)_', filename)
+    if start is not None:
+        start = start.group(1)
+        start = f"{start[:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:{start[10:12]}:{start[12:14]}z"
+    else:
+        start = ""
+    end = re.search(r'_e(?P<end>\d*)_', filename)
+    if end is not None:
+        end = end.group(1)
+        end = f"{end[:4]}-{end[4:6]}-{end[6:8]}T{end[8:10]}:{end[10:12]}:{end[12:14]}z"
+    else:
+        end = ""
+    return start, end
+
+
+def wrap_text(text, width=None):
+    """wrap the text to certain line width"""
+    if width is None:
+        return text
+
+    return textwrap.fill(text, width)

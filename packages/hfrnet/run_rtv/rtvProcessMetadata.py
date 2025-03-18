@@ -26,6 +26,11 @@ def rtvProcessMetadata(processObj, configObj):
     metaDataObj = Metadata()
     name = processObj.name.casefold()
 
+    metaDataObj.domain_description = configObj.domain_description
+    metaDataObj.history = f"HFRNet {configObj.product_version}"
+
+    set_common_metadata(configObj, metaDataObj)
+
     # Obtain process dependent metadata
     if name == 'rtv':
         metaDataObj = getRtvMetadata(processObj, configObj, metaDataObj)
@@ -40,8 +45,6 @@ def rtvProcessMetadata(processObj, configObj):
         msg = f'Process{processObj.name} not recognized for defining metadata'
         _log.error(msg)
         raise ValueError(msg)
-
-    set_common_metadata(configObj, metaDataObj)
 
     return metaDataObj
 
@@ -93,21 +96,12 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
     # Keywords (REQUIRED)
     #case & repeat for each product below (rtv, sta, lta)
     metaDataObj.keywords_vocabulary = ('Global Change Master Directory (GCMD) '
-                                       'Keywords, Version 14.1')
-    if domain == "glna":
-        metaDataObj.keywords = ('Earth Science, Terrestrial Hydrosphere, '
-                                'Surface Water, Surface Water Features, Lakes/Reservoirs')
-    else:
-        metaDataObj.keywords = ('Earth Science, Oceans, Coastal Processes, '
-                                'Marine Environment Monitoring, Ocean Circulation, '
-                                'Ocean Currents, Surface Currents, Wind-Driven Circulation, '
-                                'Tides, Tidal Currents')
-
-    metaDataObj = appendLocationKeywords(configObj, metaDataObj)
+                                       'Keywords, Version 20.8')
+    metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
-    metaDataObj.processing_level = ('Near real-time dataset with automated data '
-                                    'acquisition and processing quality control')
+    metaDataObj.processing_level = ('NOAA Level 3. Near real-time dataset with automated '
+                                    'data acquisition and processing quality control.')
 
     # References (OPTIONAL)
     metaDataObj.references = ('Terrill, E. et al., 2006. Data Management and Real-time '
@@ -170,17 +164,8 @@ def getStcMetadata(processObj, configObj, metaDataObj):
                                'filter to the hourly surface current maps.')
 
     # Keywords (REQUIRED)
-    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 14.1'
-
-    if domain == "glna":
-        metaDataObj.keywords = ['Earth Science, Terrestrial Hydrosphere, '
-                                'Surface Water, Surface Water Features, Lakes/Reservoirs']
-    else:
-        metaDataObj.keywords = ['Earth Science, Oceans, Sea Surface, Coastal Processes, '
-                                'Marine Environment Monitoring, Ocean Circulation, '
-                                'Ocean Currents, Wind-Driven Circulation']
-
-    metaDataObj = appendLocationKeywords(configObj, metaDataObj)
+    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
+    metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
     metaDataObj.processing_level = ('Near real-time dataset with automated data '
@@ -277,16 +262,8 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
         _log.error(msg)
 
     # Keywords (REQUIRED)
-    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 14.1'
-    if domain == "glna":
-        metaDataObj.keywords = ('Earth Science, Terrestrial Hydrosphere, '
-                                'Surface Water, Surface Water Features, Lakes/Reservoirs')
-    else:
-        metaDataObj.keywords = ('Earth Science, Oceans, Sea Surface, Coastal Processes, '
-                                'Marine Environment Monitoring, Ocean Circulation, '
-                                'Ocean Currents, Wind-Driven Circulation')
-
-    metaDataObj = appendLocationKeywords(configObj, metaDataObj)
+    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
+    metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
     metaDataObj.processing_level = ('Near real-time dataset with automated data '
@@ -302,45 +279,63 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
 
 
 # Append location keywords based on domain
-def appendLocationKeywords(configObj, metaDataObj):
+def appendKeywords(configObj, metaDataObj):
     """keywords for each domain"""
 
     domain = (configObj.domain).casefold()
-    locationKeywords = ''
+    keywords = ''
     if domain =='akns':
-        locationKeywords = ', Arctic Ocean, Beaufort Sea'
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'UAK-F/SFOS/AOOS, Arctic Ocean, Beaufort Sea')
 
     elif domain == 'gak':
-        locationKeywords = ', Pacific Ocean, North Pacific Ocean, Gulf of Alaska'
-
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'UAK-F/SFOS/AOOS, Pacific Ocean, North Pacific Ocean, Gulf of Alaska')
     elif domain == 'prvi':
-        locationKeywords = [', Atlantic Ocean, North Atlantic Ocean, Caribbean Sea, '
-                            'Puerto Rico, Virgin Islands']
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'Atlantic Ocean, North Atlantic Ocean, Caribbean Sea, Puerto Rico, Virgin Islands')
 
     elif domain == 'usegc':
-        locationKeywords = ', Atlantic Ocean, North Atlantic Ocean, Gulf of Mexico'
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'Atlantic Ocean, North Atlantic Ocean, Gulf of America')
 
     elif domain == 'ushi':
-        locationKeywords = ', Pacific Ocean, Central Pacific Ocean, Hawaiian Islands'
+        keywords = ('NOAA, IOOS, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'PacIOOS, Pacific Ocean, Central Pacific Ocean, Hawaiian Islands')
 
     elif domain == 'uswc':
-        locationKeywords = ', Pacific Ocean, North Pacific Ocean'
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Oceans, Coastal Processes, '
+                    'Marine Environment Monitoring, Ocean Circulation, Ocean Currents, '
+                    'Surface Currents, Wind-Driven Circulation, Tides, Tidal Currents, '
+                    'Pacific Ocean, North Pacific Ocean')
 
     elif domain == 'glna':
-        locationKeywords = ', North America, United States of America, Great Lakes'
+        keywords = ('NOAA, IOOS, CODAR SeaSonde, Earth Science, Terrestrial Hydrosphere, '
+                    'Surface Water, Surface Water Features, Lakes/Reservoirs, '
+                    'North America, United States of America, Great Lakes')
 
     else:
         msg =  f"Domain {configObj.domain} not recognized in appending location keywords"
         _log.error(msg)
         raise ValueError(msg)
 
-    metaDataObj.keywords = f"{metaDataObj.keywords}{locationKeywords}"
+    metaDataObj.keywords = f"{keywords}"
 
     return metaDataObj
 
 def set_common_metadata(configObj, metaDataObj):
     """ Set the metadata that is common to all processes"""
-    
+
     # Program (OPTIONAL)
     #    The overarching program(s) of which the dataset is a part
     metaDataObj.program = 'Integrated Ocean Observing System (IOOS)'
@@ -351,23 +346,23 @@ def set_common_metadata(configObj, metaDataObj):
     metaDataObj.institution_acronym = 'SIO'
 
     # Organization descriptive name (REQUIRED)
-    metaDataObj.institution = ('Coastal Observing Research and Development Center, '
-                        'Scripps Institution of Oceanography')
+    metaDataObj.institution = ('DOC/NOAA/NESDIS/OSPO > Office of Satellite and '
+                               'Product Operations, NESDIS, NOAA, U.S. Department of Commerce.')
 
     # Organization contact name (REQUIRED)
-    metaDataObj.creator_name = 'HFRNet Administrators'
+    metaDataObj.creator_name = 'NOAA IOOS Surface Currents Program'
 
     # Organization contact email (REQUIRED)
-    metaDataObj.creator_email = 'hfrnet.administrators@sio.ucsd.edu'
+    metaDataObj.creator_email = 'data.ioos@noaa.gov'
 
     # Organization contact type; 'person', 'group', 'institution', or 'position' (REQUIRED)
-    metaDataObj.creator_type = 'group'
+    metaDataObj.creator_type = 'institution'
 
     # Organization URL (REQUIRED)
-    metaDataObj.creator_url = 'http://cordc.ucsd.edu/projects/mapping/'
+    metaDataObj.creator_url = 'https://ioos.noaa.gov/project/hf-radar/'
 
     # Naming Authority (REQUIRED)
-    metaDataObj.naming_authority = 'edu.ucsd.cordc'
+    metaDataObj.naming_authority = 'gov.noaa.nesdis.ncei'
 
     #% Source & Instrument Definition
 
@@ -376,11 +371,10 @@ def set_common_metadata(configObj, metaDataObj):
     else:
         metaDataObj.source = 'surface ocean velocity field from hf-radar'
 
-    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 8.6'
+    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
 
-    metaDataObj.instrument = ('Earth Remote Sensing Instruments, Active Remote Sensing, '
-                       'Profilers/Sounders, Radar Sounders, Doppler RADAR')
-    
+    metaDataObj.instrument = 'OCEAN SURFACE CURRENT RADAR'
+
     # Define nominal average and profile depth using resolution as proxy for
     # operating frequency and corresponding sampling depth
     if configObj.resolution == '500m':

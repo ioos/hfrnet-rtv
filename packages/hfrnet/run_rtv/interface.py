@@ -119,12 +119,14 @@ class Interface(aim.Interface):
         log_dir.mkdir(parents=True, exist_ok=True)
 
         self.mconfigureVals.product_version = self.config['production.version']
+        self.mconfigureVals.production_environment = self.config['production.environment']
+        self.mconfigureVals.production_site = self.config['production.site']
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                            f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
-        
+
         #Check if the process is locked
         _log.info("=============================================")
         _log.info("=============================================")
@@ -133,7 +135,7 @@ class Interface(aim.Interface):
             return
         _log.info("=============================================")
         _log.info("=============================================")
-        
+
 
         _log.info("-------------------------------------- ")
         _log.info(f"Start processing HFRnet for domain::"
@@ -165,11 +167,11 @@ class Interface(aim.Interface):
         if self.lock_process_flag:
             _log.info(f" Process lock = true, Run can't be executed")
             return
-        
+
         _log.info(f" Process lock is set, Process is running")
         _log.info("=============================================")
         _log.info("=============================================")
-        
+
         # ------ setup the rtvproc connection
 
         # get the analysis parametrers for domain, res, rtv,stc,lta

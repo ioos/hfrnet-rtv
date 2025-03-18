@@ -103,6 +103,7 @@ class ConfigureVals(BaseObject):
     """
     def __init__(self, domain="USHI", resolution="6km"):
         self.domain = domain
+        self.domain_description = ""
         self.resolution = resolution
         self.times = None
         #-- The DB object
@@ -115,6 +116,9 @@ class ConfigureVals(BaseObject):
         # This will be set to the start time in the yml file
         self.runTime = None
         self.product_version = ''
+
+        self.production_site = ''
+        self.production_environment = ''
 
     def to_dict(self):
         """return the dict for all attributes in the object"""
@@ -237,7 +241,17 @@ class Metadata(BaseObject):
         self.source = ""
         self.summary = ""
         self.title = ""
-
+        self.cdm_data_type = "Grid"
+        self.day_night_data_flag = "both"
+        self.metadata_link = "https://cdn.ioos.noaa.gov/media/2017/12/hfradar_nodc_sep_2014.pdf"
+        self.platform = "CODAR SeaSonde, COASTAL STATIONS"
+        self.platform_vocabulary = "Global Change Master Directory (GCMD) Keywords, Version 20.8"
+        self.project = "NESDIS Common Cloud Framework."
+        self.publisher_email = "espcoperations@noaa.gov"
+        self.publisher_type = "institution"
+        self.publisher_name = "DOC/NOAA/NESDIS/OSPO > Office of Satellite and Product Operations, NESDIS, NOAA, U.S. Department of Commerce."
+        self.publiser_url = "http://www.ospo.noaa.gov/"
+        self.history = ""
 
 class SetupError(Exception):
     pass

@@ -1,14 +1,14 @@
 """rtvSaveNetcdf"""
 
 from datetime import timedelta
-import textwrap
 import logging
 import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
-                                        current_datetime)
+                                        current_datetime, get_timestamp_from_filename,
+                                        wrap_text)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -20,7 +20,7 @@ def rtvSaveNetcdf(metaDataObj, configObj, fileLocObj, rtvInfoObj, rtvProcessObj,
     % RTVSAVENETCDF Saves RTV data to a NetCDF file
     %
     %    rtvSaveNetCDF(metaDataObj, configObj, fileLocObj, rtvInfoObj, rtvProcessObj,
-                       time, U_tot, radials) 
+                       time, U_tot, radials)
     %    saves total solutions and corresponding metadata in NetCDF format using the
     %    Climate and Forecast (CF) and Attribute Convention for Data Discovery
     %    (ACDD) metadata standards.
@@ -78,15 +78,15 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # Changes to the way data are encoded (types, new vars, new metadata, updates in metadata, ...)
     # should be reflected here
     nc = _dict()
-    nc.formatVersion = '1.1.00' # major.minor.maintenance
+    nc.formatVersion = '2.0.00' # major.minor.maintenance
 
     # Metadata conventions used
     nc.conventions = _dict()
-    nc.conventions['CF'] = 'CF-1.7'
+    nc.conventions['CF'] = 'CF-1.12'
     nc.conventions['ACDD'] = 'ACDD-1.3'
 
     # CF Standard Name Version
-    nc.cfStdNameVersion = 'CF Standard Name Table, Version 51'
+    nc.cfStdNameVersion = 'CF Standard Name Table, Version 89'
 
     # Define default deflation parameters
     nc.deflate = _dict()
@@ -234,12 +234,12 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = metaDataObj.source
+    ncid.source = '\n'.join([rr.file for rr in r])
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
         ncid.program = metaDataObj.program
-   
+
     # Project (ACDD)
     if hasattr(metaDataObj, 'project'):
         ncid.project = metaDataObj.project
@@ -248,39 +248,33 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.title = metaDataObj.title
 
     # Summary (ACDD)
-    ncid.summary = textwrap.fill(metaDataObj.summary, 70)
+    ncid.summary = wrap_text(metaDataObj.summary)
 
     # Instrument (ACDD)
-    ncid.instrument = textwrap.fill(metaDataObj.instrument, 70)
+    ncid.instrument = wrap_text(metaDataObj.instrument)
 
     # Keywords (ACDD)
-    ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
+    ncid.keywords = wrap_text(metaDataObj.keywords)
 
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(U.grid.y_range[0])
     ncid.geospatial_lat_max = np.float32(U.grid.y_range[1])
+    ncid.geospatial_lat_resolution = configObj.resolution
+    ncid.geospatial_lat_units = 'degrees_north'
     ncid.geospatial_lon_min = np.float32(U.grid.x_range[0])
     ncid.geospatial_lon_max = np.float32(U.grid.x_range[1])
+    ncid.geospatial_lon_resolution = configObj.resolution
+    ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
-    ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
+    ncid.processing_level = wrap_text(metaDataObj.processing_level)
 
     # History (CF, ACDD)
-    ncHistory = []
-    if hasattr(U, 'history') and len(U.history) > 0:
-
-        for I in range(len(U.history)):
-
-            ncHistory.append(f'{U.history[I].timestamp} {U.history[I].user} '
-                f'{U.history[I].program}: {U.history[I].message}') ##ok<AGROW>
-
-
-        ncid.history = '\n'.join([textwrap.fill(h, 70) for h in ncHistory])
-
+    ncid.history = metaDataObj.history
 
     # References (CF, ACDD)
     if hasattr(metaDataObj, 'references'):
-        ncid.references = textwrap.fill(metaDataObj.references, 70)
+        ncid.references = wrap_text(metaDataObj.references)
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
@@ -306,6 +300,25 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # RTV Product Version (ACDD)
     ncid.product_version = configObj.product_version
 
+    # time converage
+    start, end = get_timestamp_from_filename(fileLocObj.output_ncfile.name)
+    ncid.time_coverage_start = start
+    ncid.time_coverage_end = end
+
+    #
+    ncid.cdm_data_type = metaDataObj.cdm_data_type
+    ncid.day_night_data_flag = metaDataObj.day_night_data_flag
+    ncid.metadata_link = metaDataObj.metadata_link
+    ncid.platform = metaDataObj.platform
+    ncid.platform_vocabulary = metaDataObj.platform_vocabulary
+    ncid.production_environment = configObj.production_environment
+    ncid.production_site = configObj.production_site
+    ncid.project = metaDataObj.project
+    ncid.publisher_email = metaDataObj.publisher_email
+    ncid.publisher_type = metaDataObj.publisher_type
+    ncid.publisher_name = metaDataObj.publisher_name
+    ncid.publisher_url = metaDataObj.publiser_url
+
     ## Define Data Variables & Add Attributes
 
     # Time Bounds (cell boundaries)
@@ -324,7 +337,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_z.units = 'm'
     varid_z.bounds = 'depth_bnds'
     zComment = 'Nominal depth (and corresponding bounds) based on contributing radars'
-    varid_z.comment = textwrap.fill(zComment, 70)
+    varid_z.comment = wrap_text(zComment)
 
 
     # Depth Bounds (cell boundaries)
@@ -395,7 +408,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_dopx.set_auto_scale(False)
 
     varid_dopx.long_name = 'longitudinal dilution of precision'
-    varid_dopx.comment = textwrap.fill(dopxComment, 70)
+    varid_dopx.comment = wrap_text(dopxComment)
     varid_dopx.scale_factor = np.float32(0.01)
     varid_dopx.grid_mapping = 'wgs84'
     varid_dopx.coordinates = 'depth'
@@ -412,7 +425,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_dopy.set_auto_scale(False)
 
     varid_dopy.long_name = 'latitudinal dilution of precision'
-    varid_dopy.comment = textwrap.fill(dopyComment, 70)
+    varid_dopy.comment = wrap_text(dopyComment)
     varid_dopy.scale_factor = np.float32(0.01)
     varid_dopy.grid_mapping = 'wgs84'
     varid_dopy.coordinates = 'depth'
@@ -432,7 +445,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_hdop.set_auto_scale(False)
 
     varid_hdop.long_name = 'horizontal dilution of precision'
-    varid_hdop.comment = textwrap.fill(hdopComment, 70)
+    varid_hdop.comment = wrap_text(hdopComment)
     varid_hdop.scale_factor = np.float32(0.01)
     varid_hdop.grid_mapping = 'wgs84'
     varid_hdop.coordinates = 'depth'
@@ -449,7 +462,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
                                        fill_value=netCDF4.default_fillvals['i1'])
     varid_nsites.long_name = 'number of contributing radars'
     varid_nsites.units = 'count'
-    varid_nsites.comment = textwrap.fill(nSitesComment, 70)
+    varid_nsites.comment = wrap_text(nSitesComment)
     varid_nsites.grid_mapping = 'wgs84'
     varid_nsites.coordinates = 'depth'
 
@@ -464,7 +477,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     varid_nrads.long_name = 'number of contributing radials'
     varid_nrads.units = 'count'
-    varid_nrads.comment = textwrap.fill(nRadsComment, 70)
+    varid_nrads.comment = wrap_text(nRadsComment)
     varid_nrads.grid_mapping = 'wgs84'
     varid_nrads.coordinates = 'depth'
 
