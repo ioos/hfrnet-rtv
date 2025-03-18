@@ -50,7 +50,7 @@ def aim_config(cfg: dict) -> dict:
     """
 
     token = cfg['databases']['password']
-    if cfg['databases']['run_env'] == 'aws':
+    if cfg['databases']['run_env'] == 'dev_docker':
         # Generate the token to connect to the AWS database
         endpoint = cfg['databases']['host']
         port = cfg['databases']['port']

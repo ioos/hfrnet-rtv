@@ -74,7 +74,7 @@ class db_manager:
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
                    f", Can't connect to the database: user={self.dbConfig.user}, "
-                   f"database={self.dbConfig.db_name})
+                   f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
     #----------------------------------------------------------
     def get_query(self, query):
