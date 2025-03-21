@@ -96,7 +96,7 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
     # Keywords (REQUIRED)
     #case & repeat for each product below (rtv, sta, lta)
     metaDataObj.keywords_vocabulary = ('Global Change Master Directory (GCMD) '
-                                       'Keywords, Version 20.8')
+                                       'Keywords, Version 20.9')
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
@@ -164,7 +164,7 @@ def getStcMetadata(processObj, configObj, metaDataObj):
                                'filter to the hourly surface current maps.')
 
     # Keywords (REQUIRED)
-    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
+    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.9'
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
@@ -262,7 +262,7 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
         _log.error(msg)
 
     # Keywords (REQUIRED)
-    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
+    metaDataObj.keywords_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.9'
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
@@ -364,14 +364,9 @@ def set_common_metadata(configObj, metaDataObj):
     # Naming Authority (REQUIRED)
     metaDataObj.naming_authority = 'gov.noaa.nesdis.ncei'
 
-    #% Source & Instrument Definition
+    #% Instrument Definition
 
-    if configObj.domain == "glna":
-        metaDataObj.source = 'surface water velocity field from hf-radar'
-    else:
-        metaDataObj.source = 'surface ocean velocity field from hf-radar'
-
-    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.8'
+    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.9'
 
     metaDataObj.instrument = 'OCEAN SURFACE CURRENT RADAR'
 

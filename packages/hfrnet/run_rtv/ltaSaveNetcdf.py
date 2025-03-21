@@ -16,7 +16,7 @@ from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 _log = logging.getLogger()
 
 def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessObj,
-                  time, A_totObj):
+                  time, A_totObj, inputs):
     '''
     % Saves LTA data to a NetCDF file
     %
@@ -59,7 +59,7 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     ## Save
     try:
         writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
-                    rtvProcessObj, time, A_totObj)
+                    rtvProcessObj, time, A_totObj, inputs)
 
     except Exception as e:
         message = f'Error saving {fileLocObj.output_ncfile}: \n {e}'
@@ -69,7 +69,7 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     _log.info(success)
 
 def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
-                rtvProcessObj, time, A_totObj):
+                rtvProcessObj, time, A_totObj, inputs):
     """ Formats LTA data and writes NetCDF file """
 
     A = A_totObj
@@ -253,7 +253,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = metaDataObj.source
+    ncid.source = '\n'.join(inputs)
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
