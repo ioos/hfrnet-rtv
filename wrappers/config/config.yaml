@@ -20,12 +20,13 @@ algorithm:
      radial_local_dir: /home/WORKING_DIR/input/radials
      interm_local_dir: /home/WORKING_DIR/intermediate
   databases:
-     run_env: 'dev_docker' # 'rhw' 'dev_docker'
+     run_env: 'ao' # 'aws' 'rhw' 'ao'
      user: 'hfrnet'
      host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
      port: 3306
      password: 'token'
-     ssl_ca: './us-east-1-bundle.pem'
+     ssl_ca: '/tmp/us-east-1-bundle.pem'
+     region:  'us-east-1'
      ssl_verify_identity: True
      ssl_verify_cert: True
      auth_plugin_map: {'mysql_clear_password': null}
@@ -34,7 +35,8 @@ algorithm:
 
 docker:
   #image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.1
-  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.0
+  # image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.0
+  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.13
   action:
     bin: python3
     config: /home/WORKING_DIR/config/config.yaml

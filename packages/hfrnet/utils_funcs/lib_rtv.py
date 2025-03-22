@@ -84,12 +84,14 @@ class DatabaseConfig:
         self.user = ""
         self.host = ""
         self.port = ""
-        self.password = 0
-        self.ssl_ca = 0
-        self.ssl_verify_identity = ""
-        self.ssl_verify_cert = ""
-        self.auth_plugin_map = ""
+        self.password = ""
+        self.ssl_ca = ""
+        self.region = ""
+        # self.ssl_verify_identity = ""
+        # self.ssl_verify_cert = ""
+        # self.auth_plugin_map = ""
         self.dbname = ""
+        self.ssl_context = ""
         #--- This is to use the correct parameteres when connection
         # to the DB server depends on the OS
         # if it's on a linux, set it to 'rhw'

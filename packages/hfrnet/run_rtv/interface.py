@@ -82,9 +82,10 @@ class Interface(aim.Interface):
             'port': int,
             'password': str,
             'ssl_ca': str,
-            'ssl_verify_identity': bool,
-            'ssl_verify_cert': bool,
-            'auth_plugin_map': {},
+            'region': str,
+            # 'ssl_verify_identity': bool,
+            # 'ssl_verify_cert': bool,
+            # 'auth_plugin_map': {},
             'config_dbname': str,
             'radial_dbname': str,
         },
@@ -120,9 +121,11 @@ class Interface(aim.Interface):
 
         self.mconfigureVals.product_version = self.config['production.version']
 
+        _log.info("==== Setting up the log file")
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                            f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
+        _log.info("==== Setting up the DB parameters")
         set_db_info(self.config, self.mconfigureVals)
         
         #Check if the process is locked
@@ -199,13 +202,13 @@ class Interface(aim.Interface):
 
         self.set_file_locations(self.fileLocObj)
 
-        processStatus = processRtv.processRtv(self.mconfigureVals,
-                                              self.siteInfoObj,
-                                              self.fileLocObj,
-                                              process_list,
-                                              self.mrtvInfo,
-                                              self.mstcLtaInfo,
-                                              self.compTotObj)
+        # processStatus = processRtv.processRtv(self.mconfigureVals,
+        #                                       self.siteInfoObj,
+        #                                       self.fileLocObj,
+        #                                       process_list,
+        #                                       self.mrtvInfo,
+        #                                       self.mstcLtaInfo,
+        #                                       self.compTotObj)
 
         self.output_info['status'] = "good"
 

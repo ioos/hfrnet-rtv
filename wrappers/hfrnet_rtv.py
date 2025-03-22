@@ -50,24 +50,25 @@ def aim_config(cfg: dict) -> dict:
     """
 
     token = cfg['databases']['password']
-    if cfg['databases']['run_env'] == 'dev_docker':
-        # Generate the token to connect to the AWS database
-        endpoint = cfg['databases']['host']
-        port = cfg['databases']['port']
-        user = cfg['databases']['user']
-        region = "us-east-1"
 
-        os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-        key_id = os.environ['AWS_ACCESS_KEY_ID']
-        secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-        access_token = os.environ['AWS_SESSION_TOKEN']
+    # if cfg['databases']['run_env'] == 'dev_docker':
+    #     # Generate the token to connect to the AWS database
+    #     endpoint = cfg['databases']['host']
+    #     port = cfg['databases']['port']
+    #     user = cfg['databases']['user']
+    #     region = cfg['databases']['region']
 
-        # Initialize a session using Amazon RDS
-        session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
-        client = session.client('rds')
+    #     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
+    #     key_id = os.environ['AWS_ACCESS_KEY_ID']
+    #     secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+    #     access_token = os.environ['AWS_SESSION_TOKEN']
 
-        # Generate the authentication token
-        token = client.generate_db_auth_token(DBHostname=endpoint, Port=port, DBUsername=user, Region=region)
+    #     # Initialize a session using Amazon RDS
+    #     session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
+    #     client = session.client('rds')
+
+    #     # Generate the authentication token
+    #     token = client.generate_db_auth_token(DBHostname=endpoint, Port=port, DBUsername=user, Region=region)
 
 
     aim_cfg = dict(cfg)
