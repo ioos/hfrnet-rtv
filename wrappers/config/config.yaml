@@ -20,16 +20,13 @@ algorithm:
      radial_local_dir: /home/WORKING_DIR/input/radials
      interm_local_dir: /home/WORKING_DIR/intermediate
   databases:
-     run_env: 'ao' # 'aws' 'rhw' 'ao'
+     run_env: 'aws' # 'aws' 'rhw' 'ao'
      user: 'hfrnet'
      host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
      port: 3306
      password: 'token'
      ssl_ca: '/tmp/us-east-1-bundle.pem'
      region:  'us-east-1'
-     ssl_verify_identity: True
-     ssl_verify_cert: True
-     auth_plugin_map: {'mysql_clear_password': null}
      config_dbname: 'rtvproc'
      radial_dbname: 'hfradar'
 
