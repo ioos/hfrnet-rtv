@@ -31,12 +31,15 @@ import boto3
 
 from t4_utils.future.ccap.parse_config import parse_config
 
+import logging
+logger = logging.getLogger()
+
 def get_logger(cfg: dict) -> logging.getLogger:
     """
     Creates a logging object.
     """
 
-    level = logging.getLevelName(cfg['logging_level'])
+    level = logging.getLevelName(cfg['algorithm']['logging_level'])
     logger = logging.getLogger('hfrnet')
     logger.setLevel(level)
 
@@ -49,46 +52,30 @@ def aim_config(cfg: dict) -> dict:
     handoff.
     """
 
-    token = cfg['databases']['password']
+    aim_cfg = dict(cfg['algorithm'])
+    
+    aim_cfg['time'] ={
+        'start_date': aim_cfg['coverage']['start'],
+        'end_date': aim_cfg['coverage']['end']
+    }
 
-    # if cfg['databases']['run_env'] == 'dev_docker':
-    #     # Generate the token to connect to the AWS database
-    #     endpoint = cfg['databases']['host']
-    #     port = cfg['databases']['port']
-    #     user = cfg['databases']['user']
-    #     region = cfg['databases']['region']
-
-    #     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-    #     key_id = os.environ['AWS_ACCESS_KEY_ID']
-    #     secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-    #     access_token = os.environ['AWS_SESSION_TOKEN']
-
-    #     # Initialize a session using Amazon RDS
-    #     session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
-    #     client = session.client('rds')
-
-    #     # Generate the authentication token
-    #     token = client.generate_db_auth_token(DBHostname=endpoint, Port=port, DBUsername=user, Region=region)
-
-
-    aim_cfg = dict(cfg)
-    aim_cfg['time'] = {'start_date': cfg['coverage']['start'],
-            'end_date': cfg['coverage']['end']}
     aim_cfg.pop('coverage')
-    aim_cfg['production']['version'] = 'v1r0'
+
+    aim_cfg['production']['version'] = cfg['info']['alg_version']
+
+    dirs = aim_cfg.pop('ref')
+    aim_cfg['directory'] = dirs
+
     aim_cfg.pop('io')
-    aim_cfg['directory'] = aim_cfg['ref']
-    aim_cfg['directory']['algorithm_dir'] = aim_cfg['directory']['packages']
-    aim_cfg['directory'].pop('packages')
-    aim_cfg['databases']['password'] = token
+    aim_cfg.pop('logging_level')
+
     return aim_cfg
 
 def run_aim(cfg: dict, interface_cfg: dict, logger: logging.getLogger) -> None:
     """
     Run the AIM interface
     """
-    sys.path.append(cfg['ref']['algorithm_dir']+'/packages')
-
+    sys.path.append(cfg['algorithm']['ref']['algorithm_dir']+'/packages/')
     try:
         import hfrnet.run_rtv
         import aim
@@ -98,13 +85,21 @@ def run_aim(cfg: dict, interface_cfg: dict, logger: logging.getLogger) -> None:
         sys.exit(1)
     try:
         aim_cfg = aim.Handoff(interface_cfg)
+        print("-----------------------")
+        print(interface_cfg)
+        print("-----------------------1")
+        print(aim_cfg)
     except Exception as err:
         traceback.print_exc()
         logger.error(err, exc_info=True)
         sys.exit(1)
     logger.info('Completed succesfully: aim.Handoff(interface_config)')
     try:
+        print("-----------------------")
+        print(sys.path)
         pkg_interface = hfrnet.run_rtv.interface.Interface(aim_cfg)
+        print(pkg_interface)
+        print("-----------------------2")
     except Exception as err:
         traceback.print_exc()
         logger.error(err, exc_info=True)
@@ -113,6 +108,7 @@ def run_aim(cfg: dict, interface_cfg: dict, logger: logging.getLogger) -> None:
 
     try:
         pkg_interface.run_methods()
+        print("-----------------------3")
     except Exception as err:
         traceback.print_exc()
         logger.info('pkg_interface.run_methods() returned an error:')
@@ -130,7 +126,8 @@ def main(config_path: Union[str, Path], logger: logging.getLogger=None) -> None:
         5) Executes the aim
     """
 
-    cfg = parse_config(config_path)['algorithm']
+    # cfg = parse_config(config_path)['algorithm']
+    cfg = parse_config(config_path)
 
     if logger is None:
         logger = get_logger(cfg)
@@ -155,3 +152,4 @@ if __name__ == '__main__':
     parser.add_argument('application_yaml_path')
     args = parser.parse_args()
     main(args.application_yaml_path)
+

@@ -114,13 +114,17 @@ class Interface(aim.Interface):
 
         *** Update docstring to be descriptive and useful ****
         """
+        print("-------- in interface")
+        print(self.config['processing.domain'])
+        print(self.config['processing.resolution'])
+        
         self.mconfigureVals.domain = self.config['processing.domain']
         self.mconfigureVals.resolution = self.config['processing.resolution']
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
-
+        
+        print(log_dir)
         self.mconfigureVals.product_version = self.config['production.version']
-
         _log.info("==== Setting up the log file")
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
                            f"_{self.mconfigureVals.resolution}")
@@ -133,9 +137,11 @@ class Interface(aim.Interface):
         _log.info("=============================================")
         if check_lock_process( self.mconfigureVals):
             self.lock_process_flag = True
+            print("------------------------------------333")
             return
         _log.info("=============================================")
         _log.info("=============================================")
+        print("------------------------------------222")
         
 
         _log.info("-------------------------------------- ")
@@ -145,7 +151,7 @@ class Interface(aim.Interface):
         _log.info(log_dir)
         # set the runtime to the start time
         self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
-                                          '%Y%m%d%H%M%S%f')
+                                                        '%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
         if self.config['processing.batch_processing']:
@@ -153,7 +159,7 @@ class Interface(aim.Interface):
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True
 
-
+        print("if self.config['processing.batch_processing']:")
 
     def process(self):
         """ This executes the algorithm's executable (for this unit).
@@ -167,6 +173,7 @@ class Interface(aim.Interface):
         self.output_info['status'] = "good"
         if self.lock_process_flag:
             _log.info(f" Process lock = true, Run can't be executed")
+            print("------------------------------------444")
             return
         
         _log.info(f" Process lock is set, Process is running")

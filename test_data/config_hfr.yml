@@ -10,14 +10,14 @@ production:
    environment: INT
    version: v1r0
 directory:
-   algorithm_dir: /home/WORKING_DIR/hfrnet
-   log: /workflow/data/logs
+   algorithm_dir: /home/WORKING_DIR
+   log: /home/WORKING_DIR/logs
    output: /home/WORKING_DIR/output
    radial_local_dir: /home/WORKING_DIR/hfrnet
    interm_local_dir: ''
    
 databases:
-   run_env: 'aws' # 'aws' 'rhw' 'ao'
+   run_env: 'ao' # 'aws' 'rhw' 'ao'
    user: 'hfrnet'
    host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
    port: 3306
