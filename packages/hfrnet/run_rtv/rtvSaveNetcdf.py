@@ -138,7 +138,9 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
         msg = (f"Removed {np.sum(mask)} solutions exceeding HDOP threshold of "
                f"{rtvInfoObj.uwls_max_hdop_nc:.2f}")
         set_history(U, msg)
-
+    
+    nSol_points = np.sum(~np.isnan(u))
+    _log.info(f" Number of solution points in u = {nSol_points}")
     # Replace NaN with fill values
     mask = np.isnan(u)
     u[mask] = netCDF4.default_fillvals['i2']
@@ -148,7 +150,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     hdop[mask] = netCDF4.default_fillvals['i2']
     n_sites[mask] = netCDF4.default_fillvals['i1']
     n_rads[mask] = netCDF4.default_fillvals['i2']
-
+    
     # Open NetCDF file
     # Keep the classic data model to increase compatibility since we
     # aren't using features specific to the NetCDF-4.0 model.
@@ -527,6 +529,13 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_rm.files_loaded = '\n'.join([rr.file for rr in r])
     varid_rm.files_loaded_description = 'Radial file names loaded'
 
+    # ======================================
+    # prod mon variable Number of solution points
+    varid_prodmon = ncid.createVariable('prod_mon', 'u4')
+    varid_prodmon.assignValue(np.uint32(nSol_points))
+    varid_prodmon.long_name = 'Total (actual) number of retrievals'
+    # ======================================
+    
     ## Add Data Values
     varid_lat[:] = all_range(U.grid.y_range[0], U.grid.y_range[1], U.grid.dy )
     varid_lon[:] = all_range(U.grid.x_range[0], U.grid.x_range[1], U.grid.dx )
