@@ -1,7 +1,7 @@
 processing:
    domain: ushi
    resolution: 6km
-   batch_processing: false
+   batch_processing: true
 time:
    start_date: '202301040000000'
    end_date:   '202301040000000'

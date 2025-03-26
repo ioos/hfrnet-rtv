@@ -7,15 +7,15 @@ time:
    end_date:   '202301040000000'
 production:
    site: PLAIT
-   environment: INT
+   environment: AO
    version: v1r0
 directory:
-   algorithm_dir: /home/WORKING_DIR
+   algorithm_dir: /home/WORKING_DIR/hfrnet
             #--- Do not edit this. It must be done in order for AO to move anything outside the AO sys
             #--- default path is /workflow/data/
    log: /workflow/data/logs
    output: /workflow/data/output
-   radial_local_dir: /home/WORKING_DIR/hfrnet
+   radial_local_dir: ''
    interm_local_dir: ''
    
 databases:
