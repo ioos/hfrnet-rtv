@@ -14,7 +14,7 @@
 __updated__ = "2024-07-23"
 
 import logging
-import time
+import os
 from pathlib import Path
 from datetime import datetime
 
@@ -23,7 +23,7 @@ import aim
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
-                                       check_lock_process)
+                                    check_lock_process)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
                                         DatabaseError)
@@ -83,9 +83,6 @@ class Interface(aim.Interface):
             'password': str,
             'ssl_ca': str,
             'region': str,
-            # 'ssl_verify_identity': bool,
-            # 'ssl_verify_cert': bool,
-            # 'auth_plugin_map': {},
             'config_dbname': str,
             'radial_dbname': str,
         },
@@ -114,6 +111,24 @@ class Interface(aim.Interface):
 
         *** Update docstring to be descriptive and useful ****
         """
+        
+        #--------------- check if
+        # ao_output = os.getenv('AO_WORKFLOW_DATA_DIR')
+        # if ao_output:
+        print(f"---------------------------------------------")
+        print(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
+        if self.config['databases.run_env'] == 'ao':
+            #--- this must be done in order for AO to move anything outside the AO sys
+            #--- default path is /workflow/data/
+            print(f'AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}')
+        else:
+            #---- default for running inside the docker
+            self.config['directory.log'] = '/home/WORKING_DIR/logs'
+            self.config['directory.output'] = '/home/WORKING_DIR/output'
+            print('Setting log and output dirs to /home/WORKING_DIR')
+
+        #----------------------
+
         print("-------- in interface")
         print(self.config['processing.domain'])
         print(self.config['processing.resolution'])
@@ -127,7 +142,7 @@ class Interface(aim.Interface):
         self.mconfigureVals.product_version = self.config['production.version']
         _log.info("==== Setting up the log file")
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
-                           f"_{self.mconfigureVals.resolution}")
+                        f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         _log.info("==== Setting up the DB parameters")
         set_db_info(self.config, self.mconfigureVals)
@@ -146,8 +161,8 @@ class Interface(aim.Interface):
 
         _log.info("-------------------------------------- ")
         _log.info(f"Start processing HFRnet for domain::"
-                  f"{self.mconfigureVals.domain} "
-                  f"and Resolution::{self.mconfigureVals.resolution} ")
+                f"{self.mconfigureVals.domain} "
+                f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
         # set the runtime to the start time
         self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
@@ -190,7 +205,7 @@ class Interface(aim.Interface):
                 read_domain(db_class, self.mconfigureVals)
             except DatabaseError:
                 _log.info(f"No domain {self.mconfigureVals.domain} decsription were found or "
-                          f"database connection failed")
+                        f"database connection failed")
                 return
 
             # ---------------------------------
@@ -199,23 +214,23 @@ class Interface(aim.Interface):
                 read_resolution(db_class, self.mconfigureVals)
             except DatabaseError:
                 _log.info(f"No domain {self.mconfigureVals.resolution}  were found "
-                          f"or database connection failed")
+                        f"or database connection failed")
                 return
             # ---------------------------------
             # Check for valid resolution
             process_list = []
             read_methods(db_class, self.mconfigureVals, self.mrtvInfo,
-                         self.mstcInfo, self.mltaInfo,process_list)
+                        self.mstcInfo, self.mltaInfo,process_list)
 
         self.set_file_locations(self.fileLocObj)
 
-        # processStatus = processRtv.processRtv(self.mconfigureVals,
-        #                                       self.siteInfoObj,
-        #                                       self.fileLocObj,
-        #                                       process_list,
-        #                                       self.mrtvInfo,
-        #                                       self.mstcLtaInfo,
-        #                                       self.compTotObj)
+        processStatus = processRtv.processRtv(self.mconfigureVals,
+                                            self.siteInfoObj,
+                                            self.fileLocObj,
+                                            process_list,
+                                            self.mrtvInfo,
+                                            self.mstcLtaInfo,
+                                            self.compTotObj)
 
         self.output_info['status'] = "good"
 

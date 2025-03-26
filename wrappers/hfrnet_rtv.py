@@ -1,25 +1,24 @@
 """
-Program name:        hfrnet_rtv.py
-Date:                10/30/2024
-History:             Original
-Author:              Tianzhu Qiao
-Email:               tianzhu.qiao@noaa.gov
-Description:         When run inside of a Docker container, this script
-                     will execute the program interface and generate
-                     ouput for the hfrnet algorithm.
-Input:               config.yaml - A YAML file containing all
-                     required variables and paths.
-Files needed:        Requires the configuration file.
-Output:              After a successful execution of the container, output
-                     data will be available in the output directory,
-                     and logs should be available in the logging
-                     directory. Please read the README document for more
-                     information.
+Program name:       hfrnet_rtv.py
+Date:               10/30/2024
+History:            Original
+Author:             Tianzhu Qiao
+Email:              tianzhu.qiao@noaa.gov
+Description:        When run inside of a Docker container, this script
+                    will execute the program interface and generate
+                    ouput for the hfrnet algorithm.
+Input:              config.yaml - A YAML file containing all
+                    required variables and paths.
+Files needed:       Requires the configuration file.
+Output:             After a successful execution of the container, output
+                    data will be available in the output directory,
+                    and logs should be available in the logging
+                    directory. Please read the README document for more
+                    information.
 Modules/subroutines: t4_utils.future.parse_config
 Calling sequence:    python hfrnet_rtv.py <config_yaml>
 """
 
-import os
 import sys
 import traceback
 import logging
@@ -27,7 +26,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Union
-import boto3
+
 
 from t4_utils.future.ccap.parse_config import parse_config
 

@@ -39,18 +39,7 @@ class db_manager:
                     host=self.dbConfig.host,
                     user=self.dbConfig.user,
                     database=self.dbConfig.db_name)
-            # elif self.dbConfig.run_env == 'dev_docker':
-            #     #--- connect on AWS
-            #     self.conn_handel = pymysql.connect(
-            #         user = self.dbConfig.user,
-            #         database = self.dbConfig.db_name,
-            #         host = self.dbConfig.host,
-            #         port = self.dbConfig.port,
-            #         password = self.dbConfig.password,
-            #         ssl = self.dbConfig.ssl_context)  
-            # elif self.dbConfig.run_env == 'aws':
             else:
-            
                 #--- connect on AWS
                 _log.info(f"---------------------------------------------")
                 _log.info(f" ::self.dbConfig.run_env::{self.dbConfig.run_env}")
@@ -68,8 +57,8 @@ class db_manager:
                 _log.info(f"---------------------------------------------")
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
-                   f", Can't connect to the database: user={self.dbConfig.user}, "
-                   f"database={self.dbConfig.db_name}")
+                f", Can't connect to the database: user={self.dbConfig.user}, "
+                f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
     #----------------------------------------------------------
     def get_query(self, query):
@@ -149,9 +138,6 @@ class db_manager:
         self.write_query(create_table_query)
     #----------------------------------------------------------
 
-
-
-
 # ----------------------------------------------------------
 def set_db_info( config, configObj):
     """
@@ -194,9 +180,9 @@ def set_db_info( config, configObj):
         # Generate the authentication token
         REGION = configObj.dbObject.region
         token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
-                                              Port=configObj.dbObject.port,
-                                              DBUsername=configObj.dbObject.user,
-                                              Region=REGION)
+                                            Port=configObj.dbObject.port,
+                                            DBUsername=configObj.dbObject.user,
+                                            Region=REGION)
     elif configObj.dbObject.run_env == 'aws':
         #--- connect on AWS
 
@@ -224,9 +210,9 @@ def get_aws_cloud9_pw( endpoint, port, user,region):
     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
     
     _log.debug("Attempting to AWS keys ::AWS_ACCESS_KEY_ID::AWS_SECRET_ACCESS_KEY ::AWS_SESSION_TOKEN ")
-    key_id = os.environ['AWS_ACCESS_KEY_ID']
-    secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-    access_token = os.environ['AWS_SESSION_TOKEN']
+    key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    access_token = os.getenv('AWS_SESSION_TOKEN')
     _log.info(f"------ key_id::{key_id}")
     _log.info(f"------ key_id::{access_token}")
     _log.info(f"------ key_id::{secret_key}")
@@ -239,21 +225,9 @@ def get_aws_cloud9_pw( endpoint, port, user,region):
     return client.generate_db_auth_token(DBHostname=endpoint, Port=port, DBUsername=user, Region=region)
 
 
-
-# class My400Error(Exception):
-#     """ Base Class for your known errors """
-
 def download_rds_certificate():
     """Downloads the RDS certificate. Falls back to env variable if download fails."""
 
-    # DB_HOST = os.environ['DB_HOST']
-    # DB_PORT = int(os.environ.get('DB_PORT', 3306))
-    # DB_USER = os.environ['DB_USER']
-    # DB_NAME = os.environ['DB_NAME']
-
-    # # Certificate-related
-    # CERTIFICATE_URL = 'https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem'
-    # CERTIFICATE_PATH = '/tmp/us-east-1-bundle.pem' 
     _log.info(f"------ in download_rds_certificate")   
     try:
         _log.debug("Attempting to download RDS certificate from AWS...")
@@ -268,58 +242,6 @@ def download_rds_certificate():
                 cert_file.write(os.environ['DEFAULT_RDS_CERTIFICATE'])
         else:
             raise RuntimeError("Failed to download certificate and no backup available in environment variable.")
-
-# def get_iam_token():
-#     """Generates an IAM authentication token for RDS MySQL"""
-#     client = boto3.client('rds')
-#     token = client.generate_db_auth_token(
-#         DBHostname=DB_HOST,
-#         Port=DB_PORT,
-#         DBUsername=DB_USER
-#     )
-#     return token
-
-
-# def handler(event, context):
-#     """ handler has the sole responsability of creating a return code and catching exceptions. """
-#     try:
-#         token = get_iam_token()
-#         download_rds_certificate()
-#     except My400Error as e:
-#         _log.exception("Expected type of error")
-#         return {
-#             "statusCode": 400,
-#             "body": f"Bad Input"
-#         }
-#     except Exception as e:
-#         _log.exception("Unexpected type of error")
-#         return {
-#             "statusCode": 500,
-#             "body": f"Unexpected error"
-#         }
-#     return {
-#         "statusCode": 200,
-#         "body": "ran correctly"
-#     }
-# --------------------------------------------------------------
-# def get_ao_ca():
-#     # consider moving connection to a global
-#     # so that reconnection isn't necessary every time the lambda is called.
-#     token = get_iam_token()
-#     # connection = pymysql.connect(
-#     #     host=DB_HOST,
-#     #     user=DB_USER,
-#     #     password=token,
-#     #     database=DB_NAME,
-#     #     ssl={'ca': CERTIFICATE_PATH},
-#     #     connect_timeout=10
-#     # )
-#     # with connection.cursor() as cursor:
-#     #     cursor.execute("SELECT VERSION()")
-#     #     version = cursor.fetchone()
-#     #     log.debug(f"MySQL Version: {version}")
-
-#     download_rds_certificate()
 
 
 
