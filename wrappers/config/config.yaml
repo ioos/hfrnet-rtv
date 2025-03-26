@@ -46,7 +46,7 @@ docker:
       # - &config /home/ec2-user/environment/hfrnet/wrappers/config
       - &test_data /home/ec2-user/environment/HFR/hfrnet/test_data
       - &packages /home/ec2-user/environment/HFR/hfrnet/packages
-      - &ancillary /home/ec2-user/environment/HFR/hfrnet/ancillary_data
+      - &ancillary_data /home/ec2-user/environment/HFR/hfrnet/ancillary_data
       - &wrapper /home/ec2-user/environment/HFR/hfrnet/wrappers
       - &config /home/ec2-user/environment/HFR/hfrnet/wrappers/config
       - &output /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/output
@@ -57,9 +57,9 @@ docker:
     options:
       readonly: false
     pairs:
-      /home/WORKING_DIR/testdata/: *test_data
+      /home/WORKING_DIR/test_data/: *test_data
       /home/WORKING_DIR/packages/: *packages
-      /home/WORKING_DIR/ancillary/: *ancillary
+      /home/WORKING_DIR/ancillary_data/: *ancillary_data
       /home/WORKING_DIR/wrapper/: *wrapper
       /home/WORKING_DIR/config/: *config
       /home/WORKING_DIR/output/: *output

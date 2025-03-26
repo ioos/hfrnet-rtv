@@ -116,11 +116,11 @@ class Interface(aim.Interface):
         # ao_output = os.getenv('AO_WORKFLOW_DATA_DIR')
         # if ao_output:
         print(f"---------------------------------------------")
-        print(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
+        print(f" set_db_info::Running Env is :: {self.config['databases.run_env']}")
         if self.config['databases.run_env'] == 'ao':
             #--- this must be done in order for AO to move anything outside the AO sys
             #--- default path is /workflow/data/
-            print(f'AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}')
+            print(f"AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}")
         else:
             #---- default for running inside the docker
             self.config['directory.log'] = '/home/WORKING_DIR/logs'
