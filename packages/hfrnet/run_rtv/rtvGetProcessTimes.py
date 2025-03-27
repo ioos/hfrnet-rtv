@@ -74,6 +74,12 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     # state.get()
     # state_time = None
     state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+    # _log.info("========================== get_state_time")
+    # _log.info(state_time)
+    # _log.info(state_cvs)
+    # _log.info(state_time.strftime('%Y-%m-%d %H:%M:%S'))
+    # _log.info("========================== get_state_time")
+    
     #-------------------------
 
     # Set start time to arbitrairly old value if no state is defined - let

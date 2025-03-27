@@ -33,10 +33,10 @@ algorithm:
 docker:
   #image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.1
   # image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.0
-  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.14
+  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.18
   action:
     bin: python3
-    config: /home/WORKING_DIR/config/config.yaml
+    config: /home/WORKING_DIR/test_data/config_docker.yaml
     script: /home/WORKING_DIR/wrapper/hfrnet_rtv.py
   mount:
     external:

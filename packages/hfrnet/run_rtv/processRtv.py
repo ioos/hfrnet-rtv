@@ -100,7 +100,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
                                   process, rtvInfoObj, compTotObj, land, grid)
-            if len(newRtvFiles) == 0:
+            # if len(newRtvFiles) == 0:
+            if newRtvFiles is None:
                 _log.info('No rtv files created or updated')
             else:
                 msg = f'Created or updated {len(newRtvFiles)} rtv files'
@@ -110,7 +111,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             msg = "\n" + "="*80 + f"\nRtv execution time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
 
-        if process.name.casefold() == 'stc':
+        if process.name.casefold() == 'stc' and newRtvFiles is not None:
 
             for iTime in newRtvFiles:
                 #for execution time logging
@@ -150,7 +151,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 msg = "\n" + "="*80 + f"\nSTC execution time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
 
-        if process.name.casefold() == 'lta':
+        if process.name.casefold() == 'lta' and newRtvFiles is not None:
             newRtvFiles = [configObj.runTime]
             for iTime in newRtvFiles:
 

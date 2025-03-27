@@ -40,11 +40,11 @@ class db_manager:
                     user=self.dbConfig.user,
                     database=self.dbConfig.db_name)
             else:
-                #--- connect on AWS
-                _log.info(f"---------------------------------------------")
+                # #--- connect on AWS
+                # _log.info(f"---------------------------------------------")
                 _log.info(f" ::self.dbConfig.run_env::{self.dbConfig.run_env}")
-                _log.info(f"--------self.dbConfig.password ::{self.dbConfig.password} ")
-                _log.info(f"-------- pymysql.connect ")
+                # _log.info(f"--------self.dbConfig.password ::{self.dbConfig.password} ")
+                # _log.info(f"-------- pymysql.connect ")
 
                 self.conn_handel = pymysql.connect(host = self.dbConfig.host,
                                                 user = self.dbConfig.user,
@@ -54,7 +54,7 @@ class db_manager:
                                                 ssl = self.dbConfig.ssl_context)
         
                 _log.info(f"---------------------------- connected")
-                _log.info(f"---------------------------------------------")
+                # _log.info(f"---------------------------------------------")
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
                 f", Can't connect to the database: user={self.dbConfig.user}, "
@@ -62,7 +62,7 @@ class db_manager:
             _log.fatal(msg)
     #----------------------------------------------------------
     def get_query(self, query):
-        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
         _log.info(query)
         datasetdict = {}
         with self.conn_handel.cursor() as cursor:
@@ -75,7 +75,7 @@ class db_manager:
             for key, value in datasetdict.items():
                 msg = f"{key}:::{value}"
                 _log.info(msg)
-            _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
 
         return datasetdict
     #----------------------------------------------------------
@@ -209,16 +209,17 @@ def get_aws_cloud9_pw( endpoint, port, user,region):
     _log.info(f"------ in get_aws_pw")
     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
     
-    _log.debug("Attempting to AWS keys ::AWS_ACCESS_KEY_ID::AWS_SECRET_ACCESS_KEY ::AWS_SESSION_TOKEN ")
-    key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    access_token = os.getenv('AWS_SESSION_TOKEN')
-    _log.info(f"------ key_id::{key_id}")
-    _log.info(f"------ key_id::{access_token}")
-    _log.info(f"------ key_id::{secret_key}")
+    # _log.debug("Attempting to AWS keys ::AWS_ACCESS_KEY_ID::AWS_SECRET_ACCESS_KEY ::AWS_SESSION_TOKEN ")
+    # key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    # secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    # access_token = os.getenv('AWS_SESSION_TOKEN')
+    # _log.info(f"------ key_id::{key_id}")
+    # _log.info(f"------ key_id::{access_token}")
+    # _log.info(f"------ key_id::{secret_key}")
 
     # Initialize a session using Amazon RDS
-    session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
+    # session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
+    session = boto3.Session(region_name=region)
     client = session.client('rds')
 
     # Generate the authentication token
