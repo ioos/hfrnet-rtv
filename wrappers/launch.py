@@ -32,6 +32,7 @@ def run(cmd):
 
 
 def main(config_path, interactive, dryrun):
+    print(f"config_path::{config_path}")
     config = parse_config(config_path)
     cmd = make_cmd(config, interactive)
     print('Running the following command:')

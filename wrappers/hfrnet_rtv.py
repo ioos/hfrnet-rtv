@@ -21,7 +21,7 @@ Calling sequence:    python hfrnet_rtv.py <config_yaml>
 
 import sys
 import traceback
-import logging
+# import logging
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
@@ -30,19 +30,21 @@ from typing import Union
 
 from t4_utils.future.ccap.parse_config import parse_config
 
-import logging
-logger = logging.getLogger()
+# import logging
+# logger = logging.getLogger()
 
-def get_logger(cfg: dict) -> logging.getLogger:
-    """
-    Creates a logging object.
-    """
+# def get_logger(cfg: dict) -> logging.getLogger:
+#     """
+#     Creates a logging object.
+#     """
 
-    level = logging.getLevelName(cfg['logging_level'])
-    logger = logging.getLogger('hfrnet')
-    logger.setLevel(level)
+#     level = logging.getLevelName(cfg['algorithm']['logging_level'])
+#     logger = logging.getLogger('hfrnet')
+#     logger.setLevel(level)
+#     print(f"get_logger:: {level} ")
+#     print(logger)
 
-    return logger
+#     return logger
 
 def aim_config(cfg: dict) -> dict:
     """
@@ -51,7 +53,7 @@ def aim_config(cfg: dict) -> dict:
     handoff.
     """
 
-    aim_cfg = dict(cfg['algorithm'])
+    aim_cfg = dict((cfg)['algorithm'])
     
     aim_cfg['time'] ={
         'start_date': aim_cfg['coverage']['start'],
@@ -69,17 +71,23 @@ def aim_config(cfg: dict) -> dict:
     aim_cfg.pop('logging_level')
     return aim_cfg
 
-def run_aim(cfg: dict, interface_cfg: dict, logger: logging.getLogger) -> None:
+def run_aim(cfg: dict, interface_cfg: dict)-> None: #, logger: logging.getLogger) -> None:
     """
     Run the AIM interface
     """
+    print("===============================================")
+    print(cfg)
+    print("===============================================")
+    print(interface_cfg)
     sys.path.append(cfg['algorithm']['ref']['algorithm_dir']+'/packages/')
+    print("===============================================")
+    # logger.info("===========  run_aim  ================")
 
     try:
         import hfrnet.run_rtv
         import aim
     except Exception as err:
-        logger.error(err, exc_info=True)
+        # logger.error(err, exc_info=True)
         traceback.print_exc()
         sys.exit(1)
         
@@ -87,29 +95,29 @@ def run_aim(cfg: dict, interface_cfg: dict, logger: logging.getLogger) -> None:
         aim_cfg = aim.Handoff(interface_cfg)
     except Exception as err:
         traceback.print_exc()
-        logger.error(err, exc_info=True)
+        # logger.error(err, exc_info=True)
         sys.exit(1)
         
-    logger.info('Completed succesfully: aim.Handoff(interface_config)')
+    # logger.info('Completed succesfully: aim.Handoff(interface_config)')
     try:
         pkg_interface = hfrnet.run_rtv.interface.Interface(aim_cfg)
     except Exception as err:
         traceback.print_exc()
-        logger.error(err, exc_info=True)
+        # logger.error(err, exc_info=True)
         sys.exit(1)
         
-    logger.info('Completed succesfully: hfrnet.interface.Interface(aim_cfg)')
+    # logger.info('Completed succesfully: hfrnet.interface.Interface(aim_cfg)')
 
     try:
         pkg_interface.run_methods()
     except Exception as err:
         traceback.print_exc()
-        logger.info('pkg_interface.run_methods() returned an error:')
-        logger.error(err, exc_info=True)
+        # logger.info('pkg_interface.run_methods() returned an error:')
+        # logger.error(err, exc_info=True)
         sys.exit(1)
-    logger.info('Completed succesfully: pkg_interface.run_methods()')
+    # logger.info('Completed succesfully: pkg_interface.run_methods()')
 
-def main(config_path: Union[str, Path], logger: logging.getLogger=None) -> None:
+def main(config_path: Union[str, Path])-> None: #, logger: logging.getLogger=None) -> None:
     """
     Main function that performs the following:
         1) Calls parse_config to read in the application yaml
@@ -119,28 +127,29 @@ def main(config_path: Union[str, Path], logger: logging.getLogger=None) -> None:
         5) Executes the aim
     """
 
-    cfg = parse_config(config_path)['algorithm']
+    cfg = parse_config(config_path)
 
-    if logger is None:
-        logger = get_logger(cfg)
+    # if logger is None:
+    #     logger = get_logger(cfg)
 
-    logger.info('Creating AIM config')
+    # logger.info('Creating AIM config')
     aim_cfg = aim_config(cfg)
 
     start = datetime.now(timezone.utc)
-    logger.info('Start Time: %s', start)
-    logger.info('Interface Config:\n%s', str(aim_cfg))
+    # logger.info('Start Time: %s', start)
+    # logger.info('Interface Config:\n%s', str(aim_cfg))
 
-    run_aim(cfg, aim_cfg, logger)
+    run_aim(cfg, aim_cfg) #, logger)
 
     end = datetime.now(timezone.utc)
     run = end - start
-    logger.info('End Time: %s', end)
-    logger.info('Total Run Time: %f sec', run.total_seconds())
+    # logger.info('End Time: %s', end)
+    # logger.info('Total Run Time: %f sec', run.total_seconds())
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('application_yaml_path')
     args = parser.parse_args()
+    print(f"args.application_yaml_path:: {args.application_yaml_path}")
     main(args.application_yaml_path)

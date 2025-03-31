@@ -2,7 +2,7 @@ algorithm:
     processing:
         domain: 'ushi'
         resolution: '6km'
-        batch_processing: true #'False'
+        batch_processing: true #false
     coverage:
         start: '202301040000000'
         end:   '202301040059599'
@@ -35,7 +35,7 @@ docker:
   image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.20
   action:
     bin: python3
-    config: /home/WORKING_DIR/test_data/config_docker.yml
+    config: /home/WORKING_DIR/config/config.yaml
     script: /home/WORKING_DIR/wrapper/hfrnet_rtv.py
   mount:
     external:
@@ -48,7 +48,7 @@ docker:
       - &logs /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/logs
       - &input /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/input
       - &intermediate /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/input/intermediate
-     
+    
     options:
       readonly: false
     pairs:
@@ -68,10 +68,10 @@ docker:
     #user:
     #group-add: keep-groups
     network: host
-  env_vars:
-    - AWS_ACCESS_KEY_ID
-    - AWS_SECRET_ACCESS_KEY
-    - AWS_SESSION_TOKEN
+  # env_vars:
+  #   - AWS_ACCESS_KEY_ID
+  #   - AWS_SECRET_ACCESS_KEY
+  #   - AWS_SESSION_TOKEN
   container:
     product: hfrnet_rtv
     proj: v1_prelim
