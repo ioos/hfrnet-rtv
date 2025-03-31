@@ -168,60 +168,24 @@ def set_db_info( config, configObj):
 
     _log.info(f"---------------------------------------------")
     _log.info(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
-    if configObj.dbObject.run_env == 'ao':
-        # Initialize a session using Amazon RDS
-        
-        _log.info(f" ::configObj.dbObject.run_env::{configObj.dbObject.run_env}")
-        session = boto3.Session()
-        client = session.client('rds')
-        
-        # Generate the authentication token
-        REGION = configObj.dbObject.region
-        token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
-                                            Port=configObj.dbObject.port,
-                                            DBUsername=configObj.dbObject.user,
-                                            Region=REGION)
-    elif configObj.dbObject.run_env == 'aws':
-        #--- connect on AWS
+    os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
 
-        _log.info(f"------ calling get_aws_pw")
-        token = get_aws_cloud9_pw(configObj.dbObject.host, 
-                            configObj.dbObject.port,
-                            configObj.dbObject.user,
-                            configObj.dbObject.region)
+    session = boto3.Session()
+    client = session.client('rds')
+    
+    # Generate the authentication token
+    REGION = configObj.dbObject.region
+    token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
+                                        Port=configObj.dbObject.port,
+                                        DBUsername=configObj.dbObject.user,
+                                        Region=REGION)
 
-    #================================= 
+
     configObj.dbObject.password = token
     _log.info("Generating --> token = client.generate_db_auth_token")
     _log.info("======= token =================================")
     _log.info(f"{token}")
     _log.info("========================================")
-
-# ----------------------------------------------------------
-def get_aws_cloud9_pw( endpoint, port, user,region):
-    """
-    get the token when running on aws cloud9
-    """
-
-    # Generate the token to connect to the AWS database
-    _log.info(f"------ in get_aws_pw")
-    os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-    
-    # _log.debug("Attempting to AWS keys ::AWS_ACCESS_KEY_ID::AWS_SECRET_ACCESS_KEY ::AWS_SESSION_TOKEN ")
-    # key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    # secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    # access_token = os.getenv('AWS_SESSION_TOKEN')
-    # _log.info(f"------ key_id::{key_id}")
-    # _log.info(f"------ key_id::{access_token}")
-    # _log.info(f"------ key_id::{secret_key}")
-
-    # Initialize a session using Amazon RDS
-    # session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret_key, aws_session_token=access_token, region_name=region)
-    session = boto3.Session(region_name=region)
-    client = session.client('rds')
-
-    # Generate the authentication token
-    return client.generate_db_auth_token(DBHostname=endpoint, Port=port, DBUsername=user, Region=region)
 
 
 def download_rds_certificate():
