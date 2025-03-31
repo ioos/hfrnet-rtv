@@ -13,8 +13,8 @@ directory:
    algorithm_dir: /home/WORKING_DIR
    log: /home/WORKING_DIR/logs
    output: /home/WORKING_DIR/output
-   radial_local_dir: /home/WORKING_DIR/input/radials/all
-   interm_local_dir: ''
+   radial_local_dir: /home/WORKING_DIR/input/radials
+   interm_local_dir: /home/WORKING_DIR/input/intermediate
    
 databases:
    run_env: 'aws' # 'aws' 'rhw' 'ao'

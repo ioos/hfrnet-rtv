@@ -169,17 +169,19 @@ def set_db_info( config, configObj):
     _log.info(f"---------------------------------------------")
     _log.info(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-
-    session = boto3.Session()
+    REGION = configObj.dbObject.region
+    
+    if configObj.dbObject.run_env == 'ao':
+        session = boto3.Session()
+    else:
+        session = boto3.Session(region_name=REGION)
     client = session.client('rds')
     
     # Generate the authentication token
-    REGION = configObj.dbObject.region
     token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
                                         Port=configObj.dbObject.port,
                                         DBUsername=configObj.dbObject.user,
                                         Region=REGION)
-
 
     configObj.dbObject.password = token
     _log.info("Generating --> token = client.generate_db_auth_token")
