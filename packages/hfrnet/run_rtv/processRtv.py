@@ -96,6 +96,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             continue
 
         if process.name.casefold() == 'rtv':
+            _log.info("#########################################")
+            _log.info( f"processing:: {process.name.casefold()}")
+            _log.info("#########################################")
 
             stime = current_datetime()
 
@@ -113,6 +116,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'stc' and newRtvFiles is not None:
 
+            _log.info("#########################################")
+            _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
+            _log.info("#########################################")
             for iTime in newRtvFiles:
                 #for execution time logging
                 stime = current_datetime()
@@ -154,6 +160,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
 
         if process.name.casefold() == 'lta' and newRtvFiles is not None:
             newRtvFiles = [configObj.runTime]
+            _log.info("#########################################")
+            _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
+            _log.info("#########################################")
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)

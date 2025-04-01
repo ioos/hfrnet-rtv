@@ -116,7 +116,10 @@ class SumAndAvg:
         end_time = center_time + timedelta(hours=12)
         temp_time = start_time
         time_period = [start_time]
+        count=0
         while temp_time < end_time:
+            count=count+1
+            _log.info(f"hr:: {count}")
             temp_time += timedelta(hours=1)
             time_period.append(temp_time)
 
@@ -133,8 +136,10 @@ class SumAndAvg:
         end_of_month = time_month.replace(day=last, hour=23)
         temp_time = start_of_month
         time_period = [temp_time]
-
+        count=0
         while temp_time < end_of_month:
+            count=count+1
+            _log.info(f"month:: {count}")
             temp_time += timedelta(hours=1)
             time_period.append(temp_time)
 
@@ -150,7 +155,10 @@ class SumAndAvg:
         time_period = [temp_time]
         month_tmp = 2
         max_months_in_year = 13
+        count=0
         while month_tmp < max_months_in_year:
+            count=count+1
+            _log.info(f"year:: {count}")
             temp_time = temp_time.replace(month=month_tmp)
             time_period.append(temp_time)
             month_tmp = month_tmp + 1

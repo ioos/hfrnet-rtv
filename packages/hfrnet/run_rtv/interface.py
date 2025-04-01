@@ -21,7 +21,7 @@ from datetime import datetime
 import aim
 
 #hfrnet modules
-from hfrnet.utils_funcs.utility import setup_log_filename
+from hfrnet.utils_funcs.utility import setup_log_filename, current_datetime
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
                                         check_lock_process, clear_state_table)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
@@ -141,7 +141,7 @@ class Interface(aim.Interface):
         set_db_info(self.config, self.mconfigureVals)
         
         #====== delete this
-        clear_state_table(self.mconfigureVals)
+        # clear_state_table(self.mconfigureVals)
 
         #Check if the process is locked
         _log.info("=============================================")
@@ -159,8 +159,8 @@ class Interface(aim.Interface):
                     f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
         # set the runtime to the start time
-        self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
-                                        '%Y%m%d%H%M%S%f')
+        self.mconfigureVals.runTime = current_datetime()
+        # self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],'%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
         if self.config['processing.batch_processing']:

@@ -207,7 +207,7 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         return grid
 
 def current_time():
-    """Return the current time in format for database"""
+    """Return the current time in str format for database"""
     return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
 
 def current_datetime():
@@ -355,7 +355,7 @@ def load_mat(filename):
     return data
 
 #########################################################################
-def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
+def create_CCAP_filename_s_e(ctime, stime, etime, alg_ver, unit_name, ext):
     """
     :param config_dict: contains the yaml config file
     :return: the ccap file name
@@ -363,7 +363,8 @@ def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
     # example file name
     # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
 
-    ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = current_time('%Y%m%d%H%M%S%f')
 
     file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
     return file_name
@@ -380,13 +381,24 @@ def setup_log_filename(my_pkgint, added_name=""):
     """
     # --------------------- create the log file
     log_dir = Path(my_pkgint.config['directory.log'])
-    stime = f"{my_pkgint.config['time.start_date']}"
-    etime = f"{my_pkgint.config['time.end_date']}"
+    c_datetime = current_datetime()
+    ctime = c_datetime.strftime('%Y%m%d%H%M%S%f')[:-5]
+    if my_pkgint.config['processing.batch_processing']:
+        stime = f"{my_pkgint.config['time.start_date']}"
+        etime = f"{my_pkgint.config['time.end_date']}"
+    else:
+        # Remove minutes and seconds by setting them to 0
+        stimeobj = c_datetime.replace(minute=0, second=0, microsecond=0)
+        stime = stimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+        # Set minutes to 59 and seconds to 59.9
+        etimeobj = c_datetime.replace(minute=59, second=59, microsecond=900000)
+        etime = etimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+
+
     algo_ver = f"{my_pkgint.config['production.version']}"
 
-    run_logfile = create_CCAP_filename_s_e(stime, etime,
-                                           algo_ver,
-                                           f"{added_name}", ".log")
+    run_logfile = create_CCAP_filename_s_e(ctime, stime, etime,
+                                            algo_ver, f"{added_name}", ".log")
     handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
     date_format = '%Y-%m-%d %H:%M:%S'
     full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
