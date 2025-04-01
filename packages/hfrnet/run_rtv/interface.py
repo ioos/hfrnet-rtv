@@ -23,7 +23,7 @@ import aim
 #hfrnet modules
 from hfrnet.utils_funcs.utility import setup_log_filename
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
-                                        check_lock_process)
+                                        check_lock_process, clear_state_table)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
                                         DatabaseError)
@@ -139,6 +139,9 @@ class Interface(aim.Interface):
                             f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
+        
+        #====== delete this
+        clear_state_table()
 
         #Check if the process is locked
         _log.info("=============================================")

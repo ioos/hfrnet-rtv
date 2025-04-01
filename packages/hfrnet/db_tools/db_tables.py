@@ -544,3 +544,29 @@ def check_lock_process(configObj):
 					f"The process is terminated")
 			_log.fatal(msg)
 			return True
+
+def clear_state_table(configObj):
+	# Connect to the configuration database
+
+	with db_manager(configObj.dbObject) as db_class:
+		#------- check the table
+		sqlquery = ('SELECT COUNT(*) FROM state ')
+
+		results = db_class.get_query(sqlquery)
+		nRows = len(next(iter(results.values())))
+		_log.info(f"===>>> state table before clearing,{nRows}")
+
+		# Build & execute query
+		sqlquery = ('DELETE FROM state ')
+
+		db_class.write_query(sqlquery)
+		_log.info("===>>> state table is cleared")
+		#------- check the table
+		sqlquery = ('SELECT COUNT(*) FROM state ')
+
+		results = db_class.get_query(sqlquery)
+		nRows = len(next(iter(results.values())))
+		_log.info(f"===>>> state table after clearing,{nRows}")
+
+
+	return 
