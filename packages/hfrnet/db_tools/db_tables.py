@@ -11,13 +11,13 @@ _log = logging.getLogger()
 def read_domain(db_class, configureVals):
 	# Check for valid domain
 	sqlquery = (f"SELECT description, id FROM domain WHERE name = "
-	            f"'{configureVals.domain}'")
+				f"'{configureVals.domain}'")
 	result_list = db_class.get_query(sqlquery)
 	# % Expect exactly one record to match
 	n = len(result_list)
 	if n == 0:
 		_log.error(f"{configureVals.domain} is not defined in the configuration "
-		           f"database")
+					f"database")
 		db_class.close()
 		raise DatabaseError()
 	elif n > 2:
@@ -33,7 +33,7 @@ def read_domain(db_class, configureVals):
 def read_resolution(db_class, configureVals):
 	# %% Check for valid resolution
 	sqlquery = (f"SELECT id FROM resolution WHERE name = "
-	            f"'{configureVals.resolution}'")
+				f"'{configureVals.resolution}'")
 	result_list = db_class.get_query(sqlquery)
 
 	# % Expect exactly one record to match
@@ -41,13 +41,13 @@ def read_resolution(db_class, configureVals):
 	if n != 1:
 		if n == 0:
 			_log.error(f"Resolution {configureVals.resolution} is not defined in the "
-			           f"database for domain {configureVals.domain}")
+						f"database for domain {configureVals.domain}")
 			db_class.close()
 			raise DatabaseError()
 		else:
 			_log.error(f"Resolution query for {configureVals.domain} : "
-			           f"{configureVals.resolution} "
-			           f"returned {n} rows where only one expected")
+						f"{configureVals.resolution} "
+						f"returned {n} rows where only one expected")
 			db_class.close()
 			raise DatabaseError()
 	configureVals.resolution_id = result_list['id'][0]
@@ -57,14 +57,14 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 				mltaparameters, process_list):
 	# Get realtime process(es) to run, the methods table
 	sqlquery = f"SELECT p.name,m.name,m.description,rp.save_as FROM realtime_process rp " \
-	           f"JOIN domain d ON d.id = rp.domain_id " \
-	           f"JOIN resolution r ON r.id = rp.resolution_id " \
-	           f"JOIN process p ON p.id = rp.process_id " \
-	           f"JOIN combine_method m ON m.id = p.combine_method_id " \
-	           f"WHERE rp.status = 'enabled' " \
-	           f"AND d.name = '{mconfigurevals.domain}' " \
-	           f"AND r.name = '{mconfigurevals.resolution}' " \
-	           f"ORDER BY rp.priority"
+				f"JOIN domain d ON d.id = rp.domain_id " \
+				f"JOIN resolution r ON r.id = rp.resolution_id " \
+				f"JOIN process p ON p.id = rp.process_id " \
+				f"JOIN combine_method m ON m.id = p.combine_method_id " \
+				f"WHERE rp.status = 'enabled' " \
+				f"AND d.name = '{mconfigurevals.domain}' " \
+				f"AND r.name = '{mconfigurevals.resolution}' " \
+				f"ORDER BY rp.priority"
 
 	result_list = db_class.get_query(sqlquery)
 	# % Return if there are no processes found to run
@@ -85,7 +85,7 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 	for i in range(n):
 		process_list.append(
 			RtvProcess(result_list['name'][i], result_list['name_2'][i],
-			           result_list['description'][i], result_list['save_as'][i]))
+						result_list['description'][i], result_list['save_as'][i]))
 
 	for row in process_list:
 		_log.info(f"{row.name}, {row.method}, {row.methoddesc}, {row.saveas}")
@@ -96,16 +96,16 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 		if processname.lower() == "rtv":
 			_log.info("--rtv--")
 			sqlquery = f"SELECT " \
-			           f"p.max_age,p.min_rad_sites,p.min_radials,p.max_rad_speed," \
-			           f"p.grid_search_radius,p.max_rtv_speed,p.uwls_max_hdop," \
-			           f"p.uwls_max_hdop_ascii,p.uwls_max_hdop_nc " \
-			           f"FROM rtv_parameter p " \
-			           f"JOIN domain d ON d.id = p.domain_id " \
-			           f"JOIN resolution r ON r.id = p.resolution_id " \
-			           f"JOIN combine_method m ON m.id = p.combine_method_id " \
-			           f"WHERE m.name = '{methodname.lower()}' " \
-			           f"AND d.name = '{mconfigurevals.domain}' " \
-			           f"AND r.name = '{mconfigurevals.resolution}'"
+						f"p.max_age,p.min_rad_sites,p.min_radials,p.max_rad_speed," \
+						f"p.grid_search_radius,p.max_rtv_speed,p.uwls_max_hdop," \
+						f"p.uwls_max_hdop_ascii,p.uwls_max_hdop_nc " \
+						f"FROM rtv_parameter p " \
+						f"JOIN domain d ON d.id = p.domain_id " \
+						f"JOIN resolution r ON r.id = p.resolution_id " \
+						f"JOIN combine_method m ON m.id = p.combine_method_id " \
+						f"WHERE m.name = '{methodname.lower()}' " \
+						f"AND d.name = '{mconfigurevals.domain}' " \
+						f"AND r.name = '{mconfigurevals.resolution}'"
 
 			result_list = db_class.get_query(sqlquery)
 
@@ -113,14 +113,14 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 
 			if nrows == 0:
 				_log.error(f"RTV parameters are not defined for "
-				           f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
+							f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
 				db_class.close()
 				raise DatabaseError()
 
 			elif nrows > 1:
 				_log.error(f"RTV parameter query for {mconfigurevals.domain} "
-				           f"{mconfigurevals.resolution} returned {n} rows where only "
-				           f"one expected")
+							f"{mconfigurevals.resolution} returned {n} rows where only "
+							f"one expected")
 				db_class.close()
 				raise DatabaseError()
 
@@ -141,28 +141,28 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 		elif processname.lower() == "stc":
 			_log.info("--stc--")
 			sqlquery = f"SELECT " \
-			           f"p.min_temporal_coverage,p.max_age,p.max_error  " \
-			           f"FROM stc_parameter p " \
-			           f"JOIN domain d ON d.id = p.domain_id " \
-			           f"JOIN resolution r ON r.id = p.resolution_id " \
-			           f"JOIN combine_method m ON m.id = p.combine_method_id " \
-			           f"WHERE m.name = '{methodname.lower()}' " \
-			           f"AND d.name = '{mconfigurevals.domain}' " \
-			           f"AND r.name = '{mconfigurevals.resolution}'"
+						f"p.min_temporal_coverage,p.max_age,p.max_error  " \
+						f"FROM stc_parameter p " \
+						f"JOIN domain d ON d.id = p.domain_id " \
+						f"JOIN resolution r ON r.id = p.resolution_id " \
+						f"JOIN combine_method m ON m.id = p.combine_method_id " \
+						f"WHERE m.name = '{methodname.lower()}' " \
+						f"AND d.name = '{mconfigurevals.domain}' " \
+						f"AND r.name = '{mconfigurevals.resolution}'"
 			result_list = db_class.get_query(sqlquery)
 
 			nrows = len(result_list['max_error'])
 			_log.info(nrows)
 			if nrows == 0:
 				_log.error(f"STC parameters are not defined for "
-				           f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
+							f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
 				db_class.close()
 				raise DatabaseError()
 
 			elif nrows > 1:
 				_log.error(f"STC parameter query for {mconfigurevals.domain} "
-				           f"{mconfigurevals.resolution} returned {n} rows where only "
-				           f"one expected")
+							f"{mconfigurevals.resolution} returned {n} rows where only "
+							f"one expected")
 				db_class.close()
 				raise DatabaseError()
 
@@ -176,29 +176,29 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 		elif processname.lower() == "lta":
 			_log.info("--lta--")
 			sqlquery = f"SELECT " \
-			           f"p.min_month_temporal_coverage,p.min_year_temporal_coverage," \
-			           f"p.max_error  " \
-			           f"FROM lta_parameter p " \
-			           f"JOIN domain d ON d.id = p.domain_id " \
-			           f"JOIN resolution r ON r.id = p.resolution_id " \
-			           f"JOIN combine_method m ON m.id = p.combine_method_id " \
-			           f"WHERE m.name = '{methodname.lower()}' " \
-			           f"AND d.name = '{mconfigurevals.domain}' " \
-			           f"AND r.name = '{mconfigurevals.resolution}'"
+						f"p.min_month_temporal_coverage,p.min_year_temporal_coverage," \
+						f"p.max_error  " \
+						f"FROM lta_parameter p " \
+						f"JOIN domain d ON d.id = p.domain_id " \
+						f"JOIN resolution r ON r.id = p.resolution_id " \
+						f"JOIN combine_method m ON m.id = p.combine_method_id " \
+						f"WHERE m.name = '{methodname.lower()}' " \
+						f"AND d.name = '{mconfigurevals.domain}' " \
+						f"AND r.name = '{mconfigurevals.resolution}'"
 			result_list = db_class.get_query(sqlquery)
 
 			nrows = len(result_list['max_error'])
 			_log.info(nrows)
 			if nrows == 0:
 				_log.error(f"LTA parameters are not defined for "
-				           f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
+							f"{mconfigurevals.resolution} and {mconfigurevals.domain}")
 				db_class.close()
 				raise DatabaseError()
 
 			elif nrows > 1:
 				_log.error(f"LTA parameter query for {mconfigurevals.domain} "
-				           f"{mconfigurevals.resolution} returned {n} rows where only "
-				           f"one expected")
+							f"{mconfigurevals.resolution} returned {n} rows where only "
+							f"one expected")
 				db_class.close()
 				raise DatabaseError()
 
@@ -213,7 +213,7 @@ def read_methods(db_class, mconfigurevals, mrtvparameters, mstcparameters,
 
 		else:
 			_log.error(f"Unknown process {processname}"
-			           f"obtained, no parameters obtained")
+						f"obtained, no parameters obtained")
 			db_class.close()
 			raise DatabaseError()
 
@@ -242,7 +242,7 @@ def read_site_table(configObj):
 
 	if nRows == 0:
 		errmsg = (f'No sites defined for RTV {configObj.resolution} '
-		          f'{configObj.domain} processing')
+					f'{configObj.domain} processing')
 		_log.error(errmsg)
 
 		raise DatabaseError()
@@ -277,7 +277,7 @@ def get_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 			network_tmp = sites_list["network"][i]
 			name_tmp = sites_list["name"][i]
 			sqlquery = (f'{sqlquery}'
-			            f"( n.net = '{network_tmp}' AND s.sta = '{name_tmp}')")
+						f"( n.net = '{network_tmp}' AND s.sta = '{name_tmp}')")
 
 			# End statement
 			if i == nSite - 1:
@@ -306,13 +306,13 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 
 	with db_manager(configObj.dbObject,configObj.radial_dbname) as db_class:
 		sqlquery = ('SELECT '
-		            'FROM_UNIXTIME(r.time) AS t,n.net,s.sta,patterntype,file_arrival_time,'
-		            'lat,lon,range_res,range_bin_end,manufacturer,dfile,dir '
-		            'FROM radialfiles r '
-		            'JOIN network n ON n.network_id = r.network_id '
-		            'JOIN site s ON s.site_id = r.site_id '
-		            f"WHERE FROM_UNIXTIME(r.time) >= '{calcTime - timedelta(minutes=30)}' "
-		            f"AND FROM_UNIXTIME(r.time) < '{calcTime + timedelta(minutes=30)}' ")
+					'FROM_UNIXTIME(r.time) AS t,n.net,s.sta,patterntype,file_arrival_time,'
+					'lat,lon,range_res,range_bin_end,manufacturer,dfile,dir '
+					'FROM radialfiles r '
+					'JOIN network n ON n.network_id = r.network_id '
+					'JOIN site s ON s.site_id = r.site_id '
+					f"WHERE FROM_UNIXTIME(r.time) >= '{calcTime - timedelta(minutes=30)}' "
+					f"AND FROM_UNIXTIME(r.time) < '{calcTime + timedelta(minutes=30)}' ")
 
 		# Site conditions
 		nSite = len(siteInfoObj)
@@ -326,7 +326,7 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 			beampattern_temp = siteInfoObj[i].beampattern
 			useMinute_temp = siteInfoObj[i].useMinute
 			sqlquery = (f'{sqlquery}'
-			            f"( n.net = '{network_temp}' AND s.sta = '{name_temp}' ")
+						f"( n.net = '{network_temp}' AND s.sta = '{name_temp}' ")
 
 			# Beampattern
 			if beampattern_temp == 'ideal':
@@ -345,7 +345,7 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 					DATETIME_FORMAT)
 			elif useMinute_temp >= 30 and useMinute_temp < 60:
 				tr = ((calcTime - timedelta(minutes=60 - useMinute_temp)).
-				      strftime(DATETIME_FORMAT))
+						strftime(DATETIME_FORMAT))
 			else:
 				tr = ""
 				errmsg = (
@@ -366,7 +366,7 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 		# % Expect exactly one record to match
 		nRows = len(next(iter(files_list.values())))
 		list_of_dicts = [dict(zip(files_list, t)) for t in
-		                 zip(*files_list.values())]
+							zip(*files_list.values())]
 
 		# Convert all Decimal objects to float
 		for ifile_dict in list_of_dicts:
@@ -413,7 +413,7 @@ def get_state_time(configObj, process_name):
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
 		if nRows > 0:
-			state_time = results['time']
+			state_time = results['time'][0]
 			if results['csv']:
 				state_csv = results['csv']
 		else:
@@ -447,30 +447,30 @@ def update_state_time(configObj, process_name, state_time):
 	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT COUNT(*) '
-		            'FROM state '
-		            f"WHERE name = '{process_name}' "
-		            f"AND domain_id = '{configObj.domain_id}' "
-		            f"AND resolution_id = '{configObj.resolution_id}'")
+					'FROM state '
+					f"WHERE name = '{process_name}' "
+					f"AND domain_id = '{configObj.domain_id}' "
+					f"AND resolution_id = '{configObj.resolution_id}'")
 
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
 		if nRows > 0:
 			_log.info(f" Updating the state time of {process_name}::"
-			           f"{configObj.domain}::{configObj.resolution}")
+						f"{configObj.domain}::{configObj.resolution}")
 			update_query = (f"UPDATE state SET time = '{state_time}' "
-				            f"WHERE name = '{process_name}' "
-				            f"AND domain_id = '{configObj.domain_id}' "
-				            f"AND resolution_id = '{configObj.resolution_id}'")
+							f"WHERE name = '{process_name}' "
+							f"AND domain_id = '{configObj.domain_id}' "
+							f"AND resolution_id = '{configObj.resolution_id}'")
 			try:
 				db_class.write_query(update_query)
 			except Exception as err:
 				msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-				       f", Can't update the state time for  {process_name}::"
-			           f"{configObj.domain}::{configObj.resolution}")
+						f", Can't update the state time for  {process_name}::"
+						f"{configObj.domain}::{configObj.resolution}")
 				_log.fatal(msg)
 		else:
 			_log.info(f" No updates needed for the state time of {process_name}::"
-			           f"{configObj.domain}::{configObj.resolution}")
+						f"{configObj.domain}::{configObj.resolution}")
 
 	return
 
@@ -488,7 +488,7 @@ def check_lock_process(configObj):
 	with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
 		# Build & execute query
 		sqlquery = (f"SELECT exe_time FROM lock_process WHERE domain = "
-		            f"'{configObj.domain}' AND resolution = '{configObj.resolution}' ")
+					f"'{configObj.domain}' AND resolution = '{configObj.resolution}' ")
 
 		try:
 			results = db_class.get_query(sqlquery)
@@ -534,13 +534,13 @@ def check_lock_process(configObj):
 					return False
 				except Exception as err:
 					msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-					       f", Can't update the lock_process for "
-					       f"{configObj.domain}::{configObj.resolution}")
+							f", Can't update the lock_process for "
+							f"{configObj.domain}::{configObj.resolution}")
 					_log.fatal(msg)
 					return True
 		except Exception as err:
 			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-			       f", The lock_process does not exist in the database "
-			       f"The process is terminated")
+					f", The lock_process does not exist in the database "
+					f"The process is terminated")
 			_log.fatal(msg)
 			return True

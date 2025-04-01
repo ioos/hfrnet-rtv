@@ -201,9 +201,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # representation.  Unix time epoch is:
     #	1970-01-01 00:00:00Z = 0 seconds, 86,400 sec/day
     varid_t = ncid.createVariable('time', 'i4', dimid_t,
-                                  compression=compression,
-                                  complevel=complevel,
-                                  shuffle=shuffle)
+                                compression=compression,
+                                complevel=complevel,
+                                shuffle=shuffle)
     varid_t.standard_name = 'time'
     varid_t.units = 'seconds since 1970-01-01'
     varid_t.calendar = 'gregorian'

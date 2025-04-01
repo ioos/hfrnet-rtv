@@ -1,8 +1,15 @@
 """db_manager"""
 
-from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
+import os
+import boto3
+import ssl
+import urllib.request
 import pymysql
+
+from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
+from hfrnet.utils_funcs.constsHFR import rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH
 import logging
+
 _log = logging.getLogger()
 
 class db_manager:
@@ -21,6 +28,7 @@ class db_manager:
         self.close()
 
     def connect(self):
+        _log.info(f"-- Running in {self.dbConfig.run_env }")
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux
@@ -29,25 +37,28 @@ class db_manager:
                     user=self.dbConfig.user,
                     database=self.dbConfig.db_name)
             else:
-                #--- connect on AWS
-                self.conn_handel = pymysql.connect(
-                user = self.dbConfig.user,
-                database = self.dbConfig.db_name,
-                host = self.dbConfig.host,
-                port = self.dbConfig.port,
-                password = self.dbConfig.password,
-                ssl_ca = self.dbConfig.ssl_ca,
-                ssl_verify_identity = self.dbConfig.ssl_verify_identity,
-                ssl_verify_cert = self.dbConfig.ssl_verify_cert,
-                auth_plugin_map = self.dbConfig.auth_plugin_map)
+                # #--- connect on AWS
+                # _log.info(f"---------------------------------------------")
+                _log.info(f" ::self.dbConfig.run_env::{self.dbConfig.run_env}")
+                # _log.info(f"--------self.dbConfig.password ::{self.dbConfig.password} ")
+                # _log.info(f"-------- pymysql.connect ")
+
+                self.conn_handel = pymysql.connect(host = self.dbConfig.host,
+                                                user = self.dbConfig.user,
+                                                password = self.dbConfig.password,
+                                                database = self.dbConfig.db_name,
+                                                port =self.dbConfig.port,
+                                                ssl = self.dbConfig.ssl_context)
         
+                _log.info(f"---------------------------- connected")
+                # _log.info(f"---------------------------------------------")
         except Exception as err:
-            msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-                   f", Can't connect to the database: user={self.dbConfig.user}, "
-                   f"database={self.dbConfig.db_name} , "
-                   f"exist")
+            msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
+                f", Can't connect to the database: user={self.dbConfig.user}, "
+                f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
     #----------------------------------------------------------
+    
     def get_query(self, query):
         _log.info(" -------->>>>>>>>>>>>>>------------------ ")
         _log.info(query)
@@ -125,9 +136,6 @@ class db_manager:
         self.write_query(create_table_query)
     #----------------------------------------------------------
 
-
-
-
 # ----------------------------------------------------------
 def set_db_info( config, configObj):
     """
@@ -138,11 +146,69 @@ def set_db_info( config, configObj):
     configObj.dbObject.port = config['databases.port']
     configObj.dbObject.password = config['databases.password']
     configObj.dbObject.ssl_ca = config['databases.ssl_ca']
-    configObj.dbObject.ssl_verify_identity = config['databases.ssl_verify_identity']
-    configObj.dbObject.ssl_verify_cert = config['databases.ssl_verify_cert']
-    configObj.dbObject.auth_plugin_map = config['databases.auth_plugin_map']
+    configObj.dbObject.region = config['databases.region']
     configObj.dbObject.run_env = config['databases.run_env']
+
+    #-------------------------------------------
+    # --- set the ceritication parameters
+    download_rds_certificate()
+    context = ssl.create_default_context()
+    context.check_hostname = True
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.load_verify_locations(configObj.dbObject.ssl_ca)
+    context.verify_identity = True
+    context.verify_cert = True
+    context.auth_plugin_map = {'mysql_clear_password': None}
+    configObj.dbObject.ssl_context = context
+
+    #-------------------------------------------
     #---- set the environment parameters
     configObj.config_dbname = config['databases.config_dbname']
     configObj.radial_dbname = config['databases.radial_dbname']
+
+    _log.info(f"---------------------------------------------")
+    _log.info(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
+    os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
+    REGION = configObj.dbObject.region
+    
+    if configObj.dbObject.run_env == 'ao':
+        session = boto3.Session()
+    else:
+        session = boto3.Session(region_name=REGION)
+    client = session.client('rds')
+    
+    # Generate the authentication token
+    token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
+                                        Port=configObj.dbObject.port,
+                                        DBUsername=configObj.dbObject.user,
+                                        Region=REGION)
+
+    configObj.dbObject.password = token
+    _log.info("Generating --> token = client.generate_db_auth_token")
+    _log.info("======= token =================================")
+    _log.info(f"{token}")
+    _log.info("========================================")
+
+
+def download_rds_certificate():
+    """Downloads the RDS certificate. Falls back to env variable if download fails."""
+
+    _log.info(f"------ in download_rds_certificate")   
+    try:
+        _log.debug("Attempting to download RDS certificate from AWS...")
+        urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        _log.debug("Certificate downloaded successfully.")
+    except Exception as download_error: # TODO: coding standards require catching specific errors.
+        _log.debug(f"Download failed: {download_error}")
+        # Fallback to ENV variable if download fails
+        if os.getenv('DEFAULT_RDS_CERTIFICATE'):
+            _log.debug("Using RDS certificate from environment variable.")
+            with open(docker_CERTIFICATE_PATH, 'w') as cert_file:
+                cert_file.write(os.environ['DEFAULT_RDS_CERTIFICATE'])
+        else:
+            raise RuntimeError("Failed to download certificate and no backup available in environment variable.")
+
+
+
+
 

@@ -15,10 +15,12 @@ florida_lat = [25, 26.75]
 florida_lon = [-80.75, -78.75]
 NUM_DEGREES = 360
 RIGHT_ANGLE = 90
+rds_CERTIFICATE_URL = 'https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem'
+docker_CERTIFICATE_PATH = '/tmp/us-east-1-bundle.pem'    
 
 #minimum dates for when to do the averages
 YEAR_AVG_MIN_DATE = datetime(datetime.now(timezone.utc).year, 1, 20, 0, 0, tzinfo=timezone.utc)
 MONTH_AVG_MIN_DAY = 13
 #--------
 # Waiting time for locking a process
-process_time = timedelta(minutes=5)
+process_time = timedelta(seconds=2)# timedelta(minutes=2)

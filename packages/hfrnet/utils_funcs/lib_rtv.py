@@ -84,17 +84,19 @@ class DatabaseConfig:
         self.user = ""
         self.host = ""
         self.port = ""
-        self.password = 0
-        self.ssl_ca = 0
-        self.ssl_verify_identity = ""
-        self.ssl_verify_cert = ""
-        self.auth_plugin_map = ""
+        self.password = ""
+        self.ssl_ca = ""
+        self.region = ""
         self.dbname = ""
+        self.ssl_context = ""
+        self.run_env = "rhw" # "aws" "ao" "rhw"
+        # self.ssl_verify_identity = ""
+        # self.ssl_verify_cert = ""
+        # self.auth_plugin_map = ""
         #--- This is to use the correct parameteres when connection
         # to the DB server depends on the OS
         # if it's on a linux, set it to 'rhw'
         # if it's on the cloud 9, set it to 'aws'
-        self.run_env = "rhw" # "aws"
 
 #things from the configureRtv
 class ConfigureVals(BaseObject):
@@ -129,7 +131,7 @@ class ConfigureVals(BaseObject):
 
 class FileLocations(BaseObject):
     """
-       Keep track of all file locations
+        Keep track of all file locations
     """
     def __init__(self):
         self.landfile = ""
@@ -144,7 +146,7 @@ class FileLocations(BaseObject):
 
 class RtvProcess(BaseObject):
     """
-       The configuration of the process
+        The configuration of the process
     """
     def __init__(self, name="", method="", description="", save_as=""):
         self.name = name
