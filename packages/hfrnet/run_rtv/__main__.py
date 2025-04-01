@@ -19,27 +19,27 @@
 __updated__ = "2021-09-23"
 
 import argparse
-# import logging
-# import sys
-# import autologging
+import logging
+import sys
+import autologging
 import aim
 from datetime import datetime, timezone
 
 from . import interface
-# from hfrnet.utils_funcs.utility import setup_log_filename
+from hfrnet.utils_funcs.utility import setup_log_filename
 
-# _log = logging.getLogger()
+_log = logging.getLogger()
 
 def main(my_args):
     """Command line options."""
 
-    # #
-    # # set up the logger
-    # #
-    # logging.basicConfig(
-    #     level=logging.INFO, stream=sys.stderr,
-    #     format="%(asctime)s %(levelname)s (%(name)s:%(funcName)s) %(message)s",
-    #     datefmt='%Y-%m-%d %H:%M:%S')
+    #
+    # set up the logger
+    #
+    logging.basicConfig(
+        level=logging.INFO, stream=sys.stderr,
+        format="%(asctime)s %(levelname)s (%(name)s:%(funcName)s) %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S')
 
     # "Handoff" is basically just a dictionary
     # allows accessing nested data as 'directory.bin'
