@@ -44,6 +44,7 @@ docker:
       - &ancillary_data /home/ec2-user/environment/HFR/hfrnet/ancillary_data
       - &wrapper /home/ec2-user/environment/HFR/hfrnet/wrappers
       - &config /home/ec2-user/environment/HFR/hfrnet/wrappers/config
+      - &docker /home/ec2-user/environment/HFR/hfrnet/docker
       - &output /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/output
       - &logs /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/logs
       - &input /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/input
@@ -57,6 +58,7 @@ docker:
       /home/WORKING_DIR/ancillary_data/: *ancillary_data
       /home/WORKING_DIR/wrapper/: *wrapper
       /home/WORKING_DIR/config/: *config
+      /home/WORKING_DIR/docker/: *docker
       /home/WORKING_DIR/output/: *output
       /home/WORKING_DIR/logs/: *logs
       /home/WORKING_DIR/input/: *input

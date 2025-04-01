@@ -141,7 +141,7 @@ class Interface(aim.Interface):
         set_db_info(self.config, self.mconfigureVals)
         
         #====== delete this
-        clear_state_table()
+        clear_state_table(self.mconfigureVals)
 
         #Check if the process is locked
         _log.info("=============================================")
