@@ -52,15 +52,19 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     """
 
     processTimes = []
+    _log.info(f"rtv:: {configObj.reprocess}")
     if configObj.reprocess:
         processTimes = configObj.times
     else:
         processTimes = rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj)
 
-    if processTimes and len(processTimes) > 0:
-        errmsg = (f"Obtained {len(processTimes)} hour(s) to process between: "
-                  f"{processTimes[0]} and {processTimes[-1]}")
-        _log.info(errmsg)
+    if processTimes is not None: 
+
+        _log.info(f"rtv:: {configObj.reprocess}")
+        if len(processTimes) > 0:
+            errmsg = (f"Obtained {len(processTimes)} hour(s) to process between: "
+                    f"{processTimes[0]} and {processTimes[-1]}")
+            _log.info(errmsg)
     else:
         _log.warning("No new radials found")
         return None

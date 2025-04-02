@@ -60,7 +60,7 @@ class db_manager:
     #----------------------------------------------------------
     
     def get_query(self, query):
-        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
         _log.info(query)
         datasetdict = {}
         with self.conn_handel.cursor() as cursor:
@@ -70,10 +70,11 @@ class db_manager:
             self.create_dict(rows, cursor.description, datasetdict)
             
             _log.info(" ------------------ ")
+            _log.info(f" ------------------  {len(datasetdict)}")
             for key, value in datasetdict.items():
                 msg = f"{key}:::{value}"
                 _log.info(msg)
-            _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+            _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
 
         return datasetdict
     #----------------------------------------------------------

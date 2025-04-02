@@ -96,11 +96,12 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             continue
 
         if process.name.casefold() == 'rtv':
+            stime = current_datetime()
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()}")
+            _log.info( f"{stime}")
             _log.info("#########################################")
 
-            stime = current_datetime()
 
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
                                   process, rtvInfoObj, compTotObj, land, grid)
