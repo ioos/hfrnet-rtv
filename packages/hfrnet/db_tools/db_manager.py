@@ -57,6 +57,12 @@ class db_manager:
                 f", Can't connect to the database: user={self.dbConfig.user}, "
                 f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
+        if self.conn_handel is None:
+            msg = " Database connection failed, handle is none"
+            _log.fatal(msg)
+            raise ValueError(msg)
+            
+            
     #----------------------------------------------------------
     
     def get_query(self, query):
