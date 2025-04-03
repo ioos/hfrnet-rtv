@@ -64,9 +64,9 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     # ## Define radial file arrival time search window
     # # Oldest data time to process
     minTime = now_hour(configObj.runTime) - timedelta(hours=rtvInfoObj.max_age)
-    print(f"rtvGetProcessTimes::100-1 ::{configObj.runTime}")
-    print(f"rtvGetProcessTimes::100-1 ::{rtvInfoObj.max_age}")
-    print(f"rtvGetProcessTimes::100-1 ::{minTime}")
+    _log.debug(f"rtvGetProcessTimes::100-1 ::{configObj.runTime}")
+    _log.debug(f"rtvGetProcessTimes::100-1 ::{rtvInfoObj.max_age}")
+    _log.debug(f"rtvGetProcessTimes::100-1 ::{minTime}")
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
     #
     # # Check state
@@ -85,13 +85,13 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
         msg = (f"No rtv state defined. Using maximum data age of {rtvInfoObj.max_age}"
                f' hours to find radials since {minTime}')
         _log.info(msg)
-        print("rtvGetProcessTimes::100-1")
+        _log.debug("rtvGetProcessTimes::100-1")
     else:
         rtvInfoObj.current_state = state_time
         msg = f"Obtained rtv state time of {rtvInfoObj.current_state}"
         _log.info(msg)
 
-    print("rtvGetProcessTimes::100")
+    _log.debug("rtvGetProcessTimes::100")
     # Define the end time of the search window
     rtvInfoObj.new_state = now_second(configObj.runTime) - timedelta(seconds=10)
     msg = f"Radial search window ends on {rtvInfoObj.new_state}"
@@ -99,17 +99,17 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
 
     ## Find all sites associated with the domain and resolution
     sites_list = read_site_table(configObj)
-    print("rtvGetProcessTimes::101")
+    _log.debug("rtvGetProcessTimes::101")
 
     _log.info(" get_files_times_radialtable ")
     time_list, nfiles = get_files_times_radialtable(configObj, rtvInfoObj, sites_list,
                                                 minTime)
     
-    print(f"rtvGetProcessTimes::102::{nfiles}")
+    _log.info(f"rtvGetProcessTimes::102::{nfiles}")
     if nfiles == 0:
         return t
-    print(f"rtvGetProcessTimes::102::{len(time_list)}")
-    print("rtvGetProcessTimes::102")
+    _log.debug(f"rtvGetProcessTimes::102::{len(time_list)}")
+    _log.debug("rtvGetProcessTimes::102")
 
     ## Find unique dates (hours) to process
     # Assign process times
@@ -117,12 +117,14 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     t = next(iter(time_list.values()))
 
     # Shift radials >= :30 to the top of the next hour
+    _log.info(f"iTime.minute >= 30")
     for i, iTime in enumerate(t):
         if iTime.minute >= 30:
             t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0)
             _log.info(f"=== ::{i}::{t[i]}")
 
     # Shift radials > :00 & < :30 to the top of the current hour
+    _log.info(f"iTime.minute < 30")
     for i, iTime in enumerate(t):
         if iTime.minute < 30:
             t[i] = iTime.replace(minute=0, second=0, microsecond=0)
@@ -130,6 +132,6 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
 
     # Find unique values to process
     t = np.unique(t)
-    print(f"rtvGetProcessTimes::110:: {len(t)}")
+    _log.debug(f"rtvGetProcessTimes::110:: {len(t)}")
 
     return t

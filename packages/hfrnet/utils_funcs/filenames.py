@@ -174,6 +174,9 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     retObj.intermed_filepath = Path(retObj.output_dir, retObj.intermed_filename)
 
+    _log.info(f"------------- getRtvFilenames ")
+    _log.info(f"------------- output_ncfile :: {retObj.output_ncfile}")
+    _log.info(f"------------- intermed_filepath :: {retObj.intermed_filepath}")
     return retObj
 
 

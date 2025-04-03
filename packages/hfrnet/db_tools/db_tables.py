@@ -397,7 +397,22 @@ def get_active_sitelist(configObj, calcTime):
 			f"AND c.start_time <= '{calcTime}' AND "
 			f"( c.end_time > '{calcTime}' OR ISNULL(c.end_time) )")
 
-		return db_class.get_query(sqlquery)
+		active_sites = db_class.get_query(sqlquery)
+
+	nRows = len(next(iter(active_sites.values())))
+
+	if nRows == 0:
+		errmsg = (f'No sites defined for RTV {configObj.resolution} '
+					f'{configObj.domain} processing')
+		_log.error(errmsg)
+
+		raise DatabaseError()
+
+	elif nRows > 0:
+		msg = f'Found {nRows} sites associated with {configObj.domain} {configObj.resolution}'
+		_log.info(msg)
+
+	return active_sites, nRows
 
 def get_state_time(configObj, process_name):
 	# Connect to the configuration database
