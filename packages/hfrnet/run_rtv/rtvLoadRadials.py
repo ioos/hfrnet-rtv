@@ -103,20 +103,21 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Ensure radial selection consistent with previous run(s)
     # Check if a file already exists
     last = None
-    if fileLocObj.input_file.is_file():
+    if fileLocObj.input_file is not None:
+        if fileLocObj.input_file.is_file():
 
-        # Load previous radial dataset
-        try:
-            last = read_total_file(fileLocObj.input_file)
-            msg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
-            _log.info(msg)
+            # Load previous radial dataset
+            try:
+                last = read_total_file(fileLocObj.input_file)
+                msg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
+                _log.info(msg)
 
-        except Exception as e:
-            errmsg = (f'Failed to load radial structure from prior run ('
-                      f'{fileLocObj.input_file}): {str(e)}')
-            _log.warning(errmsg)
-            _log.warning('Cannot ensure consistent radial selection if results are '
-                         'combined with previous run(s)')
+            except Exception as e:
+                errmsg = (f'Failed to load radial structure from prior run ('
+                        f'{fileLocObj.input_file}): {str(e)}')
+                _log.warning(errmsg)
+                _log.warning('Cannot ensure consistent radial selection if results are '
+                            'combined with previous run(s)')
 
     else:
         errmsg = f'{fileLocObj.input_file} not found, no pre-existing radial data'

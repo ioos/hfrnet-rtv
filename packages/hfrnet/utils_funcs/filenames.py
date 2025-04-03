@@ -145,6 +145,7 @@ def get_database_interm_file(retObj, configObj, t, find_proc_name):
             retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
         msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
+        retObj.input_file = None
         _log.error(msg)
 
 
