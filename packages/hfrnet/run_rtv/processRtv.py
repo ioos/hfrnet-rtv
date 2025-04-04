@@ -114,7 +114,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             rtvTime = current_datetime()
             msg = "\n" + "="*80 + f"\nRtv execution time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
-
+        else:
+            continue
         if process.name.casefold() == 'stc' and newRtvFiles is not None:
 
             _log.info("#########################################")

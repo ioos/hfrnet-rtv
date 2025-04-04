@@ -458,7 +458,7 @@ def get_files_list_intem_table(configObj, calcTime, process_name):
 
 def update_state_time(configObj, process_name, state_time):
 	# Connect to the configuration database
-
+	return
 	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT COUNT(*) '

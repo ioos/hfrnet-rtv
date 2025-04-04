@@ -271,6 +271,9 @@ class SumAndAvg:
 
         for inFile in self.fileList:
 
+            if inFile.input_file is None:
+                continue
+            
             if not Path(inFile.input_file).is_file():
                 msg = f"ERROR::sumAvg: could not load file {inFile.input_file}"
                 _log.error(msg)

@@ -9,7 +9,8 @@ import numpy as np
 from hfrnet.utils_funcs.lib_rtv import RadialInfo
 from hfrnet.run_rtv.rtvReadRadialFile import rtvReadRadialFile
 
-from hfrnet.utils_funcs.utility import _dict, read_total_file, prev_radial_data
+from hfrnet.utils_funcs.utility import (_dict, read_total_file, prev_radial_data,
+                                        copy_s3_local)
 from hfrnet.utils_funcs.math_funcs import  km2deg, scircle1, inpolygon, scxsc
 from hfrnet.db_tools.db_tables import get_files_list_radialtable
 
@@ -382,12 +383,13 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         n = n + 1
         ifile = file_list_temp[I]
-        ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
-        if fileLocObj.radial_local_dir:
-            ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
-                                  f"{ifile.network}", f"{ifile.site}",
-                                  f"{ifile.t.strftime('%Y-%m')}",
-                                  f"{ifile.file}")
+        # ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
+        ifile.fullfile = copy_s3_local(ifile.dir,ifile.file,fileLocObj.radial_local_dir)
+        # if fileLocObj.radial_local_dir:
+        #     ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
+        #                           f"{ifile.network}", f"{ifile.site}",
+        #                           f"{ifile.t.strftime('%Y-%m')}",
+        #                           f"{ifile.file}")
         # Load radial data
         d = None
         try:

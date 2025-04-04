@@ -13,6 +13,7 @@ from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
 import h5py
+import boto3
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
@@ -473,6 +474,11 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
         #have to get state from database to see if it's already been done
         state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+        if state_time is None:
+            state_time = datetime.fromisoformat('1970-01-01')
+            msg = (f"No lta state defined. Using base date 1970-01-01")
+        else:
+            state_time = datetime.strptime(state_time, constsHFR.DATETIME_FORMAT)
 
         if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
@@ -558,3 +564,31 @@ def wrap_text(text, width=None):
         return text
 
     return textwrap.fill(text, width)
+
+def copy_s3_local(s3_url, file_name, dir_dest):
+    #  dfile:::['RDLm_PYFC_2025_04_02_1900.ruv']
+    #  dir:::['s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC']
+    s3handle = boto3.client('s3')
+    s3_url = s3_url.replace('s3://', '')
+    
+    # Split the URL into parts
+    parts = s3_url.split('/', 2)
+    
+    # Extract bucket name and file key
+    bucket_name = parts[0]
+    file_key = parts[2] if len(parts) > 1 else ''
+    
+    bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    file_key = f"{file_key}/Radials"
+    #'s3://nccf-dev-ingest-trust-us-east-1-560271376700/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    
+    newfpath = f"{dir_dest}/{file_name}"
+    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+    return newfpath
+    
+    # s3handle.download_file('nccf-dev-ingest-trust-us-east-1-560271376700', 
+    #                     'HFRNet/AOOS/WAIN/Radials/RDLm_WAIN_2025_03_21_1200.ruv', 
+    #                     '/home/ec2-user/environment/HFR/hfrnet/packages/test.ruv')
+    
+    

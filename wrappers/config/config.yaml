@@ -1,8 +1,8 @@
 algorithm:
     processing:
-        domain: 'ushi'
+        domain: 'ushi' # 'prvi' #'ushi'
         resolution: '6km'
-        batch_processing: true #false
+        batch_processing: false # true #false
     coverage:
         start: '202301040000000'
         end:   '202301040059599'
@@ -32,7 +32,7 @@ algorithm:
 
 docker:
   #image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.1
-  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.20
+  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.26
   action:
     bin: python3
     config: /home/WORKING_DIR/config/config.yaml
