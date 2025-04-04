@@ -118,11 +118,11 @@ class Interface(aim.Interface):
             #--- this must be done in order for AO to move anything outside the AO sys
             #--- default path is /workflow/data/
             print(f"AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}")
-        else:
-            #---- default for running inside the docker
-            self.config['directory.log'] = '/home/WORKING_DIR/logs'
-            self.config['directory.output'] = '/home/WORKING_DIR/output'
-            print('Setting log and output dirs to /home/WORKING_DIR')
+        # else:
+        #     #---- default for running inside the docker
+        #     self.config['directory.log'] = '/home/WORKING_DIR/logs'
+        #     self.config['directory.output'] = '/home/WORKING_DIR/output'
+        #     print('Setting log and output dirs to /home/WORKING_DIR')
 
         #----------------------
 

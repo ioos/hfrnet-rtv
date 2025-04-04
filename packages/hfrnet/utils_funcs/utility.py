@@ -571,19 +571,32 @@ def copy_s3_local(s3_url, file_name, dir_dest):
     s3handle = boto3.client('s3')
     s3_url = s3_url.replace('s3://', '')
     
+    's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/PacIOOS/kak/Radials'
     # Split the URL into parts
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     parts = s3_url.split('/', 2)
     
+    print(parts)
     # Extract bucket name and file key
-    bucket_name = parts[0]
+    bucket_name = f"{parts[0]}/{parts[1]}"# parts[0]
+
     file_key = parts[2] if len(parts) > 1 else ''
     
-    bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
-    file_key = f"{file_key}/Radials"
-    #'s3://nccf-dev-ingest-trust-us-east-1-560271376700/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
-    bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    if "Radials" not in file_key:
+        file_key = f"{file_key}/Radials"
+    # #'s3://nccf-dev-ingest-trust-us-east-1-560271376700/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
     
     newfpath = f"{dir_dest}/{file_name}"
+    _log.info(f"{s3_url}")
+    _log.info(f"{bucket_name}")
+    _log.info(f"{file_key}")
+    _log.info(f"{newfpath}")
     s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
     return newfpath
     

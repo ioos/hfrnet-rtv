@@ -384,7 +384,9 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         n = n + 1
         ifile = file_list_temp[I]
         # ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
-        ifile.fullfile = copy_s3_local(ifile.dir,ifile.file,fileLocObj.radial_local_dir)
+        ifile.fullfile = Path(copy_s3_local(ifile.dir,ifile.file,fileLocObj.radial_local_dir))
+        
+        # raise ValueError("==================")   
         # if fileLocObj.radial_local_dir:
         #     ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
         #                           f"{ifile.network}", f"{ifile.site}",

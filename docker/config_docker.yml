@@ -1,10 +1,10 @@
 processing:
    domain: 'ushi' # 'prvi' #'ushi'
    resolution: 6km
-   batch_processing: false # true
+   batch_processing: true #false # true
 time:
-   start_date: '202301040000000'
-   end_date:   '202301040059599'
+   start_date: '202504020000000'
+   end_date:   '202504020059599'
 production:
    site: PLAIT
    environment: INT

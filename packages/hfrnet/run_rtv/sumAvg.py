@@ -371,7 +371,7 @@ class SumAndAvg:
 
         if self.isAnnual:
             # Mask points below minimum temporal coverage
-            mask = (avgsumObj.nGood <
+            mask = (len(avgsumObj.nGood) <
                     infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if np.any(mask):
