@@ -21,14 +21,14 @@ from datetime import datetime
 import aim
 
 #hfrnet modules
-from hfrnet.utils_funcs.utility import setup_log_filename, current_datetime
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
                                         check_lock_process, clear_state_table)
+from hfrnet.utils_funcs.utility import (setup_log_filename, current_datetime, Set_s3_output_bucket
+                                        ,generate_time_spans)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
                                         DatabaseError)
 from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo
-from hfrnet.utils_funcs.utility import generate_time_spans
 import hfrnet.run_rtv.processRtv as processRtv
 from hfrnet.db_tools.db_manager import db_manager, set_db_info
 
@@ -139,6 +139,8 @@ class Interface(aim.Interface):
                             f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
+        # ---- Set the intermedite files s3 bucket based on the running env id 
+        Set_s3_output_bucket(self.mconfigureVals)
         
         #====== delete this
         # clear_state_table(self.mconfigureVals)

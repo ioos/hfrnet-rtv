@@ -68,13 +68,7 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     _log.debug(f"rtvGetProcessTimes::100-1 ::{rtvInfoObj.max_age}")
     _log.debug(f"rtvGetProcessTimes::100-1 ::{minTime}")
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
-    #
-    # # Check state
-    # state = State(configObj.domain, configObj.domain_id,
-    #               configObj.resolution, configObj.resolution_id,
-    #               rtvProcessObj.name.lower(), configObj.confdb)
-    # state.get()
-    # state_time = None
+    
     state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
     #-------------------------
 
@@ -113,7 +107,6 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
 
     ## Find unique dates (hours) to process
     # Assign process times
-    # t = [datetime.fromtimestamp(r[0]) for r in time_list]
     t = next(iter(time_list.values()))
 
     # Shift radials >= :30 to the top of the next hour

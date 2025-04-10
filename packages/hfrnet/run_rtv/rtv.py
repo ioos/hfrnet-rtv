@@ -12,7 +12,7 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
-from hfrnet.db_tools.db_tables import update_state_time
+from hfrnet.db_tools.db_tables import update_state_time, record_output_files
 
 _log = logging.getLogger()
 
@@ -148,6 +148,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
 
             _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
             update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)
+            record_output_files(configObj, fileNameList.intermed_filename, rtvProcessObj.name.casefold())
 
         else:
             _log.info( 'No total solutions below netcdf hdop threshold' )

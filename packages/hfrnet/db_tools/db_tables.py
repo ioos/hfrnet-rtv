@@ -458,7 +458,7 @@ def get_files_list_intem_table(configObj, calcTime, process_name):
 
 def update_state_time(configObj, process_name, state_time):
 	# Connect to the configuration database
-	return
+	
 	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT COUNT(*) '
@@ -585,3 +585,64 @@ def clear_state_table(configObj):
 
 
 	return 
+
+def record_output_files(configObj, file_name, process_name):
+	"""
+	MariaDB [hfradar]> select * from inter_files where stime > '2023-01-01 20:00:00' and res like '6km';
+	+----+--------+-----+---------+---------------------+---------------------------------------+----------------------------------------------------------+
+	| id | domain | res | process     | stime               | name                                  | dir                                                      |
+	+----+--------+-----+---------+---------------------+---------------------------------------+----------------------------------------------------------+
+	| 11 | ushi   | 6km | rtv_inter   | 2023-01-01 23:00:00 | rtv_ushi_6km_uwls_2023_01_01_2300.mat | /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/hfrtv/USHI/2023_01 |
+	| 15 | ushi   | 6km | rtv_inter   | 2023-01-01 22:00:00 | rtv_ushi_6km_uwls_2023_01_01_2200.mat | /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/hfrtv/USHI/2023_01 |
+	| 20 | ushi   | 6km | month_total | 2023-01-01 21:00:00 | rtv_ushi_6km_uwls_2023_01_01_2100.mat | /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/hfrtv/USHI/2023_01 |
+	+----+--------+-----+---------+---------------------+---------------------------------------+----------------------------------------------------------+
+	month aver--->rtv_inter
+	ann aver --> month_total
+	select * from inter_files where stime > '2023-01-01 20:00:00' and res like '6km';
+	select count(*) from inter_files;
+	"""
+	from hfrnet.utils_funcs.utility import get_file_stime
+
+	stime = get_file_stime(file_name)
+	record_pars = {
+		"domain": f"'{configObj.domain}'",
+		"res": f"'{configObj.resolution}'",
+		"process": f"'{process_name}'",
+		"stime": f"'{stime}'",
+		"name": f"'{file_name}'"
+	}
+	record_pars_str = ''.join([f"{key} = {value} AND " for key, value in record_pars.items()])
+	record_pars_str = record_pars_str[:-5]
+
+	with db_manager(configObj.dbObject, configObj.radial_dbname) as db_class:	
+		# check if the record exists
+		sqlquery = ('SELECT COUNT(*) '
+					f"FROM inter_files WHERE {record_pars_str}")
+		results = db_class.get_query(sqlquery)
+		nRows = len(next(iter(results.values())))
+		if nRows > 0:
+			# if exists, the delete it
+			delete_query = f"DELETE FROM inter_files WHERE {record_pars_str}"
+			_log.info(f" Updating the inter_files record for {record_pars_str}")
+			try:
+				db_class.write_query(delete_query)
+			except Exception as err:
+				msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+						f", Can't delete the record from the DB")
+				_log.fatal(msg)
+		# ---- Add the intermediate file to the DB table
+		record_pars["dir"] = f"'{configObj.intermedaite_file_s3}'"
+		# Create a string of the keys
+		keys_str = ', '.join(record_pars.keys())
+		# Create a string of the values
+		values_str = ', '.join(record_pars.values())
+		insert_query = f"INSERT INTO inter_files ({keys_str}) VALUES ({values_str})"
+		try:
+			db_class.write_query(insert_query)
+		except Exception as err:
+			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+					f", Can't add the record ::{insert_query}:: to the inter_files")
+			_log.fatal(msg)
+
+
+	return

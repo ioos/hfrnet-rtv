@@ -1,5 +1,7 @@
 """saveNetcdf"""
 
+"""saveNetcdf"""
+
 from collections.abc import Mapping
 import datetime
 import json
@@ -82,6 +84,10 @@ def saveNetcdf(filename, d):
             datetime_to_timestamp(d['c']['lta'], 'annual_min_date')
         if 'runTime' in d['c']['configObj']:
             datetime_to_timestamp(d['c']['configObj'], 'runTime')
+        if 'rtvInfoObj' in d['c']:
+            for k in ['new_state', 'current_state']:
+                if d['c']['rtvInfoObj'][k] is not None:
+                    datetime_to_timestamp(d['c']['rtvInfoObj'], k)
         d['c'] = json.dumps(d['c'])
     if 'r' in d:
         for iRad in d['r']:
@@ -105,6 +111,10 @@ def saveNetcdf(filename, d):
             timestamp_to_datetime(d['c']['lta'], 'annual_min_date')
         if 'runTime' in d['c']['configObj']:
             timestamp_to_datetime(d['c']['configObj'], 'runTime')
+        if 'rtvInfoObj' in d['c']:
+            for k in ['new_state', 'current_state']:
+                if d['c']['rtvInfoObj'][k] is not None:
+                    timestamp_to_datetime(d['c']['rtvInfoObj'], k)
     if 'r' in d:
         for iRad in d['r']:
             timestamp_to_datetime(iRad, 'time')
@@ -159,6 +169,11 @@ def loadNetcdf(filename):
                 timestamp_to_datetime(data['c']['reprocess'], k)
         if 'lta' in data['c']:
             timestamp_to_datetime(data['c']['lta'], 'annual_min_date')
+        if 'rtvInfoObj' in data['c']:
+            for k in ['new_state', 'current_state']:
+                if data['c']['rtvInfoObj'][k] is not None:
+                    timestamp_to_datetime(data['c']['rtvInfoObj'], k)
+
     if 'r' in data:
         for iRad in data['r']:
             timestamp_to_datetime(iRad, 'time')
@@ -169,3 +184,5 @@ def loadNetcdf(filename):
     _log.info(msg)
 
     return data
+
+

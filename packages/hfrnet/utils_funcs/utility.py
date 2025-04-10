@@ -22,7 +22,53 @@ from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
 
+def Set_s3_output_bucket(mconfigureVals):
+    '''
+    Set the intermedite files s3 bucket based on the running env id
+    Dev/Sandbox: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    UAT: s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao
+    Prod: s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao
+    '''
+    
+    _log.info('----------------------')
+    _log.info('Set the intermedite files s3 bucket based on the running env id')
+    
+    sts = boto3.client('sts')
+    response = sts.get_caller_identity()
+    acc_id = response.get('Account')
 
+    _log.info(f'------Account {acc_id}')
+    if acc_id == '560271376700': # Dev/Sandbox
+        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+    elif acc_id == '656149346314': # UAT
+        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+    elif acc_id == '844319835141': # Prod
+        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+    _log.info(f"--The intermedaite_file_s3 = {mconfigureVals.intermedaite_file_s3}")
+    _log.info('----------------------')
+def convert_time(time_str):
+    # Remove the last digit to match the format
+    time_str = time_str[:-1]
+
+    # Convert the time string to datetime object
+    time_obj = datetime.strptime(time_str, '%Y%m%d%H%M%S')
+
+    # Format the datetime object to the desired format
+    formatted_time = time_obj.strftime(constsHFR.DATETIME_FORMAT)
+
+    return formatted_time
+
+
+def get_file_stime(filen):
+    # Check if '_c' is in the string
+    if '_c' in filen:
+        # Find the position of '_c'
+        pos = filen.find('_c')
+        # Get the 15 characters after '_c'
+        result = filen[pos+2:pos+17]
+        return convert_time(result)
+    else:
+        return current_time()
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
     def __getattr__(self, key):
@@ -573,14 +619,9 @@ def copy_s3_local(s3_url, file_name, dir_dest):
     
     's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/PacIOOS/kak/Radials'
     # Split the URL into parts
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    _log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     parts = s3_url.split('/', 2)
     
-    print(parts)
     # Extract bucket name and file key
     bucket_name = f"{parts[0]}/{parts[1]}"# parts[0]
 

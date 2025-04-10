@@ -116,7 +116,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             _log.info(msg)
         # else:
         #     continue
-        if process.name.casefold() == 'stc1' and newRtvFiles is not None:
+        if process.name.casefold() == 'stc' and newRtvFiles is not None:
 
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")

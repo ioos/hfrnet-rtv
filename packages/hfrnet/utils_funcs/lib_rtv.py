@@ -121,6 +121,7 @@ class ConfigureVals(BaseObject):
 
         self.production_site = ''
         self.production_environment = ''
+        self.intermedaite_file_s3 = ''
 
     def to_dict(self):
         """return the dict for all attributes in the object"""
@@ -182,8 +183,8 @@ class RtvInfo(BaseObject):
         self.uwls_max_hdop = np.float64(0)
         self.uwls_max_hdop_ascii = np.float64(0)
         self.uwls_max_hdop_nc = np.float64(0)
-        self.new_state = ""
-        self.curent_state = ""
+        self.new_state = None
+        self.current_state = None
 
 class UwlsTotalInfo:
     """
