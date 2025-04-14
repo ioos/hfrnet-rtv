@@ -130,11 +130,11 @@ def find_intermediate_file(directory, search_par, file_format):
     if len(data_file) > 1:
         msg = f"Mutiple matching files: {data_file}"
         _log.warning(msg)
-        return ""
+        return None
 
     msg = f"File not found: {directory}/{search_par}.{file_format}"
     _log.warning(msg)
-    return ""
+    return None
 
 def get_database_interm_file(retObj, configObj, t, find_proc_name):
     """Get the intermediate input file"""
@@ -176,7 +176,7 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     if retObj.input_file is None:
         tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
         retObj.input_file = tmp_file
-        
+
     # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
                                 f"_s{start_time}_e{end_time}_c{creation_time}.nc")
