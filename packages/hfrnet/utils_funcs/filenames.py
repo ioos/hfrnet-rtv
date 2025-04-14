@@ -171,10 +171,12 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #intermediate input
     get_database_interm_file(retObj, configObj, t, 'rtv')
+    
+    #search local if not found in database
     if retObj.input_file is None:
-        tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"{domain}*{resolution}**intermediate_s{start_time}_e{end_time}*","nc")
+        tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
         retObj.input_file = tmp_file
-
+        
     # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
                                 f"_s{start_time}_e{end_time}_c{creation_time}.nc")
@@ -204,8 +206,10 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #input NetCDF
     get_database_interm_file(retObj, configObj, t, 'rtv')
+
+    #search local if intermediate not found in database
     if retObj.input_file is None:
-        tmp_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}**intermediate_s{start_time}_e{end_time}*", "nc")
+        tmp_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*", "nc")
         retObj.input_file = tmp_file
     
     # Output NetCDF
