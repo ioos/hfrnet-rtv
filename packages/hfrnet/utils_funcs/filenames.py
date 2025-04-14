@@ -121,8 +121,9 @@ def find_file(domain, resolution, method, time, directory, file_format):
 
 def find_intermediate_file(directory, search_par, file_format):
     """get the monthSum file"""
-
-    data_file = list(directory.glob(f"{search_par}.{file_format}"))
+    
+    #data_file = list(directory.glob(f"{search_par}.{file_format}"))
+    data_file = list(directory.glob(f"{search_par}"))
     if len(data_file) == 1:
         return data_file[0]
 
@@ -131,7 +132,7 @@ def find_intermediate_file(directory, search_par, file_format):
         _log.warning(msg)
         return ""
 
-    msg = f"File not found: {search_par}.{file_format}"
+    msg = f"File not found: {directory}/{search_par}.{file_format}"
     _log.warning(msg)
     return ""
 
@@ -139,13 +140,14 @@ def get_database_interm_file(retObj, configObj, t, find_proc_name):
     """Get the intermediate input file"""
 
     fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
+    
     if nRows == 1:
         copy_s3_local(fileList['dir'][0], fileList['name'][0], retObj.interm_local_dir)
         retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
         if retObj.interm_local_dir:
             retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
     else:
-        msg = f"Found zero (or multiple) files for settings: {find_proc_name}, time::{t}"
+        msg = f"Found {nRows} (zero or multiple) files for settings: {find_proc_name}, time::{t}"
         retObj.input_file = None
         _log.error(msg)
 
@@ -158,17 +160,20 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
     method = rtvProcessObj.method.casefold()
-
-    get_database_interm_file(retObj, configObj, t, 'rtv')
-
+    
     # Output NetCDF
     start_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
     end_time = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
     creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     name_nccf = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr"
                  f"_s{start_time}_e{end_time}_c{creation_time}.nc")
-
     retObj.output_ncfile = Path(retObj.output_dir, name_nccf)
+
+    #intermediate input
+    get_database_interm_file(retObj, configObj, t, 'rtv')
+    if retObj.input_file is None:
+        tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"{domain}*{resolution}**intermediate_s{start_time}_e{end_time}*","nc")
+        retObj.input_file = tmp_file
 
     # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
@@ -199,7 +204,10 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #input NetCDF
     get_database_interm_file(retObj, configObj, t, 'rtv')
-
+    if retObj.input_file is None:
+        tmp_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}**intermediate_s{start_time}_e{end_time}*", "nc")
+        retObj.input_file = tmp_file
+    
     # Output NetCDF
     retObj.output_ncfile = Path(fileLocObj.output_dir, retObj.ncfilename)
 

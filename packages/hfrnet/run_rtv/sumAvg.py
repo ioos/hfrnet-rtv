@@ -119,7 +119,7 @@ class SumAndAvg:
         count=0
         while temp_time < end_time:
             count=count+1
-            _log.info(f"hr:: {count}")
+            _log.info(f"hr:: {count}: {temp_time}")
             temp_time += timedelta(hours=1)
             time_period.append(temp_time)
 
@@ -253,7 +253,7 @@ class SumAndAvg:
             if isMat:
                 inFileTotObj = dataInObj.U
             if isNC:
-                inFileTotObj = SumAvgInfo()
+                inFileTotObj = RtvTotals()
                 inFileTotObj.from_dict(**dataInObj['U'])
 
         return inFileTotObj
@@ -270,7 +270,6 @@ class SumAndAvg:
         self.get_file_list()
 
         for inFile in self.fileList:
-
             if inFile.input_file is None:
                 continue
             
@@ -280,15 +279,14 @@ class SumAndAvg:
                 continue
 
             inFileTotObj = self.get_intermed_sum_obj(inFile)
-
             self.nLoadedFiles = self.nLoadedFiles + 1
 
             # Filter by HDOP
             if (self.is25Hr or self.isMonthly):
                 mask = inFileTotObj.hdop >= infoObj.stcInfo.max_error
                 if np.any(mask):
-                    inFileTotObj.u[mask] = np.nan
-                    inFileTotObj.v[mask] = np.nan
+                    inFileTotObj.u_xvel[mask] = np.nan
+                    inFileTotObj.v_yvel[mask] = np.nan
 
             if len(self.sumavgObj.nGood) == 0 and not self.isAnnual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
@@ -320,23 +318,23 @@ class SumAndAvg:
                     self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
                                                                inFileTotObj.vMax)), axis=0)
             else:
-                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(inFileTotObj.u))
+                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(inFileTotObj.u_xvel))
                 self.sumavgObj.uSum  = np.nansum(np.stack((self.sumavgObj.uSum,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vSum  = np.nansum(np.stack((self.sumavgObj.vSum,
-                                                           inFileTotObj.v)), axis=0)
+                                                           inFileTotObj.v_yvel)), axis=0)
                 self.sumavgObj.u2sum = np.nansum(np.stack((self.sumavgObj.u2sum,
-                                                           inFileTotObj.u**2)), axis=0)
+                                                           inFileTotObj.u_xvel**2)), axis=0)
                 self.sumavgObj.v2sum = np.nansum(np.stack((self.sumavgObj.v2sum,
-                                                           inFileTotObj.v**2)), axis=0)
+                                                           inFileTotObj.v_yvel**2)), axis=0)
                 self.sumavgObj.uMin  = np.nanmin(np.stack((self.sumavgObj.uMin,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMin  = np.nanmin(np.stack((self.sumavgObj.vMin,
-                                                           inFileTotObj.v)), axis=0)
+                                                           inFileTotObj.v_yvel)), axis=0)
                 self.sumavgObj.uMax  = np.nanmax(np.stack((self.sumavgObj.uMax,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
-                                                           inFileTotObj.v)), axis=0)
+                                                           inFileTotObj.v_yvel)), axis=0)
         self.completedSum = True
 
         return self.sumavgObj

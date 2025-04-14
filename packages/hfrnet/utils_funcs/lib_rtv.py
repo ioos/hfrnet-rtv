@@ -141,8 +141,8 @@ class FileLocations(BaseObject):
         self.input_file = ""
         self.output_dir = ""
         self.output_ncfile = ""
-        self.intermed_ncfilename = ""
-        self.intermed_ncfilepath = ""
+        self.intermed_filename = ""
+        self.intermed_filepath = ""
         self.interm_local_dir = ""
 
 class RtvProcess(BaseObject):
