@@ -268,8 +268,9 @@ class SumAndAvg:
 
         # need to know which files to run over
         self.get_file_list()
-
+        
         for inFile in self.fileList:
+            
             if inFile.input_file is None:
                 continue
             
@@ -363,6 +364,13 @@ class SumAndAvg:
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
         if self.isMonthly:
+
+            minFiles = infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY
+            if self.nLoadedFiles < minFiles:
+                msg = f"Only loaded {self.nLoadedFiles} for monthly average; need min of {minFiles}"
+                _log.warning(msg)
+                #return avgsumObj
+            
             # Mask points below minimum temporal coverage
             mask = (avgsumObj.nGood <
                     infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY)

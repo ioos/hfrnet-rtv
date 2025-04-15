@@ -105,6 +105,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Check if a file already exists
     last = None
     if fileLocObj.input_file is not None:
+
         if fileLocObj.input_file.is_file():
 
             # Load previous radial dataset
@@ -411,6 +412,8 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         if hasattr(d, "vflag"):
 
             idx = d.vflag == 128
+            nIdx = np.sum(idx)
+            
             if nIdx > 0:
 
                 d.latitude = d.latitude[~idx]
@@ -422,14 +425,14 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                     d.range = d.range[~idx]
                 errmsg = f'Removed {nIdx} velocity flagged radials'
                 _log.debug(errmsg)
-
-                if not d.latitude:
+                
+                if not np.any(d.latitude):
                     errmsg = (f'No radial data left from {ifile.file}'
                               f' after velocity flag filtering')
                     _log.info(errmsg)
                     continue
-
-            d.pop('vflag', None)
+            
+            #d.pop('vflag', None)
 
         # Speed thresholding
         idx = abs(d.speed) > rtvInfoObj.max_rad_speed

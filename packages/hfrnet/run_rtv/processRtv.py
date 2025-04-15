@@ -131,8 +131,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                    fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
-                inputs = [Path(f.input_file).name for f in sumAvg.fileList]
-
+                
+                inputs = [Path(f.input_file).name for f in sumAvg.fileList if f.input_file is not None]
+                
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
                                          fileLocObj, center_time)
@@ -160,15 +161,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 msg = "\n" + "="*80 + f"\nSTC execution time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
 
-        if process.name.casefold() == 'lta1' and newRtvFiles is not None:
-            newRtvFiles = [configObj.runTime]
+        if process.name.casefold() == 'lta' and newRtvFiles is not None:
+            #newRtvFiles = [configObj.runTime]
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
             _log.info("#########################################")
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
-
+                
                 if doMonthly:
 
                     #for execution time logging
@@ -179,8 +180,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, monthTime, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
-                    inputs = [Path(f.input_file).name for f in sumAvg.fileList]
-
+                    
+                    inputs = [Path(f.input_file).name for f in sumAvg.fileList if f.input_file is not None]
+                    
                     #metadata and filenames for output
                     avgObj.land = land
                     avgObj.grid = grid
@@ -226,7 +228,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, yearTime, stcLtaInfoObj)
                     sumObjYear = sumAvgYear.get_sum()
                     avgObjYear = sumAvgYear.get_avg()
-                    inputs = [Path(f.input_file).name for f in sumAvgYear.fileList]
+                    inputs = [Path(f.input_file).name for f in sumAvgYear.fileList if f.input_file is not None]
 
                     #metadata and filenames for output
                     avgObjYear.land = land

@@ -170,12 +170,14 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj.output_ncfile = Path(retObj.output_dir, name_nccf)
 
     #intermediate input
-    get_database_interm_file(retObj, configObj, t, 'rtv')
+    #get_database_interm_file(retObj, configObj, t, 'rtv')
     
     #search local if not found in database
-    if retObj.input_file is None:
-        tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
-        retObj.input_file = tmp_file
+    #if retObj.input_file is None:
+     #   tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
+     #   retObj.input_file = tmp_file
+     
+    retObj.input_file = None
 
     # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
@@ -209,8 +211,7 @@ def getStcFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #search local if intermediate not found in database
     if retObj.input_file is None:
-        tmp_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*", "nc")
-        retObj.input_file = tmp_file
+        retObj.input_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*", "nc")
     
     # Output NetCDF
     retObj.output_ncfile = Path(fileLocObj.output_dir, retObj.ncfilename)
@@ -231,10 +232,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     retObj = fileLocObj
     domain = configObj.domain.casefold()
     resolution = configObj.resolution.casefold()
-
-    # Input rtv file
-    get_database_interm_file(retObj, configObj, t, 'rtv')
-
+    
     ### Output files
     dayOfWeek, last = calendar.monthrange(t.year, t.month)
     start_time = (t.replace(day=1, hour=0, minute=0, second=0)).strftime(constsHFR.NCCF_FORMAT)[:-5]
@@ -244,6 +242,15 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
                          "-month-avg_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
+    #Input rtv file
+    get_database_interm_file(retObj, configObj, t, 'rtv')
+    print("\n\n getLtaMonthFilenames:  ", t, "\n\n")
+    #Search in local directory if file not found in database
+    if retObj.input_file is None:
+        tmp_start = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
+        tmp_end = tmp_start
+        retObj.input_file = find_intermediate_file(retObj.interm_local_dir, f"*{domain}*{resolution}*intermediate*s{tmp_start}_e{tmp_end}*", "nc")
+    
     #intermediate file
     retObj.intermed_filename = (f"rtv-monthSum_{domain}_"
                                 f"{resolution}_{rtvProcessObj.method}"
