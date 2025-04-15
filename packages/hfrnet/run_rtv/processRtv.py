@@ -137,8 +137,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 metaDataObj = rtvProcessMetadata(process, configObj)
                 fileNameList = filenames(configObj, process,
                                          fileLocObj, center_time)
-                avgObj.land = land
-                avgObj.grid = grid
+                
                 stcInfoObj = stcLtaInfoObj.stcInfo
 
                 #save intermediate file
@@ -149,10 +148,17 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 allInfo_dict = {'c': allInfo, 'tc': center_time, 'A': sumObj.to_dict()}
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
                 _log.info("Saving stc total intermediate files in netcdf format")
-                stcSaveNetcdf(metaDataObj, configObj,
-                              fileNameList, stcInfoObj,
-                              process, center_time, avgObj, inputs)
 
+                if avgObj is not None:
+                    avgObj.land = land
+                    avgObj.grid = grid
+                    stcSaveNetcdf(metaDataObj, configObj,
+                                  fileNameList, stcInfoObj,
+                                  process, center_time, avgObj, inputs)
+                else:
+                    msg = f"Could not save average file because average was not calculated"
+                    _log.error(msg)
+                
                 stcTime = current_time()
                 _log.info(f"Update the process {process.name} time {stcTime} in the state table")
                 update_state_time(configObj, process.name.casefold(), stcTime)

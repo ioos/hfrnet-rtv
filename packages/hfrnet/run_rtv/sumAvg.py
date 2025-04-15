@@ -98,7 +98,7 @@ class SumAndAvg:
             if self.is25Hr:#25-hour
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
-                                                  self.fileLocObj, time, 'rtv')
+                                                  self.fileLocObj, time, 'stc')
             else:
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
@@ -336,7 +336,7 @@ class SumAndAvg:
                                                            inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
                                                            inFileTotObj.v_yvel)), axis=0)
-        self.completedSum = True
+        self.completedSum = self.nLoadedFiles > 0 
 
         return self.sumavgObj
 
@@ -359,6 +359,9 @@ class SumAndAvg:
         if self.is25Hr:
             # Mask points below minimum temporal coverage
             if self.nLoadedFiles < infoObj.stcInfo.min_temporal_coverage:
+                msg = (f"Only loaded {self.nLoadedFiles} files for 25 Hour Avg, "
+                       f"but need min of {infoObj.stcInfo.min_temporal_coverage}")
+                _log.warning(msg)
                 return avgsumObj
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
