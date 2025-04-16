@@ -452,7 +452,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                       f'{rtvInfoObj.max_rad_speed} cm/s')
             _log.debug(errmsg)
 
-            if not d.latitude:
+            if not np.any(d.latitude):
                 errmsg = f'No radial data left from {ifile.file} after speed thresholding'
                 _log.info(errmsg)
                 continue

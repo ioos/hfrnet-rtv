@@ -244,7 +244,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
 
     #Input rtv file
     get_database_interm_file(retObj, configObj, t, 'rtv')
-    print("\n\n getLtaMonthFilenames:  ", t, "\n\n")
+    
     #Search in local directory if file not found in database
     if retObj.input_file is None:
         tmp_start = t.strftime(constsHFR.NCCF_FORMAT)[:-5]
