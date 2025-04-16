@@ -67,7 +67,7 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
     # Summary (REQUIRED)
     if domain == "glna":
         metaDataObj.summary = ('Surface velocities estimated from HF-Radar are '
-                               f"representative of the upper {metaDataObj.depth_bottom: 0.1f} "
+                               f"representative of the upper {metaDataObj.depth_bottom:0.1f} "
                                'meters of the lake.  The main objective of near-real'
                                'time processing is to produce the best product from'
                                'available data at the time of processing. '
@@ -191,9 +191,10 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
 
     # Summary (REQUIRED)
     if domain == "glna":
+        
         metaDataObj.summary = ("Surface velocities estimated from HF-Radar are "
                                "representative of the upper "
-                               f"{metaDataObj.depth_bottom:0.1f meters} of the lake.  The "
+                               f"{metaDataObj.depth_bottom:0.1f} meters of the lake.  The "
                                "main objective of near-real time processing is to "
                                "produce the best product from available data at "
                                "the time of processing.  "

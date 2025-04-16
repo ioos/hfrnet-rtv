@@ -190,8 +190,6 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     inputs = [Path(f.input_file).name for f in sumAvg.fileList if f.input_file is not None]
                     
                     #metadata and filenames for output
-                    avgObj.land = land
-                    avgObj.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, monthTime)
@@ -210,10 +208,16 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     #save final file
                     _log.info("------------- Saving intermediate monthly total files "
                               "in netcdf format")
-                    ltaSaveNetcdf(metaDataObj, configObj,
-                                  fileNameList, stcLtaInfoObj,
-                                  process, iTime, avgObj, inputs)
 
+                    if avgObj is not None:
+                        avgObj.land = land
+                        avgObj.grid = grid
+                        ltaSaveNetcdf(metaDataObj, configObj,
+                                      fileNameList, stcLtaInfoObj,
+                                      process, iTime, avgObj, inputs)
+                    else:
+                        _log.warning("Could not save monthly average file")
+                    
                     monthlyTime = current_time()
                     _log.info(f"Update the process {process.name} time "
                               f"{monthlyTime} in the state table")
@@ -237,17 +241,20 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     inputs = [Path(f.input_file).name for f in sumAvgYear.fileList if f.input_file is not None]
 
                     #metadata and filenames for output
-                    avgObjYear.land = land
-                    avgObjYear.grid = grid
                     metaDataObj = rtvProcessMetadata(process, configObj)
                     fileNameList = filenames(configObj, process,
                                              fileLocObj, yearTime)
                     #save final file
                     _log.info("------------- Saving annual total files in netcdf format")
-                    ltaSaveNetcdf(metaDataObj, configObj,
-                                  fileNameList, stcLtaInfoObj,
-                                  process, iTime, avgObjYear, inputs)
-
+                    if avgObjYear is not None:
+                        avgObjYear.land = land
+                        avgObjYear.grid = grid
+                        ltaSaveNetcdf(metaDataObj, configObj,
+                                      fileNameList, stcLtaInfoObj,
+                                      process, iTime, avgObjYear, inputs)
+                    else:
+                        _log.warning("Could not save yearly average file")
+                        
                     yearlyTime = current_time()
                     _log.info(
                         f"Update the process {process.name} time {yearlyTime} in the state table")
