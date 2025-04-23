@@ -5,7 +5,7 @@ import calendar
 from pathlib import Path
 from copy import deepcopy
 from hfrnet.utils_funcs.lib_rtv import FileLocations
-from hfrnet.utils_funcs.utility import current_datetime, copy_s3_local
+from hfrnet.utils_funcs.utility import current_datetime, copy_file_from_s3
 from hfrnet.utils_funcs import constsHFR
 from hfrnet.db_tools.db_tables import get_files_list_intem_table
 
@@ -142,7 +142,7 @@ def get_database_interm_file(retObj, configObj, t, find_proc_name):
     fileList, nRows = get_files_list_intem_table(configObj, t, find_proc_name)
     
     if nRows == 1:
-        copy_s3_local(fileList['dir'][0], fileList['name'][0], retObj.interm_local_dir)
+        copy_file_from_s3(fileList['dir'][0], fileList['name'][0], retObj.interm_local_dir)
         retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])
         if retObj.interm_local_dir:
             retObj.input_file = Path(retObj.interm_local_dir, fileList['name'][0])

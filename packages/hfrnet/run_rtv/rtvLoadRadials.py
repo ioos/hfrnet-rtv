@@ -10,7 +10,7 @@ from hfrnet.utils_funcs.lib_rtv import RadialInfo
 from hfrnet.run_rtv.rtvReadRadialFile import rtvReadRadialFile
 
 from hfrnet.utils_funcs.utility import (_dict, read_total_file, prev_radial_data,
-                                        copy_s3_local)
+                                        copy_file_from_s3)
 from hfrnet.utils_funcs.math_funcs import  km2deg, scircle1, inpolygon, scxsc
 from hfrnet.db_tools.db_tables import get_files_list_radialtable
 
@@ -385,7 +385,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         n = n + 1
         ifile = file_list_temp[I]
         # ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
-        ifile.fullfile = Path(copy_s3_local(ifile.dir,ifile.file,fileLocObj.radial_local_dir))
+        ifile.fullfile = Path(copy_file_from_s3(ifile.dir,ifile.file,fileLocObj.radial_local_dir))
         
         # raise ValueError("==================")   
         # if fileLocObj.radial_local_dir:

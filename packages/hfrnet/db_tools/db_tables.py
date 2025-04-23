@@ -3,6 +3,8 @@ from hfrnet.utils_funcs.lib_rtv import DatabaseError, RtvProcess
 from hfrnet.db_tools.db_manager import db_manager
 from datetime import timedelta, timezone
 from decimal import Decimal
+from hfrnet.utils_funcs import constsHFR
+
 
 
 _log = logging.getLogger()
@@ -300,9 +302,11 @@ def get_files_times_radialtable(configObj, rtvInfoObj, sites_list, minTime):
 def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 	# Check for valid domain
 	# Connect to the configuration database
-	DATE_FORMAT = "%Y-%m-%d"
-	TIME_FORMAT = "%H:%M:%S"
-	DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
+	# DATE_FORMAT = "%Y-%m-%d"
+	# TIME_FORMAT = "%H:%M:%S"
+	# DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
+	t_lower = (calcTime - timedelta(minutes=30)).strftime(constsHFR.DATETIME_FORMAT)
+	t_upper = (calcTime + timedelta(minutes=30)).strftime(constsHFR.DATETIME_FORMAT)
 
 	with db_manager(configObj.dbObject,configObj.radial_dbname) as db_class:
 		sqlquery = ('SELECT '
@@ -311,8 +315,11 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 					'FROM radialfiles r '
 					'JOIN network n ON n.network_id = r.network_id '
 					'JOIN site s ON s.site_id = r.site_id '
-					f"WHERE FROM_UNIXTIME(r.time) >= '{calcTime - timedelta(minutes=30)}' "
-					f"AND FROM_UNIXTIME(r.time) < '{calcTime + timedelta(minutes=30)}' ")
+					f"WHERE FROM_UNIXTIME(r.time) >= '{t_lower}' "
+					f"AND FROM_UNIXTIME(r.time) < '{t_upper}' ")
+  
+					# f"WHERE FROM_UNIXTIME(r.time) >= '{calcTime - timedelta(minutes=30)}' "
+					# f"AND FROM_UNIXTIME(r.time) < '{calcTime + timedelta(minutes=30)}' ")
 
 		# Site conditions
 		nSite = len(siteInfoObj)
@@ -339,13 +346,13 @@ def get_files_list_radialtable(configObj, calcTime, siteInfoObj):
 
 			# Radial timestamp
 			if useMinute_temp == 0:
-				tr = calcTime.strftime(DATETIME_FORMAT)
+				tr = calcTime.strftime(constsHFR.DATETIME_FORMAT)
 			elif useMinute_temp > 0 and useMinute_temp < 30:
 				tr = (calcTime + timedelta(minutes=useMinute_temp)).strftime(
-					DATETIME_FORMAT)
+					constsHFR.DATETIME_FORMAT)
 			elif useMinute_temp >= 30 and useMinute_temp < 60:
 				tr = ((calcTime - timedelta(minutes=60 - useMinute_temp)).
-						strftime(DATETIME_FORMAT))
+						strftime(constsHFR.DATETIME_FORMAT))
 			else:
 				tr = ""
 				errmsg = (
@@ -419,7 +426,8 @@ def get_state_time(configObj, process_name):
 
 	with db_manager(configObj.dbObject) as db_class:
 		# Build & execute query
-		sqlquery = ('SELECT time,csv '
+		state_time = None
+		sqlquery = ('SELECT time '
 					'FROM state '
 					f"WHERE name = '{process_name}' "
 					f"AND domain_id = '{configObj.domain_id}' "
@@ -429,13 +437,11 @@ def get_state_time(configObj, process_name):
 		nRows = len(next(iter(results.values())))
 		if nRows > 0:
 			state_time = results['time'][0]
-			if results['csv']:
-				state_csv = results['csv']
-		else:
-			state_time = None
-			state_csv = ''
+			# if results['csv']:
+			# 	state_csv = results['csv']
+			# state_csv = ''
 
-	return state_time, state_csv
+	return state_time
 
 
 def get_files_list_intem_table(configObj, calcTime, process_name):
@@ -458,34 +464,48 @@ def get_files_list_intem_table(configObj, calcTime, process_name):
 
 def update_state_time(configObj, process_name, state_time):
 	# Connect to the configuration database
-	
-	with db_manager(configObj.dbObject) as db_class:
+	record_pars = {
+		"name": f"'{process_name}'",
+		"domain_id": f"'{configObj.domain_id}'",
+		"resolution_id": f"'{configObj.resolution_id}'",
+	}
+
+	record_pars_str = ''.join([f"{key} = {value} AND " for key, value in record_pars.items()])
+	record_pars_str = record_pars_str[:-5]
+
+	with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
 		# Build & execute query
 		sqlquery = ('SELECT COUNT(*) '
-					'FROM state '
-					f"WHERE name = '{process_name}' "
-					f"AND domain_id = '{configObj.domain_id}' "
-					f"AND resolution_id = '{configObj.resolution_id}'")
+					f"FROM state WHERE {record_pars_str}")
 
 		results = db_class.get_query(sqlquery)
 		nRows = len(next(iter(results.values())))
 		if nRows > 0:
-			_log.info(f" Updating the state time of {process_name}::"
-						f"{configObj.domain}::{configObj.resolution}")
-			update_query = (f"UPDATE state SET time = '{state_time}' "
-							f"WHERE name = '{process_name}' "
-							f"AND domain_id = '{configObj.domain_id}' "
-							f"AND resolution_id = '{configObj.resolution_id}'")
+			# if exists, the delete it
+			delete_query = f"DELETE FROM state WHERE {record_pars_str}"
+			_log.info(f" Updating the state record for {record_pars_str}")
 			try:
-				db_class.write_query(update_query)
+				db_class.write_query(delete_query)
 			except Exception as err:
 				msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-						f", Can't update the state time for  {process_name}::"
-						f"{configObj.domain}::{configObj.resolution}")
+						f", Can't delete the record from the DB")
 				_log.fatal(msg)
 		else:
 			_log.info(f" No updates needed for the state time of {process_name}::"
 						f"{configObj.domain}::{configObj.resolution}")
+		# ---- Add the intermediate file to the DB table
+		record_pars["time"] = f"'{state_time}'"
+		# Create a string of the keys
+		keys_str = ', '.join(record_pars.keys())
+		# Create a string of the values
+		values_str = ', '.join(record_pars.values())
+		insert_query = f"INSERT INTO state ({keys_str}) VALUES ({values_str})"
+		try:
+			db_class.write_query(insert_query)
+		except Exception as err:
+			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+					f", Can't add the record ::{insert_query}:: to the inter_files")
+			_log.fatal(msg)
 
 	return
 
@@ -608,11 +628,11 @@ def record_output_files(configObj, file_name, process_name):
 		"domain": f"'{configObj.domain}'",
 		"res": f"'{configObj.resolution}'",
 		"process": f"'{process_name}'",
-		"stime": f"'{stime}'",
-		"name": f"'{file_name}'"
+		"stime": f"'{stime}'"
 	}
 	record_pars_str = ''.join([f"{key} = {value} AND " for key, value in record_pars.items()])
-	record_pars_str = record_pars_str[:-5]
+	# rtv-ushi-6km-uwls_v1r0_hfr_intermediate_s202504171300000_e202504171300000_c202504181545556.nc
+	record_pars_str = record_pars_str[:-5] # to remove the last 5 = len(' AND ')
 
 	with db_manager(configObj.dbObject, configObj.radial_dbname) as db_class:	
 		# check if the record exists
@@ -631,7 +651,8 @@ def record_output_files(configObj, file_name, process_name):
 						f", Can't delete the record from the DB")
 				_log.fatal(msg)
 		# ---- Add the intermediate file to the DB table
-		record_pars["dir"] = f"'{configObj.intermedaite_file_s3}'"
+		record_pars["name"] = f"'{file_name}'"
+		record_pars["dir"] = f"'{configObj.output_s3_loc}/HFRNet/test'"
 		# Create a string of the keys
 		keys_str = ', '.join(record_pars.keys())
 		# Create a string of the values
@@ -646,3 +667,51 @@ def record_output_files(configObj, file_name, process_name):
 
 
 	return
+
+def create_db_table_inter_files(configObj):
+	"""
+	Creates the inter_files table in the "hfradar" 
+
+	"""
+	_log.info(f" === CREATE TABLE IF NOT EXISTS inter_files == ")
+
+	with db_manager(configObj.dbObject, configObj.radial_dbname) as db_class:
+		# Create a new table
+		create_table_query = """
+				CREATE TABLE IF NOT EXISTS inter_files (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					domain VARCHAR(255) NOT NULL,
+					res VARCHAR(255) NOT NULL,
+					process VARCHAR(255) NOT NULL,
+					stime timestamp NOT NULL,
+					name VARCHAR(255) NOT NULL,
+					dir VARCHAR(255) NOT NULL
+				)"""
+		try:
+			db_class.write_query(create_table_query)
+		except Exception as err:
+			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+					f", Can't create inter_files ::{create_table_query}::")
+			_log.fatal(msg)
+
+def create_db_table_lock_process(configObj):
+	"""
+	Creates the lock_process table in the "rtvproc" 
+
+	"""
+	_log.info(f" === CREATE TABLE IF NOT EXISTS lock_process == ")
+	with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
+		# Create a new table
+		create_table_query = """
+			CREATE TABLE IF NOT EXISTS lock_process 
+			( id INT AUTO_INCREMENT PRIMARY KEY, 
+			exe_time timestamp NOT NULL, 
+			domain VARCHAR(255) NOT NULL, 
+			resolution VARCHAR(255) NOT NULL)
+			"""
+		try:
+			db_class.write_query(create_table_query)
+		except Exception as err:
+			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+					f", Can't create lock_process ::{create_table_query}::")
+			_log.fatal(msg)

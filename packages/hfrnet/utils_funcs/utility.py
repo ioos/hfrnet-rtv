@@ -31,7 +31,7 @@ def Set_s3_output_bucket(mconfigureVals):
     '''
     
     _log.info('----------------------')
-    _log.info('Set the intermedite files s3 bucket based on the running env id')
+    _log.info('Set the intermediate files s3 bucket based on the running env id')
     
     sts = boto3.client('sts')
     response = sts.get_caller_identity()
@@ -39,12 +39,13 @@ def Set_s3_output_bucket(mconfigureVals):
 
     _log.info(f'------Account {acc_id}')
     if acc_id == '560271376700': # Dev/Sandbox
-        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
     elif acc_id == '656149346314': # UAT
-        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
     elif acc_id == '844319835141': # Prod
-        mconfigureVals.intermedaite_file_s3 = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
-    _log.info(f"--The intermedaite_file_s3 = {mconfigureVals.intermedaite_file_s3}")
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+    
+    _log.info(f"--The output_s3_loc = {mconfigureVals.output_s3_loc}")
     _log.info('----------------------')
 def convert_time(time_str):
     # Remove the last digit to match the format
@@ -61,10 +62,10 @@ def convert_time(time_str):
 
 def get_file_stime(filen):
     # Check if '_c' is in the string
-    if '_c' in filen:
-        # Find the position of '_c'
-        pos = filen.find('_c')
-        # Get the 15 characters after '_c'
+    if '_s' in filen:
+        # Find the position of '_s'
+        pos = filen.find('_s')
+        # Get the 15 characters after '_s'
         result = filen[pos+2:pos+17]
         return convert_time(result)
     else:
@@ -519,7 +520,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     else:#NRT
 
         #have to get state from database to see if it's already been done
-        state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+        state_time = get_state_time(configObj, rtvProcessObj.name.lower())
         if state_time is None:
             state_time = datetime.fromisoformat('1970-01-01')
             msg = (f"No lta state defined. Using base date 1970-01-01")
@@ -544,7 +545,7 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 #replace the month in the datetime to do previous month's average
                 timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime > constsHFR.YEAR_AVG_MIN_DATE:
+        if rtvTime.year > constsHFR.YEAR_AVG_MIN_DATE:
             doYearly = True
 
             #check if average has been done
@@ -611,38 +612,67 @@ def wrap_text(text, width=None):
 
     return textwrap.fill(text, width)
 
-def copy_s3_local(s3_url, file_name, dir_dest):
-    #  dfile:::['RDLm_PYFC_2025_04_02_1900.ruv']
-    #  dir:::['s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC']
-    s3handle = boto3.client('s3')
-    s3_url = s3_url.replace('s3://', '')
-    
-    's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/PacIOOS/kak/Radials'
-    # Split the URL into parts
-    _log.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    parts = s3_url.split('/', 2)
-    
-    # Extract bucket name and file key
-    bucket_name = f"{parts[0]}/{parts[1]}"# parts[0]
-
-    file_key = parts[2] if len(parts) > 1 else ''
-    
-    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
-    if "Radials" not in file_key:
-        file_key = f"{file_key}/Radials"
-    # #'s3://nccf-dev-ingest-trust-us-east-1-560271376700/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
-    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
-    
-    newfpath = f"{dir_dest}/{file_name}"
-    _log.info(f"{s3_url}")
-    _log.info(f"{bucket_name}")
-    _log.info(f"{file_key}")
-    _log.info(f"{newfpath}")
-    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
-    return newfpath
-    
+def copy_file_from_s3(s3_url, file_name, dir_dest):
+    """
     # s3handle.download_file('nccf-dev-ingest-trust-us-east-1-560271376700', 
     #                     'HFRNet/AOOS/WAIN/Radials/RDLm_WAIN_2025_03_21_1200.ruv', 
     #                     '/home/ec2-user/environment/HFR/hfrnet/packages/test.ruv')
+    #  dfile:::['RDLm_PYFC_2025_04_02_1900.ruv']
+    #  dir:::['s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC']
+    # arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    """
+    #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    _log.info(">>> s3_url={s3_url}")
+    s3handle = boto3.client('s3')
+    s3_url = s3_url.replace('s3://', '')
+    
+    #'arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    # Split the URL into parts
+    parts = s3_url.split('/', 2)
+    
+    # Extract bucket name and file key
+    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    bucket_name = f"{parts[0]}/{parts[1]}"
+
+    # file_key = 'HFRNet/CariCOOS/PYFC/Radials/'
+    file_key = parts[2] if len(parts) > 2 else ''    
+    # if "Radials" not in file_key:
+    #     # file_key = f"{file_key}/Radials"
+    #     _log.error(f"--> Radials --- does exist in the file key {file_key}")
+    
+    newfpath = f"{dir_dest}/{file_name}"
+    _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
+    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+    _log.info(f"\n Finished download_file from s3 {file_name} \n\n")
+    return newfpath
     
     
+def copy_file_to_s3(file_name, configObj, time):
+    """    
+    Copy the output file with metadata to S3 Results bucket
+    """
+    _log.info(">>> s3_url={configObj.output_s3_loc}")
+
+    s3_url = configObj.output_s3_loc[5:]
+    #s3_url = f"arn:aws:s3:us-east-1:{acc_id}:accesspoint/nccf-uat-pg-results-ao"
+    s3handle = boto3.client('s3')
+    ExtraArgs_dict={
+        "Metadata":
+        {
+            "Region": f"{configObj.domain}",
+            "Resolution": f"{configObj.resolution}",
+            "Date": f"{time}"
+        }
+    }
+    file_key = f"HFRNet/test/{file_name.name}"
+    
+    _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
+        f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")
+    
+    s3handle.upload_file(
+        Filename= f"{file_name}",
+        Bucket=f"{s3_url}",
+        Key=file_key,
+        ExtraArgs=ExtraArgs_dict
+    )
+    _log.info(f"\n Finished copying {file_name} to s3 \n\n")
