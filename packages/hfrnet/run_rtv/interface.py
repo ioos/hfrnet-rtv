@@ -248,21 +248,32 @@ class Interface(aim.Interface):
         """
             Set all the directory locations
         """
-
+        _log.info(f" ---- Setting up the dirs")
         algo_dir = Path(self.config['directory.algorithm_dir'])
+        _log.info(f" ---- algo_dir::{algo_dir}")
+
         fileLocObj.landfile = algo_dir / 'ancillary_data/land_data'
         fileLocObj.gridfile = algo_dir / 'ancillary_data/grid_data'
+        _log.info(f" ---- fileLocObj.landfile::{fileLocObj.landfile}")
+        _log.info(f" ---- fileLocObj.gridfile::{fileLocObj.gridfile}")
 
         # --- output dirs to save the nc, asc, intermediate files
         fileLocObj.output_dir = Path(self.config['directory.output'])
         fileLocObj.output_dir.mkdir(parents=True, exist_ok=True)
+        _log.info(f" ---- fileLocObj.output_dir::{fileLocObj.output_dir}")
 
+        _log.info(f" ---- directory.radial_local_dir::{self.config['directory.radial_local_dir']}")
         if self.config['directory.radial_local_dir']:
+            fileLocObj.radial_local_dir.mkdir(parents=True, exist_ok=True)
             fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+            _log.info(f" ---- fileLocObj.radial_local_dir::{fileLocObj.radial_local_dir}")
         else:
             fileLocObj.radial_local_dir = None
+            _log.info(f" ---- fileLocObj.output_dir")
 
+        _log.info(f" ---- directory.interm_local_dir::{self.config['directory.interm_local_dir']}")
         if self.config['directory.interm_local_dir']:
+            fileLocObj.interm_local_dir.mkdir(parents=True, exist_ok=True)
             fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
         else:
             fileLocObj.interm_local_dir = None
