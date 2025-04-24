@@ -263,17 +263,21 @@ class Interface(aim.Interface):
         _log.info(f" ---- fileLocObj.output_dir::{fileLocObj.output_dir}")
 
         _log.info(f" ---- directory.radial_local_dir::{self.config['directory.radial_local_dir']}")
+        _log.info(f" ---- directory.interm_local_dir::{self.config['directory.interm_local_dir']}")
+
         if self.config['directory.radial_local_dir']:
-            fileLocObj.radial_local_dir.mkdir(parents=True, exist_ok=True)
             fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
             _log.info(f" ---- fileLocObj.radial_local_dir::{fileLocObj.radial_local_dir}")
         else:
-            fileLocObj.radial_local_dir = None
-            _log.info(f" ---- fileLocObj.output_dir")
+            fileLocObj.radial_local_dir = Path('/home/WORKING_DIR/input/radials')
+            _log.info(f" ---- fileLocObj.radial_local_dir")
 
-        _log.info(f" ---- directory.interm_local_dir::{self.config['directory.interm_local_dir']}")
         if self.config['directory.interm_local_dir']:
-            fileLocObj.interm_local_dir.mkdir(parents=True, exist_ok=True)
             fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
         else:
-            fileLocObj.interm_local_dir = None
+            fileLocObj.interm_local_dir = Path('/home/WORKING_DIR/input/intermediate')
+            _log.info(f" ---- fileLocObj.interm_local_dir")
+
+        fileLocObj.radial_local_dir.mkdir(parents=True, exist_ok=True)
+        fileLocObj.interm_local_dir.mkdir(parents=True, exist_ok=True)
+            
