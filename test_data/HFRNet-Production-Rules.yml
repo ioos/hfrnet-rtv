@@ -24,7 +24,7 @@ production_rule:
   - catalog_name: HFRNet
     copy_location: hfrnet/output
     file_pattern:
-      regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+      regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
     search:
       type: "system.temporal"
       temporal_search_boundaries:
@@ -35,33 +35,33 @@ production_rule:
         format: '%Y%m%d%H%M%S%f'
         type: datetime
         value:
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
           from: "filename"
       end:
         format: '%Y%m%d%H%M%S%f'
         type: datetime
         value:
           from: "filename"
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
       start:
         type: datetime
         format: '%Y%m%d%H%M%S%f'
         value:
           from: "filename"
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
       domain:
         type: string
         value:
           from: "filename"
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
       resolution:
         type: string
         value:
           from: "filename"
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
       product_name:
         type: string
         value:
           from: "filename"
-          regex: 'rtv-<domain>-<resolution>-<product_name>_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          regex: 'rtv-(?P<domain>\w{4})-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
     
