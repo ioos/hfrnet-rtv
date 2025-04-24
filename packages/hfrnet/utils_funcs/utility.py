@@ -521,12 +521,11 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
         #have to get state from database to see if it's already been done
         state_time = get_state_time(configObj, rtvProcessObj.name.lower())
+
         if state_time is None:
             state_time = datetime.fromisoformat('1970-01-01')
             msg = (f"No lta state defined. Using base date 1970-01-01")
-        else:
-            state_time = datetime.strptime(state_time, constsHFR.DATETIME_FORMAT)
-
+        
         if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
 
