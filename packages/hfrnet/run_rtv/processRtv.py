@@ -175,7 +175,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 msg = "\n" + "="*80 + f"\nSTC execution time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
 
-        if process.name.casefold() == 'lta' and newRtvFiles is not None:
+        if process.name.casefold() == 'lta1' and newRtvFiles is not None:
             #newRtvFiles = [configObj.runTime]
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
