@@ -1,7 +1,7 @@
 """rtvGetProcessTimes"""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 
 from hfrnet.utils_funcs.utility import now_second, now_hour
@@ -111,7 +111,7 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     _log.info(f"iTime.minute >= 30")
     for i, iTime in enumerate(t):
         if iTime.minute >= 30:
-            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0)
+            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
             _log.info(f"=== ::{i}::{t[i]}")
 
     _log.info(f"---------------------------------------------")
@@ -120,7 +120,7 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     _log.info(f"iTime.minute < 30")
     for i, iTime in enumerate(t):
         if iTime.minute < 30:
-            t[i] = iTime.replace(minute=0, second=0, microsecond=0)
+            t[i] = iTime.replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
             _log.info(f"=== ::{i}::{t[i]}")
 
     # Find unique values to process

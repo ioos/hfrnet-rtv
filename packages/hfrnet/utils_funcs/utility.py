@@ -537,15 +537,17 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
             elif month_diff == 1:
                 doMonthly = True
             else:
-                msg = ("Error: time difference in month between db state time"
-                       f"and current time inproper: {month_diff}")
-                _log.error(msg)
+                doMonthly = True
+                msg = ("Warning: time difference in month between db state time"
+                       f"and current time is {month_diff}.  "
+                       "Should be just 1 month difference during proper running")
+                _log.warning(msg)
 
             if doMonthly:
                 #replace the month in the datetime to do previous month's average
                 timeMonthly = rtvTime.replace(day=1) - timedelta(days=7)
 
-        if rtvTime.year > constsHFR.YEAR_AVG_MIN_DATE:
+        if rtvTime > constsHFR.YEAR_AVG_MIN_DATE:
             doYearly = True
 
             #check if average has been done
