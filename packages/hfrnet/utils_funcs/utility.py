@@ -644,7 +644,7 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     newfpath = f"{dir_dest}/{file_name}"
     _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
     s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
-    _log.info(f"\n Finished download_file from s3 {file_name} \n\n")
+    _log.info(f"\n Finished download_file from s3 {file_name} \n")
     return newfpath
     
     
