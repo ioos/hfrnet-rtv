@@ -368,8 +368,7 @@ class SumAndAvg:
 
         if self.isMonthly:
 
-            #minFiles = infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY
-            minFiles = 2*24 
+            minFiles = infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY 
             if self.nLoadedFiles < minFiles:
                 msg = f"Only loaded {self.nLoadedFiles} for monthly average; need min of {minFiles}"
                 _log.warning(msg)
