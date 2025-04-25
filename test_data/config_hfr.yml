@@ -15,8 +15,8 @@ directory:
             #--- default path is /workflow/data/
    log: /workflow/data/logs
    output: /workflow/data/output
-   radial_local_dir: ''
-   interm_local_dir: ''
+   radial_local_dir: /home/WORKING_DIR/input/radials
+   interm_local_dir: /home/WORKING_DIR/input/intermediate
    
 databases:
    run_env: 'ao' # 'aws' 'rhw' 'ao'

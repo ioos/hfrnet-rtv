@@ -1,11 +1,11 @@
 """rtvGetProcessTimes"""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 
 from hfrnet.utils_funcs.utility import now_second, now_hour
-
+from hfrnet.utils_funcs import constsHFR
 from hfrnet.db_tools.db_tables import (read_site_table, get_files_times_radialtable
 , get_state_time)
 
@@ -64,16 +64,12 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     # ## Define radial file arrival time search window
     # # Oldest data time to process
     minTime = now_hour(configObj.runTime) - timedelta(hours=rtvInfoObj.max_age)
-
+    _log.info(f"rtvGetProcessTimes:: ::{configObj.runTime}")
+    _log.info(f"rtvGetProcessTimes:: ::{rtvInfoObj.max_age}")
+    _log.info(f"rtvGetProcessTimes:: ::{minTime}")
     # #minTime.Format = 'yyyy-MM-dd HH:mm:ss.S'
-    #
-    # # Check state
-    # state = State(configObj.domain, configObj.domain_id,
-    #               configObj.resolution, configObj.resolution_id,
-    #               rtvProcessObj.name.lower(), configObj.confdb)
-    # state.get()
-    # state_time = None
-    state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+    
+    state_time = get_state_time(configObj, rtvProcessObj.name.lower())
     #-------------------------
 
     # Set start time to arbitrairly old value if no state is defined - let
@@ -84,40 +80,51 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
                f' hours to find radials since {minTime}')
         _log.info(msg)
     else:
-        rtvInfoObj.current_state = state_time
+        rtvInfoObj.current_state = state_time # already datetime obj
         msg = f"Obtained rtv state time of {rtvInfoObj.current_state}"
         _log.info(msg)
 
     # Define the end time of the search window
     rtvInfoObj.new_state = now_second(configObj.runTime) - timedelta(seconds=10)
     msg = f"Radial search window ends on {rtvInfoObj.new_state}"
-    _log.debug(msg)
+    _log.info(msg)
 
     ## Find all sites associated with the domain and resolution
     sites_list = read_site_table(configObj)
 
+    _log.info(" get_files_times_radialtable ")
     time_list, nfiles = get_files_times_radialtable(configObj, rtvInfoObj, sites_list,
                                                 minTime)
     
+    _log.info(f"rtvGetProcessTimes::::{nfiles}")
     if nfiles == 0:
         return t
+    _log.info(f"rtvGetProcessTimes::::{len(time_list)}")
 
     ## Find unique dates (hours) to process
     # Assign process times
-    # t = [datetime.fromtimestamp(r[0]) for r in time_list]
     t = next(iter(time_list.values()))
 
-    # Shift radials >= :30 to the top of the next hour
+    _log.info(f"---------------------------------------------")
+    _log.info(f" Shift radials >= :30 to the top of the next hour")
+    _log.info(f"---------------------------------------------")
+    _log.info(f"iTime.minute >= 30")
     for i, iTime in enumerate(t):
         if iTime.minute >= 30:
-            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0)
+            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            _log.info(f"=== ::{i}::{t[i]}")
 
-    # Shift radials > :00 & < :30 to the top of the current hour
+    _log.info(f"---------------------------------------------")
+    _log.info(f" Shift radials > :00 & < :30 to the top of the current hour")
+    _log.info(f"---------------------------------------------")
+    _log.info(f"iTime.minute < 30")
     for i, iTime in enumerate(t):
         if iTime.minute < 30:
-            t[i] = iTime.replace(minute=0, second=0, microsecond=0)
+            t[i] = iTime.replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            _log.info(f"=== ::{i}::{t[i]}")
 
     # Find unique values to process
     t = np.unique(t)
+    _log.info(f"rtvGetProcessTimes:::: {len(t)}")
 
     return t

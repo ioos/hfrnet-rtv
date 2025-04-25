@@ -13,6 +13,7 @@ from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
 import h5py
+import boto3
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
@@ -21,7 +22,54 @@ from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
 
+def Set_s3_output_bucket(mconfigureVals):
+    '''
+    Set the intermedite files s3 bucket based on the running env id
+    Dev/Sandbox: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    UAT: s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao
+    Prod: s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao
+    '''
+    
+    _log.info('----------------------')
+    _log.info('Set the intermediate files s3 bucket based on the running env id')
+    
+    sts = boto3.client('sts')
+    response = sts.get_caller_identity()
+    acc_id = response.get('Account')
 
+    _log.info(f'------Account {acc_id}')
+    if acc_id == '560271376700': # Dev/Sandbox
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+    elif acc_id == '656149346314': # UAT
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+    elif acc_id == '844319835141': # Prod
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+    
+    _log.info(f"--The output_s3_loc = {mconfigureVals.output_s3_loc}")
+    _log.info('----------------------')
+def convert_time(time_str):
+    # Remove the last digit to match the format
+    time_str = time_str[:-1]
+
+    # Convert the time string to datetime object
+    time_obj = datetime.strptime(time_str, '%Y%m%d%H%M%S')
+
+    # Format the datetime object to the desired format
+    formatted_time = time_obj.strftime(constsHFR.DATETIME_FORMAT)
+
+    return formatted_time
+
+
+def get_file_stime(filen):
+    # Check if '_c' is in the string
+    if '_s' in filen:
+        # Find the position of '_s'
+        pos = filen.find('_s')
+        # Get the 15 characters after '_s'
+        result = filen[pos+2:pos+17]
+        return convert_time(result)
+    else:
+        return current_time()
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
     def __getattr__(self, key):
@@ -207,7 +255,7 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         return grid
 
 def current_time():
-    """Return the current time in format for database"""
+    """Return the current time in str format for database"""
     return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
 
 def current_datetime():
@@ -355,7 +403,7 @@ def load_mat(filename):
     return data
 
 #########################################################################
-def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
+def create_CCAP_filename_s_e(ctime, stime, etime, alg_ver, unit_name, ext):
     """
     :param config_dict: contains the yaml config file
     :return: the ccap file name
@@ -363,7 +411,8 @@ def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
     # example file name
     # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
 
-    ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = current_time('%Y%m%d%H%M%S%f')
 
     file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
     return file_name
@@ -380,13 +429,24 @@ def setup_log_filename(my_pkgint, added_name=""):
     """
     # --------------------- create the log file
     log_dir = Path(my_pkgint.config['directory.log'])
-    stime = f"{my_pkgint.config['time.start_date']}"
-    etime = f"{my_pkgint.config['time.end_date']}"
+    c_datetime = current_datetime()
+    ctime = c_datetime.strftime('%Y%m%d%H%M%S%f')[:-5]
+    if my_pkgint.config['processing.batch_processing']:
+        stime = f"{my_pkgint.config['time.start_date']}"
+        etime = f"{my_pkgint.config['time.end_date']}"
+    else:
+        # Remove minutes and seconds by setting them to 0
+        stimeobj = c_datetime.replace(minute=0, second=0, microsecond=0)
+        stime = stimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+        # Set minutes to 59 and seconds to 59.9
+        etimeobj = c_datetime.replace(minute=59, second=59, microsecond=900000)
+        etime = etimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+
+
     algo_ver = f"{my_pkgint.config['production.version']}"
 
-    run_logfile = create_CCAP_filename_s_e(stime, etime,
-                                           algo_ver,
-                                           f"{added_name}", ".log")
+    run_logfile = create_CCAP_filename_s_e(ctime, stime, etime,
+                                            algo_ver, f"{added_name}", ".log")
     handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
     date_format = '%Y-%m-%d %H:%M:%S'
     full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
@@ -460,8 +520,12 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     else:#NRT
 
         #have to get state from database to see if it's already been done
-        state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+        state_time = get_state_time(configObj, rtvProcessObj.name.lower())
 
+        if state_time is None:
+            state_time = datetime.fromisoformat('1970-01-01')
+            msg = (f"No lta state defined. Using base date 1970-01-01")
+        
         if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
 
@@ -472,9 +536,11 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
             elif month_diff == 1:
                 doMonthly = True
             else:
-                msg = ("Error: time difference in month between db state time"
-                       f"and current time inproper: {month_diff}")
-                _log.error(msg)
+                doMonthly = True
+                msg = ("Warning: time difference in month between db state time"
+                       f"and current time is {month_diff}.  "
+                       "Should be just 1 month difference during proper running")
+                _log.warning(msg)
 
             if doMonthly:
                 #replace the month in the datetime to do previous month's average
@@ -546,3 +612,68 @@ def wrap_text(text, width=None):
         return text
 
     return textwrap.fill(text, width)
+
+def copy_file_from_s3(s3_url, file_name, dir_dest):
+    """
+    # s3handle.download_file('nccf-dev-ingest-trust-us-east-1-560271376700', 
+    #                     'HFRNet/AOOS/WAIN/Radials/RDLm_WAIN_2025_03_21_1200.ruv', 
+    #                     '/home/ec2-user/environment/HFR/hfrnet/packages/test.ruv')
+    #  dfile:::['RDLm_PYFC_2025_04_02_1900.ruv']
+    #  dir:::['s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC']
+    # arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    """
+    #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    _log.info(">>> s3_url={s3_url}")
+    s3handle = boto3.client('s3')
+    s3_url = s3_url.replace('s3://', '')
+    
+    #'arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    # Split the URL into parts
+    parts = s3_url.split('/', 2)
+    
+    # Extract bucket name and file key
+    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    bucket_name = f"{parts[0]}/{parts[1]}"
+
+    # file_key = 'HFRNet/CariCOOS/PYFC/Radials/'
+    file_key = parts[2] if len(parts) > 2 else ''    
+    # if "Radials" not in file_key:
+    #     # file_key = f"{file_key}/Radials"
+    #     _log.error(f"--> Radials --- does exist in the file key {file_key}")
+    
+    newfpath = f"{dir_dest}/{file_name}"
+    _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
+    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+    _log.info(f"\n Finished download_file from s3 {file_name} \n\n")
+    return newfpath
+    
+    
+def copy_file_to_s3(file_name, configObj, time):
+    """    
+    Copy the output file with metadata to S3 Results bucket
+    """
+    _log.info(">>> s3_url={configObj.output_s3_loc}")
+
+    s3_url = configObj.output_s3_loc[5:]
+    #s3_url = f"arn:aws:s3:us-east-1:{acc_id}:accesspoint/nccf-uat-pg-results-ao"
+    s3handle = boto3.client('s3')
+    ExtraArgs_dict={
+        "Metadata":
+        {
+            "Region": f"{configObj.domain}",
+            "Resolution": f"{configObj.resolution}",
+            "Date": f"{time}"
+        }
+    }
+    file_key = f"HFRNet/test/{file_name.name}"
+    
+    _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
+        f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")
+    
+    s3handle.upload_file(
+        Filename= f"{file_name}",
+        Bucket=f"{s3_url}",
+        Key=file_key,
+        ExtraArgs=ExtraArgs_dict
+    )
+    _log.info(f"\n Finished copying {file_name} to s3 \n\n")

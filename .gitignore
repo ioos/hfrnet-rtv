@@ -6,6 +6,7 @@ venv
 *~
 *.txt
 *.log
+*.vscode
 hfrnet/packages/hfrnet/run_rtv/stcCompute25hrAvg.py
 hfrnet/packages/hfrnet/run_rtv/ltaMonthly.py
 hfrnet/packages/hfrnet/run_rtv/ltaMonthlyAvg.py

@@ -1,8 +1,8 @@
 algorithm:
     processing:
-        domain: 'ushi'
+        domain: 'ushi' # 'prvi' #'ushi'
         resolution: '6km'
-        batch_processing: true #false
+        batch_processing: false # true #false
     coverage:
         start: '202301040000000'
         end:   '202301040059599'
@@ -32,7 +32,7 @@ algorithm:
 
 docker:
   #image: git.star.nesdis.noaa.gov:4567/assistt/plait/standalone/hfrnet/process:v1.1
-  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.20
+  image: registry.services.nesdis.noaa.gov/ssboxes/science_codes/nos/ioos/hfrnet:1.0.27
   action:
     bin: python3
     config: /home/WORKING_DIR/config/config.yaml
@@ -44,6 +44,7 @@ docker:
       - &ancillary_data /home/ec2-user/environment/HFR/hfrnet/ancillary_data
       - &wrapper /home/ec2-user/environment/HFR/hfrnet/wrappers
       - &config /home/ec2-user/environment/HFR/hfrnet/wrappers/config
+      - &docker /home/ec2-user/environment/HFR/hfrnet/docker
       - &output /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/output
       - &logs /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/logs
       - &input /home/ec2-user/environment/HFR/input_data/DATA/USHI_20230104/input
@@ -57,6 +58,7 @@ docker:
       /home/WORKING_DIR/ancillary_data/: *ancillary_data
       /home/WORKING_DIR/wrapper/: *wrapper
       /home/WORKING_DIR/config/: *config
+      /home/WORKING_DIR/docker/: *docker
       /home/WORKING_DIR/output/: *output
       /home/WORKING_DIR/logs/: *logs
       /home/WORKING_DIR/input/: *input

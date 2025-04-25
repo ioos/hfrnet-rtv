@@ -31,9 +31,8 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
     %    Coastal Observing Research and Development Center
     """
     siteInfoObj = []
-    results = get_active_sitelist(configObj, t)
-    nRows = len(results['id'])
-
+    results, nRows = get_active_sitelist(configObj, t)
+    
     if nRows == 0:
         # No sites configured
         msg = f'Site configuration not found for {configObj.domain}, {configObj.resolution}'

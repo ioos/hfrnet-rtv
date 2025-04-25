@@ -21,6 +21,7 @@ class db_manager:
         self.conn_handel = None
 
     def __enter__(self):
+        _log.info(f" >>> self.connect ::{self.dbConfig.db_name}::")
         self.connect()
         return self
 
@@ -50,17 +51,23 @@ class db_manager:
                                                 port =self.dbConfig.port,
                                                 ssl = self.dbConfig.ssl_context)
         
-                _log.info(f"---------------------------- connected")
+                _log.info(f"---------------------------- connected to ::{self.dbConfig.db_name} database")
                 # _log.info(f"---------------------------------------------")
         except Exception as err:
             msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
                 f", Can't connect to the database: user={self.dbConfig.user}, "
                 f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
+        if self.conn_handel is None:
+            msg = " Database connection failed, handle is none"
+            _log.fatal(msg)
+            raise ValueError(msg)
+            
+            
     #----------------------------------------------------------
     
     def get_query(self, query):
-        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
         _log.info(query)
         datasetdict = {}
         with self.conn_handel.cursor() as cursor:
@@ -70,10 +77,11 @@ class db_manager:
             self.create_dict(rows, cursor.description, datasetdict)
             
             _log.info(" ------------------ ")
+            _log.info(f" ------------------  {len(datasetdict)}")
             for key, value in datasetdict.items():
                 msg = f"{key}:::{value}"
                 _log.info(msg)
-            _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+            _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
 
         return datasetdict
     #----------------------------------------------------------
@@ -117,6 +125,7 @@ class db_manager:
 
     def close(self):
         self.conn_handel.close()
+        _log.info(f" >>> self.conn_handel.close ::{self.dbConfig.db_name}::")
     #----------------------------------------------------------
 #------------------ new stuff here \/
     def table_exists(self, table_name):
@@ -141,6 +150,8 @@ def set_db_info( config, configObj):
     """
     Set DB info to be used later...?
     """
+    from hfrnet.db_tools.db_tables import create_db_table_inter_files, create_db_table_lock_process
+
     configObj.dbObject.user = config['databases.user']
     configObj.dbObject.host = config['databases.host']
     configObj.dbObject.port = config['databases.port']
@@ -187,6 +198,10 @@ def set_db_info( config, configObj):
     _log.info("Generating --> token = client.generate_db_auth_token")
     _log.info("======= token =================================")
     _log.info(f"{token}")
+    _log.info("========================================")
+    _log.info(f" Create tables,inter_files,lock_process  if not exist")
+    create_db_table_inter_files(configObj)
+    create_db_table_lock_process(configObj)
     _log.info("========================================")
 
 

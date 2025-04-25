@@ -25,6 +25,11 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
 
     # Check for data file from previous run(s)
     last = None
+    if fileLocObj.input_file is None:
+        _log.warning('fileLocObj.input_file is None')
+        return radials, U_tot
+
+        
     if fileLocObj.input_file.is_file():
 
         if configObj.reprocess:

@@ -9,7 +9,8 @@ import numpy as np
 from hfrnet.utils_funcs.lib_rtv import RadialInfo
 from hfrnet.run_rtv.rtvReadRadialFile import rtvReadRadialFile
 
-from hfrnet.utils_funcs.utility import _dict, read_total_file, prev_radial_data
+from hfrnet.utils_funcs.utility import (_dict, read_total_file, prev_radial_data,
+                                        copy_file_from_s3)
 from hfrnet.utils_funcs.math_funcs import  km2deg, scircle1, inpolygon, scxsc
 from hfrnet.db_tools.db_tables import get_files_list_radialtable
 
@@ -103,20 +104,22 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
     # Ensure radial selection consistent with previous run(s)
     # Check if a file already exists
     last = None
-    if fileLocObj.input_file.is_file():
+    if fileLocObj.input_file is not None:
 
-        # Load previous radial dataset
-        try:
-            last = read_total_file(fileLocObj.input_file)
-            msg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
-            _log.info(msg)
+        if fileLocObj.input_file.is_file():
 
-        except Exception as e:
-            errmsg = (f'Failed to load radial structure from prior run ('
-                      f'{fileLocObj.input_file}): {str(e)}')
-            _log.warning(errmsg)
-            _log.warning('Cannot ensure consistent radial selection if results are '
-                         'combined with previous run(s)')
+            # Load previous radial dataset
+            try:
+                last = read_total_file(fileLocObj.input_file)
+                msg = f'Loaded radial structure from prior run ({fileLocObj.input_file})'
+                _log.info(msg)
+
+            except Exception as e:
+                errmsg = (f'Failed to load radial structure from prior run ('
+                        f'{fileLocObj.input_file}): {str(e)}')
+                _log.warning(errmsg)
+                _log.warning('Cannot ensure consistent radial selection if results are '
+                            'combined with previous run(s)')
 
     else:
         errmsg = f'{fileLocObj.input_file} not found, no pre-existing radial data'
@@ -381,12 +384,15 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         n = n + 1
         ifile = file_list_temp[I]
-        ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
-        if fileLocObj.radial_local_dir:
-            ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
-                                  f"{ifile.network}", f"{ifile.site}",
-                                  f"{ifile.t.strftime('%Y-%m')}",
-                                  f"{ifile.file}")
+        # ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
+        ifile.fullfile = Path(copy_file_from_s3(ifile.dir,ifile.file,fileLocObj.radial_local_dir))
+        
+        # raise ValueError("==================")   
+        # if fileLocObj.radial_local_dir:
+        #     ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
+        #                           f"{ifile.network}", f"{ifile.site}",
+        #                           f"{ifile.t.strftime('%Y-%m')}",
+        #                           f"{ifile.file}")
         # Load radial data
         d = None
         try:
@@ -406,6 +412,8 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         if hasattr(d, "vflag"):
 
             idx = d.vflag == 128
+            nIdx = np.sum(idx)
+            
             if nIdx > 0:
 
                 d.latitude = d.latitude[~idx]
@@ -417,14 +425,14 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                     d.range = d.range[~idx]
                 errmsg = f'Removed {nIdx} velocity flagged radials'
                 _log.debug(errmsg)
-
-                if not d.latitude:
+                
+                if not np.any(d.latitude):
                     errmsg = (f'No radial data left from {ifile.file}'
                               f' after velocity flag filtering')
                     _log.info(errmsg)
                     continue
-
-            d.pop('vflag', None)
+            
+            #d.pop('vflag', None)
 
         # Speed thresholding
         idx = abs(d.speed) > rtvInfoObj.max_rad_speed
@@ -444,7 +452,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
                       f'{rtvInfoObj.max_rad_speed} cm/s')
             _log.debug(errmsg)
 
-            if not d.latitude:
+            if not np.any(d.latitude):
                 errmsg = f'No radial data left from {ifile.file} after speed thresholding'
                 _log.info(errmsg)
                 continue

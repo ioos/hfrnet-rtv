@@ -12,7 +12,8 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
-from hfrnet.db_tools.db_tables import update_state_time
+from hfrnet.db_tools.db_tables import update_state_time, record_output_files
+from hfrnet.utils_funcs.utility import copy_file_to_s3
 
 _log = logging.getLogger()
 
@@ -52,14 +53,18 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     """
 
     processTimes = []
+    _log.info(f"rtv:: {configObj.reprocess}")
     if configObj.reprocess:
         processTimes = configObj.times
     else:
         processTimes = rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj)
 
-    if processTimes and len(processTimes) > 0:
+    # if len(processTimes) :  # if it's not empty
+
+    _log.info(f"rtv:: {configObj.reprocess}")
+    if len(processTimes) > 0:
         errmsg = (f"Obtained {len(processTimes)} hour(s) to process between: "
-                  f"{processTimes[0]} and {processTimes[-1]}")
+                f"{processTimes[0]} and {processTimes[-1]}")
         _log.info(errmsg)
     else:
         _log.warning("No new radials found")
@@ -131,6 +136,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
             rtvSaveNetcdf(metaDataObj, configObj, fileNameList,
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
+            #copy file to the s3 bucket
+            copy_file_to_s3(fileNameList.output_ncfile, configObj, CalcTime)
+
 
             _log.info(f"Saving uwls total intermediate files in netcdf format")
             #save intermediate file (greater precision)
@@ -141,9 +149,12 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
             allInfo_dict = {'c':allInfo, 't':CalcTime, 'U':U_tot.to_dict(),
                             'r': [r.to_dict() for r in radials]}
             saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
+            #copy intermediate file to S3 bucket
+            copy_file_to_s3(fileNameList.intermed_filepath, configObj, CalcTime)
 
             _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
             update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)
+            record_output_files(configObj, fileNameList.intermed_filename, rtvProcessObj.name.casefold())
 
         else:
             _log.info( 'No total solutions below netcdf hdop threshold' )

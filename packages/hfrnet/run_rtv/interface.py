@@ -21,14 +21,14 @@ from datetime import datetime
 import aim
 
 #hfrnet modules
-from hfrnet.utils_funcs.utility import setup_log_filename
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
-                                        check_lock_process)
+                                        check_lock_process, clear_state_table)
+from hfrnet.utils_funcs.utility import (setup_log_filename, current_datetime, Set_s3_output_bucket
+                                        ,generate_time_spans)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
                                         DatabaseError)
 from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo
-from hfrnet.utils_funcs.utility import generate_time_spans
 import hfrnet.run_rtv.processRtv as processRtv
 from hfrnet.db_tools.db_manager import db_manager, set_db_info
 
@@ -118,11 +118,11 @@ class Interface(aim.Interface):
             #--- this must be done in order for AO to move anything outside the AO sys
             #--- default path is /workflow/data/
             print(f"AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}")
-        else:
-            #---- default for running inside the docker
-            self.config['directory.log'] = '/home/WORKING_DIR/logs'
-            self.config['directory.output'] = '/home/WORKING_DIR/output'
-            print('Setting log and output dirs to /home/WORKING_DIR')
+        # else:
+        #     #---- default for running inside the docker
+        #     self.config['directory.log'] = '/home/WORKING_DIR/logs'
+        #     self.config['directory.output'] = '/home/WORKING_DIR/output'
+        #     print('Setting log and output dirs to /home/WORKING_DIR')
 
         #----------------------
 
@@ -139,6 +139,11 @@ class Interface(aim.Interface):
                             f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
+        # ---- Set the intermedite files s3 bucket based on the running env id 
+        Set_s3_output_bucket(self.mconfigureVals)
+        
+        #====== delete this
+        # clear_state_table(self.mconfigureVals)
 
         #Check if the process is locked
         _log.info("=============================================")
@@ -156,8 +161,8 @@ class Interface(aim.Interface):
                     f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
         # set the runtime to the start time
-        self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
-                                        '%Y%m%d%H%M%S%f')
+        self.mconfigureVals.runTime = current_datetime()
+        # self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],'%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
         if self.config['processing.batch_processing']:
@@ -243,21 +248,36 @@ class Interface(aim.Interface):
         """
             Set all the directory locations
         """
-
+        _log.info(f" ---- Setting up the dirs")
         algo_dir = Path(self.config['directory.algorithm_dir'])
+        _log.info(f" ---- algo_dir::{algo_dir}")
+
         fileLocObj.landfile = algo_dir / 'ancillary_data/land_data'
         fileLocObj.gridfile = algo_dir / 'ancillary_data/grid_data'
+        _log.info(f" ---- fileLocObj.landfile::{fileLocObj.landfile}")
+        _log.info(f" ---- fileLocObj.gridfile::{fileLocObj.gridfile}")
 
         # --- output dirs to save the nc, asc, intermediate files
         fileLocObj.output_dir = Path(self.config['directory.output'])
         fileLocObj.output_dir.mkdir(parents=True, exist_ok=True)
+        _log.info(f" ---- fileLocObj.output_dir::{fileLocObj.output_dir}")
+
+        _log.info(f" ---- directory.radial_local_dir::{self.config['directory.radial_local_dir']}")
+        _log.info(f" ---- directory.interm_local_dir::{self.config['directory.interm_local_dir']}")
 
         if self.config['directory.radial_local_dir']:
             fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+            _log.info(f" ---- fileLocObj.radial_local_dir::{fileLocObj.radial_local_dir}")
         else:
-            fileLocObj.radial_local_dir = None
+            fileLocObj.radial_local_dir = Path('/home/WORKING_DIR/input/radials')
+            _log.info(f" ---- fileLocObj.radial_local_dir")
 
         if self.config['directory.interm_local_dir']:
             fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
         else:
-            fileLocObj.interm_local_dir = None
+            fileLocObj.interm_local_dir = Path('/home/WORKING_DIR/input/intermediate')
+            _log.info(f" ---- fileLocObj.interm_local_dir")
+
+        fileLocObj.radial_local_dir.mkdir(parents=True, exist_ok=True)
+        fileLocObj.interm_local_dir.mkdir(parents=True, exist_ok=True)
+            

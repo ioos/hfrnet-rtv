@@ -26,6 +26,7 @@ class SumAvgInfo(BaseObject):
         self.vVar = []
         self.lat = []
         self.lon = []
+        #self.hdop = []
         self.grid = Grid()
         self.land = LandInfo([], [], 0)
 
