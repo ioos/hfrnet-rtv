@@ -14,7 +14,8 @@ directory:
             #--- Do not edit this. It must be done in order for AO to move anything outside the AO sys
             #--- default path is /workflow/data/
    log: /workflow/data/logs
-   output: /workflow/data/output
+   #-- removing sending the output to AO to move it the s3 bucket, the algo is doing it
+   output: /home/WORKING_DIR/output
    radial_local_dir: /home/WORKING_DIR/input/radials
    interm_local_dir: /home/WORKING_DIR/input/intermediate
    
