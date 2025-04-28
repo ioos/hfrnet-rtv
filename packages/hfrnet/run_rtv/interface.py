@@ -74,6 +74,8 @@ class Interface(aim.Interface):
             'output': str,
             'radial_local_dir': str,
             'interm_local_dir': str,
+            'output_s3_bucket': str,
+            'output_intermed_s3_bucket': str,
         },
         'databases': {
             'run_env': str,
@@ -139,6 +141,11 @@ class Interface(aim.Interface):
                             f"_{self.mconfigureVals.resolution}")
         # ------ setup the rtvproc connection
         set_db_info(self.config, self.mconfigureVals)
+
+        # ---- Set the output and intermediate s3 bucket locations
+        self.mconfigureVals.output_s3_loc = self.config['directory.output_s3_bucket']
+        self.mconfigureVals.output_intermed_s3_loc = self.config['directory.output_intermed_s3_bucket']
+        
         # ---- Set the intermedite files s3 bucket based on the running env id 
         Set_s3_output_bucket(self.mconfigureVals)
         

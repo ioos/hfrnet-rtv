@@ -17,6 +17,8 @@ directory:
    output: /workflow/data/output
    radial_local_dir: /home/WORKING_DIR/input/radials
    interm_local_dir: /home/WORKING_DIR/input/intermediate
+   output_s3_bucket: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+   output_intermed_s3_bucket: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
    
 databases:
    run_env: 'ao' # 'aws' 'rhw' 'ao'

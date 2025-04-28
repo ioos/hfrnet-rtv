@@ -122,6 +122,7 @@ class ConfigureVals(BaseObject):
         self.production_site = ''
         self.production_environment = ''
         self.output_s3_loc = ''
+        self.output_intermed_s3_loc = ''
 
     def to_dict(self):
         """return the dict for all attributes in the object"""
