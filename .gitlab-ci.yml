@@ -49,6 +49,8 @@ test-job:
 build-container:
   stage: build/container
   extends: .login_gitlab_cr
+  variables:
+    GIT_LFS_SKIP_SMUDGE: "0"
   script:
     - |
       if [[ -n "$CI_COMMIT_TAG" ]]; then
