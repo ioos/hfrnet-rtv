@@ -30,6 +30,13 @@ from hfrnet.utils_funcs.utility import setup_log_filename
 
 _log = logging.getLogger()
 
+def update_nested_dict(d, key, value):
+	for k, v in d.items():
+		if isinstance(v, dict):
+			update_nested_dict(v, key, value)
+		elif k == key:
+			d[k] = value
+
 def main(my_args):
     """Command line options."""
 
@@ -44,8 +51,17 @@ def main(my_args):
     # "Handoff" is basically just a dictionary
     # allows accessing nested data as 'directory.bin'
     # rather than having my_dict['directory']['bin']
+    
     cfg = aim.Handoff(my_args.cfg)
 
+    # --------------------------------
+    #-- the call to main should include these two args
+    # python -m hfrnet.run_rtv ../test_data/config_hfr.yml" -dom ushi -res 6km
+    # --- check for args and update
+    if my_args.dom:
+        update_nested_dict(cfg.info, 'domain', my_args.dom)
+    if my_args.res:
+        update_nested_dict(cfg.info, 'resolution', my_args.res)
     # create an instance of this package Interface class.
     pkg_int = interface.Interface(cfg)
 
@@ -68,6 +84,12 @@ if __name__ == '__main__':
                         action='store_true', help="set debug log level")
     parser.add_argument("-t", "--trace", dest='trace',
                         action='store_true', help="set trace log level")
+    # --------------------------------
+    #-- the call to main should include these two args
+    # python -m hfrnet.run_rtv ../test_data/config_hfr.yml" -dom ushi -res 6km
+
+    parser.add_argument("-dom", help="the domain")
+    parser.add_argument("-res", help="the resolution")
 
     # Process arguments
     stime = datetime.now(timezone.utc)
