@@ -64,12 +64,6 @@ ao_register:
       - RULE_PATH: test_data/HFRNet-Production-Rules-glna-6km.yml
         SA_NAME: HFRNet-glna-6km
         VERSION: ${CI_COMMIT_TAG}
-      - RULE_PATH: test_data/HFRNet-Production-Rules-prvi-500m.yml
-        SA_NAME: HFRNet-prvi-500m
-        VERSION: ${CI_COMMIT_TAG}
-      - RULE_PATH: test_data/HFRNet-Production-Rules-prvi-1km.yml
-        SA_NAME: HFRNet-prvi-1km
-        VERSION: ${CI_COMMIT_TAG}
       - RULE_PATH: test_data/HFRNet-Production-Rules-prvi-2km.yml
         SA_NAME: HFRNet-prvi-2km
         VERSION: ${CI_COMMIT_TAG}
