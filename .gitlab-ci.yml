@@ -4,6 +4,7 @@ variables:
 stages:
   - pre
   - test
+  - build/container
   - release
   - register
 
@@ -30,6 +31,7 @@ include:
     ref: 'main'
     file:
       - ".gitlab-ci-template.yml"
+  - local: .gitlab-ci-ao.yml 
 
 lint-job:
   stage: test
@@ -44,51 +46,19 @@ test-job:
   script:
     - echo “No test has been created yet”
 
-release/dev:
-  stage: release
-  extends: 
-    - .login_aws_ecr
+build-container:
+  stage: build/container
+  extends: .login_gitlab_cr
   variables:
     GIT_LFS_SKIP_SMUDGE: "0"
-    AWS_PROFILE: nesdis-osgs-nccf-dev-5006
-    ENV: nesdis-nccfdev5006-pg
-    AWS_ECR_URL: 560271376700.dkr.ecr.us-east-1.amazonaws.com
-    ECR_IMAGE: ${AWS_ECR_URL}/ao-hfrnet
-  id_tokens: !reference [.get_token]
   script:
-    - docker build -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} -f Dockerfile .
-    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
-    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} ${ECR_IMAGE}:${CI_COMMIT_TAG}
-    - docker push ${ECR_IMAGE}:${CI_COMMIT_TAG}
-  rules:
-    - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+$/'
-
-register/dev:
-  stage: register
-  image: "registry.services.nesdis.noaa.gov/product-generation/algorithm-orchestration/ao/libraries/ao-ci-tools/tf-ci:latest"
-  id_tokens: !reference [.get_token]
-  variables:
-    ENV: nesdis-nccfdev5006-pg
-    AWS_ECR_URL: 560271376700.dkr.ecr.us-east-1.amazonaws.com
-    ECR_IMAGE: ${AWS_ECR_URL}/ao-hfrnet
-    AWS_PROFILE: nesdis-osgs-nccf-dev-5006
-    IMAGE_LOC: $ECR_IMAGE:$CI_COMMIT_TAG
-  parallel:
-    matrix:
-    - ALGORITHM_NAME: HFRNet
-      PR_YAML: test_data/HFRNet-Production-Rules.yml
-  before_script:
-    - !reference [.set_token]
-  script:
-    - pip install ao_register --index-url https://gitlab-ci-token:${CI_JOB_TOKEN}@git.services.nesdis.noaa.gov/api/v4/projects/10095/packages/pypi/simple
     - |
-      ao_register CREATE -v \
-      --sa_name $ALGORITHM_NAME \
-      --version $CI_COMMIT_TAG \
-      --rule_file $PR_YAML \
-      --container_location $IMAGE_LOC \
-      --artifacts_location None \
-      --env $ENV \
-      --rule_bucket ${ENV}-ao-algorithm-shared
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+      else
+        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+      fi
+    - docker build -t ${IMAGE} .
+    - docker push ${IMAGE}
   rules:
-    - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+$/'
+  - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+.*/'
