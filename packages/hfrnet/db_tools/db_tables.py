@@ -652,7 +652,7 @@ def record_output_files(configObj, file_name, process_name):
 				_log.fatal(msg)
 		# ---- Add the intermediate file to the DB table
 		record_pars["name"] = f"'{file_name}'"
-		record_pars["dir"] = f"'{configObj.output_s3_loc}/HFRNet/test'"
+		record_pars["dir"] = f"'{configObj.output_s3_loc}/HFRNet/{configObj.domain}/{configObj.resolution}/{process_name}'"
 		# Create a string of the keys
 		keys_str = ', '.join(record_pars.keys())
 		# Create a string of the values

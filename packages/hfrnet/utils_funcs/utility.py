@@ -651,8 +651,23 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     _log.info(f"\n Finished download_file from s3 {file_name} \n")
     return newfpath
     
-    
-def copy_file_to_s3(s3_loc, file_name, configObj, time):
+def get_s3_directory_path(time, process):
+    year = time.year
+    month = time.month
+    day = time.day
+    dir_path = ''
+    if process == 'rtv':
+        dir_path = f'hfrtv/{year}/{month}/{day}'
+    if process == 'stc':
+        dir_path = f'hfrtv/{year}/{month}/{day}/averages'
+    if process == 'monthly':
+        dir_path = f'hfrtv/{year}/{month}/averages'
+    if process == 'annual':
+        dir_path = f'hfrtv/{year}/averages'
+
+    return dir_path
+        
+def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
     """    
     Copy the output file with metadata to S3 Results bucket
     """
@@ -669,7 +684,10 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time):
             "Date": f"{time}"
         }
     }
-    file_key = f"HFRNet/{configObj.domain}/{configObj.resolution}/{file_name.name}"
+    
+    dir_path = get_s3_directory_path(time, process)
+    dir_path = f"HFRNet/{configObj.domain}/{configObj.resolution}/{process}"
+    file_key = f"{dir_path}/{file_name.name}"
     
     _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
         f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")
