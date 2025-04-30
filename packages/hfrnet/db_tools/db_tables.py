@@ -651,7 +651,8 @@ def record_output_files(configObj, file_name, process_name):
 						f", Can't delete the record from the DB")
 				_log.fatal(msg)
 		# ---- Add the intermediate file to the DB table
-		record_pars["name"] = f"'{file_name}'" ; dir_path = get_s3_directory_path(datetime.strptime(stime, constsHFR.DATETIME_FORMAT), process_name, configObj)
+		record_pars["name"] = f"'{file_name}'" ;
+		dir_path = get_s3_directory_path(datetime.strptime(stime, constsHFR.DATETIME_FORMAT), process_name, configObj)
 		record_pars["dir"] = f"'{configObj.output_s3_loc}/{dir_path}'"
 		# Create a string of the keys
 		keys_str = ', '.join(record_pars.keys())
