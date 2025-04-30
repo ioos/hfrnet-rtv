@@ -18,8 +18,11 @@ RIGHT_ANGLE = 90
 rds_CERTIFICATE_URL = 'https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem'
 docker_CERTIFICATE_PATH = '/tmp/us-east-1-bundle.pem'
 PRODUCT_SHORT_NAMES = {"rtv": "HFRNet_Hourly",
+                       "rtv-intermed": "HFRNet_Hourly_Intermediate",
                        "stc": "HFRNet_25Hour",
+                       "stc-intermed": "HFRNet_25Hour_Intermediate",
                        "monthly": "HFRNet_Monthly",
+                       "monthly-intermed": "HFRNet_Monthly_Intermediate",
                        "annual": "HFRNet_Annual"
                        }
 

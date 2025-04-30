@@ -677,6 +677,14 @@ def get_s3_directory_path(time, process, configObj):
         dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}'
     if process == 'annual':
         dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}'
+        
+    #intermediate processes
+    if process == 'rtv-intermed':
+        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
+    if process == 'stc-intermed':
+        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
+    if process == 'monthly-intermed':
+        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}'
 
     return dir_path
         
