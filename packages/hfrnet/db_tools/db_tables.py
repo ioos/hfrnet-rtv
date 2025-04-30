@@ -1,10 +1,10 @@
 import logging
 from hfrnet.utils_funcs.lib_rtv import DatabaseError, RtvProcess
 from hfrnet.db_tools.db_manager import db_manager
-from datetime import timedelta, timezone
+from datetime import timedelta, timezone, datetime
 from decimal import Decimal
 from hfrnet.utils_funcs import constsHFR
-
+from hfrnet.utils_funcs.utility import get_s3_directory_path
 
 
 _log = logging.getLogger()
@@ -651,8 +651,8 @@ def record_output_files(configObj, file_name, process_name):
 						f", Can't delete the record from the DB")
 				_log.fatal(msg)
 		# ---- Add the intermediate file to the DB table
-		record_pars["name"] = f"'{file_name}'"
-		record_pars["dir"] = f"'{configObj.output_s3_loc}/HFRNet/{configObj.domain}/{configObj.resolution}/{process_name}'"
+		record_pars["name"] = f"'{file_name}'" ; dir_path = get_s3_directory_path(datetime.strptime(stime, constsHFR.DATETIME_FORMAT), process_name, configObj)
+		record_pars["dir"] = f"'{configObj.output_s3_loc}/{dir_path}'"
 		# Create a string of the keys
 		keys_str = ', '.join(record_pars.keys())
 		# Create a string of the values

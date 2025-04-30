@@ -17,7 +17,6 @@ import boto3
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
-from hfrnet.db_tools.db_tables import get_state_time
 from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
@@ -74,6 +73,7 @@ def get_file_stime(filen):
         return convert_time(result)
     else:
         return current_time()
+    
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
     def __getattr__(self, key):
@@ -523,6 +523,8 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
     else:#NRT
 
+        from hfrnet.db_tools.db_tables import get_state_time
+        
         #have to get state from database to see if it's already been done
         state_time = get_state_time(configObj, rtvProcessObj.name.lower())
 
@@ -647,23 +649,34 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     
     newfpath = f"{dir_dest}/{file_name}"
     _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
-    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
-    _log.info(f"\n Finished download_file from s3 {file_name} \n")
+    try:
+        s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+        _log.info(f"\n Finished download_file from s3 {file_name} \n")
+    except Exception as exc:
+        msg = f"ERROR: Could not download file from s3: {file_key}/{file_name}; {exc}"
+        _log.error(msg)
+        
     return newfpath
     
-def get_s3_directory_path(time, process):
+def get_s3_directory_path(time, process, configObj):
+    """
+        Set the s3 output directory structure
+    """
     year = time.year
     month = time.month
     day = time.day
+    domain = configObj.domain
+    res = configObj.resolution
+    prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
     dir_path = ''
     if process == 'rtv':
-        dir_path = f'hfrtv/{year}/{month}/{day}'
+        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
     if process == 'stc':
-        dir_path = f'hfrtv/{year}/{month}/{day}/averages'
+        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
     if process == 'monthly':
-        dir_path = f'hfrtv/{year}/{month}/averages'
+        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}'
     if process == 'annual':
-        dir_path = f'hfrtv/{year}/averages'
+        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}'
 
     return dir_path
         
@@ -685,8 +698,7 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
         }
     }
     
-    dir_path = get_s3_directory_path(time, process)
-    dir_path = f"HFRNet/{configObj.domain}/{configObj.resolution}/{process}"
+    dir_path = get_s3_directory_path(time, process, configObj)
     file_key = f"{dir_path}/{file_name.name}"
     
     _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
