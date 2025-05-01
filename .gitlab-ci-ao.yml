@@ -85,6 +85,9 @@ ao_register:
       - RULE_PATH: test_data/HFRNet-Production-Rules-ushi-2km.yml
         SA_NAME: HFRNet-ushi-2km
         VERSION: ${CI_COMMIT_TAG}
+      - RULE_PATH: test_data/HFRNet-Production-Rules-ushi-6km.yml
+        SA_NAME: HFRNet-ushi-6km
+	VERSION: ${CI_COMMIT_TAG}
       - RULE_PATH: test_data/HFRNet-Production-Rules-uswc-500m.yml
         SA_NAME: HFRNet-uswc-500m
         VERSION: ${CI_COMMIT_TAG}
