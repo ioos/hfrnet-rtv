@@ -668,23 +668,13 @@ def get_s3_directory_path(time, process, configObj):
     domain = configObj.domain
     res = configObj.resolution
     prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
-    dir_path = ''
-    if process == 'rtv':
-        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
-    if process == 'stc':
-        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
-    if process == 'monthly':
-        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}/{month}'
-    if process == 'annual':
-        dir_path = f'HFRNet/{domain}/{res}/{prod_short_name}/{year}'
-        
-    #intermediate processes
-    if process == 'rtv-intermed':
-        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
-    if process == 'stc-intermed':
-        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
-    if process == 'monthly-intermed':
-        dir_path = f'HFRNet-Intermediate/{domain}/{res}/{prod_short_name}/{year}/{month}'
+    folder = ''
+    if 'intermed' not in process:
+        folder = 'HFRNet'
+    else:
+        folder = 'HFRNet-Intermediate'
+
+    dir_path = f'{folder}/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
 
     return dir_path
         
