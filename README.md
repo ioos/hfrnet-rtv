@@ -15,6 +15,11 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 - Uses submodules: Yes
 
 ### System Requirements
+- Unit Name: HFRNet
+- Clock Time: ~5 min (depends on the process)
+- Max Memory: ~15 GB
+- CPU Usage: 1 CPU
+
 ### Library Packages Required
 #### Needed in the Run Time Environment
 - __Python__: see `conda_environment.yaml
@@ -27,6 +32,7 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 
 ## Compiling the Code
 - N/A
+
 
 ## Running the Code
 Find the current Production rules in the Google Drive Folder above.
