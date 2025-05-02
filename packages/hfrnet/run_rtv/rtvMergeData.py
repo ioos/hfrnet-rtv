@@ -65,9 +65,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         _log.debug('Started history')
         return radials, U_tot
 
-
     # Merge current run with prior data
-    print("\n\n", last.keys(), last['U'], type(last), "\n\n")
     # Loop over radial datasets from previous run(s)
     for I in range(len(last['r'])):
 
@@ -112,7 +110,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
             f'{nNew} new or updated, {np.count_nonzero(osi)} unmodified from '
             'previous run(s)')
     set_history(U_tot, msg)
-    print("\n\n", U_tot.history[-1]['message'], "\n\n")
+
     msg = f'Updated history: {U_tot.history[-1]["message"]}'
     _log.info(msg)
 
