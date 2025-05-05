@@ -111,7 +111,7 @@ def rtvGetProcessTimes(configObj, rtvInfoObj, rtvProcessObj):
     _log.info(f"iTime.minute >= 30")
     for i, iTime in enumerate(t):
         if iTime.minute >= 30:
-            t[i] = (iTime + timedelta(hour=1)).replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            t[i] = (iTime + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
             _log.info(f"=== ::{i}::{t[i]}")
 
     _log.info(f"---------------------------------------------")
