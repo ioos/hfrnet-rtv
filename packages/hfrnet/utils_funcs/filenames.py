@@ -239,7 +239,7 @@ def getLtaMonthFilenames(fileLocObj, configObj, rtvProcessObj, t):
     end_time = (t.replace(day=last, hour=23, minute=59, second=59)).strftime(constsHFR.NCCF_FORMAT)[:-5]
     creation_time = current_datetime().strftime(constsHFR.NCCF_FORMAT)[:-5]
     retObj.ncfilename = (f"rtv-{domain}-{resolution}"
-                         "-month-avg_v1r0_hfr"
+                         "-mon-avg_v1r0_hfr"
                          f"_s{start_time}_e{end_time}_c{creation_time}.nc")
 
     #Input rtv file

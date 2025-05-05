@@ -99,11 +99,13 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ## Define subprocess specific parameters
     if rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['month']:
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_month_temporal_coverage)
+        min_temporal_coverage_description = 'Minimum number of days required to compute monthly statistics'
         time_bnds = [datetime(year=time.year, month=time.month, day=1).timestamp(),
                      next_month_start(time).timestamp()]
 
     elif rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['year']:
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
+        min_temporal_coverage_description = 'Minimum number of days required to compute annual statistics'
         time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
                      datetime(year=time.year+1, month=1, day=1).timestamp()]
     else:
@@ -577,8 +579,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         'Method used to compute hourly total solutions from radial velocities'
 
     varid_pp.min_temporal_coverage = min_temporal_coverage
-    varid_pp.min_temporal_coverage_description = \
-        'Minimum number of days required to compute monthly statistics'
+    varid_pp.min_temporal_coverage_description = min_temporal_coverage_description
 
     if rtvProcessObj.method == 'uwls':
         varid_pp.max_hdop = np.float32(stcLtaInfoObj.stcInfo.max_error)
