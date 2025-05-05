@@ -64,6 +64,8 @@ directory:
    output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
    radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/radials
    interm_local_dir: ''
+   output_s3_bucket: ''
+   output_intermed_s3_bucket: ''
 
 databases:
    run_env: 'rhw' # 'aws'
