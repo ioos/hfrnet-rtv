@@ -1,14 +1,14 @@
 production_rule:
-  sa_name: "HFRNet"
+  sa_name: "HFRNet-glna-6km"
   description: "Integrated Ocean Observing System (IOOS)"
-  sa_id: "IOOS-HFRNet"
-  version: "1.0.32"
+  sa_id: "IOOS-HFRNet-glna-6km"
+  version: "1.0.37"
   runtime:
     resources:
       cpu: "1"
       memory: "2Gi"
       shm: "0Ki"
-    command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml"]
+    command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml -dom glna -res 6km"]
     retry:
       limit: 2
       backoff: 5min

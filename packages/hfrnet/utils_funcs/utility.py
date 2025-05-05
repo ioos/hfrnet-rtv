@@ -17,7 +17,6 @@ import boto3
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
-from hfrnet.db_tools.db_tables import get_state_time
 from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
@@ -40,13 +39,17 @@ def Set_s3_output_bucket(mconfigureVals):
     _log.info(f'------Account {acc_id}')
     if acc_id == '560271376700': # Dev/Sandbox
         mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
     elif acc_id == '656149346314': # UAT
         mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+        mconfigurevals.output_intermed_s3_loc = mconfigureVals.output_s3_loc
     elif acc_id == '844319835141': # Prod
         mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
     
     _log.info(f"--The output_s3_loc = {mconfigureVals.output_s3_loc}")
     _log.info('----------------------')
+    
 def convert_time(time_str):
     # Remove the last digit to match the format
     time_str = time_str[:-1]
@@ -70,6 +73,7 @@ def get_file_stime(filen):
         return convert_time(result)
     else:
         return current_time()
+    
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
     def __getattr__(self, key):
@@ -519,6 +523,8 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
 
     else:#NRT
 
+        from hfrnet.db_tools.db_tables import get_state_time
+        
         #have to get state from database to see if it's already been done
         state_time = get_state_time(configObj, rtvProcessObj.name.lower())
 
@@ -643,19 +649,43 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     
     newfpath = f"{dir_dest}/{file_name}"
     _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
-    s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
-    _log.info(f"\n Finished download_file from s3 {file_name} \n\n")
+    try:
+        s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+        _log.info(f"\n Finished download_file from s3 {file_name} \n")
+    except Exception as exc:
+        msg = f"ERROR: Could not download file from s3: {file_key}/{file_name}; {exc}"
+        _log.error(msg)
+        
     return newfpath
     
-    
-def copy_file_to_s3(file_name, configObj, time):
+def get_s3_directory_path(time, process, configObj):
+    """
+        Set the s3 output directory structure
+    """
+    year = time.year
+    month = time.month
+    day = time.day
+    domain = configObj.domain
+    res = configObj.resolution
+    prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
+    folder = ''
+    if 'intermed' not in process:
+        folder = 'HFRNet'
+    else:
+        folder = 'HFRNet-Intermediate'
+
+    dir_path = f'{folder}/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
+
+    return dir_path
+        
+def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
     """    
     Copy the output file with metadata to S3 Results bucket
     """
-    _log.info(">>> s3_url={configObj.output_s3_loc}")
+    _log.info(">>> s3_url={s3_loc}")
 
-    s3_url = configObj.output_s3_loc[5:]
-    #s3_url = f"arn:aws:s3:us-east-1:{acc_id}:accesspoint/nccf-uat-pg-results-ao"
+    s3_url = s3_loc.replace('s3://', '')
+    
     s3handle = boto3.client('s3')
     ExtraArgs_dict={
         "Metadata":
@@ -665,7 +695,9 @@ def copy_file_to_s3(file_name, configObj, time):
             "Date": f"{time}"
         }
     }
-    file_key = f"HFRNet/test/{file_name.name}"
+    
+    dir_path = get_s3_directory_path(time, process, configObj)
+    file_key = f"{dir_path}/{file_name.name}"
     
     _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
         f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")

@@ -5,7 +5,7 @@ import numpy as np
 
 _log = logging.getLogger()
 
-from hfrnet.utils_funcs.utility import load_mat, set_history
+from hfrnet.utils_funcs.utility import read_total_file, set_history
 
 def rtvMergeData(fileLocObj, configObj, radials, U_tot):
     """
@@ -41,7 +41,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         else:
             # Load existing data
             try:
-                last = load_mat(fileLocObj.input_file)
+                last = read_total_file(fileLocObj.input_file)
                 msg = f'Loaded prior solutions from {fileLocObj.input_file}'
                 _log.debug(msg)
 
@@ -65,54 +65,53 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         _log.debug('Started history')
         return radials, U_tot
 
-
     # Merge current run with prior data
-
     # Loop over radial datasets from previous run(s)
-    for I in range(len(last.r)):
+    for I in range(len(last['r'])):
 
         # and look for matching datasets in the current run.
         r_network = np.array([rr.network for rr in radials])
         r_site = np.array([rr.site for rr in radials])
         r_patterntype = np.array([rr.patterntype for rr in radials])
-        siteMatch = (r_network == last.r[I].network) & \
-            (r_site == last.r[I].site) & (r_patterntype == last.r[I].patterntype)
+        
+        siteMatch = (r_network == last['r'][I]['network']) & \
+            (r_site == last['r'][I]['site']) & (r_patterntype == last['r'][I]['patterntype'])
 
         # Append the radial dataset to the current run if it hasn't already been loaded
         if not np.any(siteMatch):
             ri = len(radials) + 1
-            fields = list(last.r[I].keys())
+            fields = list(last['r'][I].keys())
 
             for J in range(len(fields)):
                 fn = fields[J]
-                radials[ri][fn] = last.r[I][fn]
+                radials[ri][fn] = last['r'][I][fn]
 
-            msg = (f'Merged radial dataset from {last.r[I].network}'
-                   f'{last.r[I].site} {last.r[I].patterntype}')
+            msg = (f'Merged radial dataset from {last["r"][I]["network"]}'
+                   f'{last["r"][I].site} {last["r"][I]["patterntype"]}')
             _log.debug(msg)
 
     # Find previous solutions that aren't being updated by new solutions
-    osi = np.isnan(U_tot.u_xvel) & np.isfinite(last.U_tot.u_xvel)
+    osi = np.isnan(U_tot.u_xvel) & np.isfinite(last['U']['u_xvel'])
 
     if np.any(osi):
-
+        
         # Keep previous solutions that aren't being updated by this run
-        U_tot.u_xvel[osi] = last.U.u_xvel[osi]
-        U_tot.v_yvel[osi] = last.U.v_yvel[osi]
-        U_tot.dopx[osi] = last.U.dopx[osi]
-        U_tot.dopy[osi] = last.U.dopy[osi]
-        U_tot.hdop[osi] = last.U.hdop[osi]
-        U_tot.nRads[osi] = last.U.nRads[osi]
-        U_tot.nSites[osi] = last.U.nSites[osi]
+        U_tot.u_xvel[osi] = last['U']['u_xvel'][osi]
+        U_tot.v_yvel[osi] = last['U']['v_yvel'][osi]
+        U_tot.dopx[osi] = last['U']['dopx'][osi]
+        U_tot.dopy[osi] = last['U']['dopy'][osi]
+        U_tot.hdop[osi] = last['U']['hdop'][osi]
+        U_tot.nRads[osi] = last['U']['nRads'][osi]
+        U_tot.nSites[osi] = last['U']['nSites'][osi]
 
     # Append to history
-    U_tot.history = last.U.history
+    U_tot.history = last['U']['history']
     msg =  (f'Saving {np.count_nonzero(np.isfinite(U_tot.u_xvel))} solutions; '
             f'{nNew} new or updated, {np.count_nonzero(osi)} unmodified from '
             'previous run(s)')
     set_history(U_tot, msg)
 
-    msg = f'Updated history: {U_tot.history[-1].message}'
+    msg = f'Updated history: {U_tot.history[-1]["message"]}'
     _log.info(msg)
 
     return radials, U_tot

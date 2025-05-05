@@ -169,16 +169,16 @@ def getRtvFilenames(fileLocObj, configObj, rtvProcessObj, t):
                  f"_s{start_time}_e{end_time}_c{creation_time}.nc")
     retObj.output_ncfile = Path(retObj.output_dir, name_nccf)
 
+    retObj.input_file = None
+    
     #intermediate input
-    #get_database_interm_file(retObj, configObj, t, 'rtv')
+    get_database_interm_file(retObj, configObj, t, 'rtv')
     
     #search local if not found in database
-    #if retObj.input_file is None:
-     #   tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
-     #   retObj.input_file = tmp_file
-     
-    retObj.input_file = None
-
+    if retObj.input_file is None:
+        tmp_file = find_intermediate_file(fileLocObj.interm_local_dir, f"*{domain}*{resolution}*intermediate_s{start_time}_e{end_time}*","nc")
+        retObj.input_file = tmp_file
+    
     # Intermediate NetCDF
     retObj.intermed_filename = (f"rtv-{domain}-{resolution}-{method}_v1r0_hfr_intermediate"
                                 f"_s{start_time}_e{end_time}_c{creation_time}.nc")

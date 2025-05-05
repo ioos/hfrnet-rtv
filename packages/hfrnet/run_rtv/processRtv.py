@@ -18,7 +18,7 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.utils_funcs.utility import (load_land, load_grid, ltaRunConfig,
                                         current_time, current_datetime,
                                         copy_file_to_s3)
-from hfrnet.db_tools.db_tables import update_state_time
+from hfrnet.db_tools.db_tables import update_state_time, record_output_files
 
 _log = logging.getLogger()
 
@@ -152,8 +152,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 _log.info(f"--- saveNetcdf:{fileNameList.intermed_filepath}::---")
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
                 _log.info("Saving stc total intermediate files in netcdf format")
-                 #copy intermediate file to s3 bucket
-                copy_file_to_s3(fileNameList.intermed_filepath, configObj, center_time)
+                #copy intermediate file to s3 bucket
+                copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, center_time, 'stc-intermed')
 
                 if avgObj is not None:
                     avgObj.land = land
@@ -162,7 +162,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcInfoObj,
                                   process, center_time, avgObj, inputs)
                     #copy file to s3 bucket
-                    copy_file_to_s3(fileNameList.output_ncfile, configObj, center_time)
+                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, center_time, 'stc')
                 else:
                     msg = f"Could not save average file because average was not calculated"
                     _log.error(msg)
@@ -170,7 +170,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 stcTime = current_time() # time in constsHFR.DATETIME_FORMAT
                 _log.info(f"Update the process {process.name} time {stcTime} in the state table")
                 update_state_time(configObj, process.name.casefold(), stcTime)
-
+                record_output_files(configObj, fileNameList.intermed_filename, process.name.casefold(), 'stc-intermed')
+                
                 stcTime = current_datetime() # datetime obj
                 msg = "\n" + "="*80 + f"\nSTC execution time:  {(stcTime - stime)}\n" + "="*80
                 _log.info(msg)
@@ -213,8 +214,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                               "format")
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
                     #copy intermediate file to s3 bucket
-                    copy_file_to_s3(fileNameList.intermed_filepath, configObj, iTime)
-
+                    copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, iTime, 'monthly-intermed')
+                    record_output_files(configObj, fileNameList.intermed_filename, process.name.casefold(), 'monthly-intermed')
+                    
                     #save final file
                     _log.info("------------- Saving intermediate monthly total files "
                               "in netcdf format")
@@ -226,7 +228,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                       fileNameList, stcLtaInfoObj,
                                       process, iTime, avgObj, inputs)
                         #copy file to s3 bucket
-                        copy_file_to_s3(fileNameList.output_ncfile, configObj, iTime)
+                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, 'monthly')
                     else:
                         _log.warning("Could not save monthly average file")
                     
@@ -265,7 +267,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                       fileNameList, stcLtaInfoObj,
                                       process, iTime, avgObjYear, inputs)
                         #copy file to s3 bucket
-                        copy_file_to_s3(fileNameList.output_ncfile, configObj, iTime)
+                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, 'annual')
                     else:
                         _log.warning("Could not save yearly average file")
                         

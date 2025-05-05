@@ -137,8 +137,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
             #copy file to the s3 bucket
-            copy_file_to_s3(fileNameList.output_ncfile, configObj, CalcTime)
-
+            copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, CalcTime, 'rtv')
 
             _log.info(f"Saving uwls total intermediate files in netcdf format")
             #save intermediate file (greater precision)
@@ -150,11 +149,11 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                             'r': [r.to_dict() for r in radials]}
             saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
             #copy intermediate file to S3 bucket
-            copy_file_to_s3(fileNameList.intermed_filepath, configObj, CalcTime)
+            copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, CalcTime, 'rtv-intermed')
 
             _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
             update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)
-            record_output_files(configObj, fileNameList.intermed_filename, rtvProcessObj.name.casefold())
+            record_output_files(configObj, fileNameList.intermed_filename, rtvProcessObj.name.casefold(), 'rtv-intermed')
 
         else:
             _log.info( 'No total solutions below netcdf hdop threshold' )
