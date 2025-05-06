@@ -30,6 +30,20 @@ class db_manager:
 
     def connect(self):
         _log.info(f"-- Running in {self.dbConfig.run_env }")
+         
+        if self.dbConfig.run_env == 'ao':
+            session = boto3.Session()
+        else:
+            session = boto3.Session(region_name=self.dbConfig.region)
+        client = session.client('rds')
+            
+        # Generate the authentication token
+        token = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
+                                              Port=self.dbConfig.port,
+                                              DBUsername=self.dbConfig.user,
+                                              Region=self.dbConfig.region)
+
+        self.dbConfig.password = token
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux

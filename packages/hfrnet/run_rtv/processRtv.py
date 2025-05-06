@@ -184,7 +184,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
-                
+                doYearly = True 
                 if doMonthly:
 
                     #for execution time logging
