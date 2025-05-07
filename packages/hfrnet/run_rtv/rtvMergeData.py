@@ -90,7 +90,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
             radials.append(newRadial)
 
             msg = (f'Merged radial dataset from {last["r"][I]["network"]}'
-                   f'{last["r"][I].site} {last["r"][I]["patterntype"]}')
+                   f'{last["r"][I]["site"]} {last["r"][I]["patterntype"]}')
             _log.debug(msg)
 
     # Find previous solutions that aren't being updated by new solutions
