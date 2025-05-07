@@ -30,11 +30,11 @@ class db_manager:
 
     def generate_token(self):
         """
-           Use IAM database authentication when your application requires fewer than 200 new IAM database authentication connections per second. 
-           The database engines that work with Amazon RDS don't impose any limits on authentication attempts per second. However, when you use IAM
-           database authentication, your application must generate an authentication token. Your application then uses that token to connect to the 
-           DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database authentication can
-           cause connection throttling.
+        Use IAM database authentication when your application requires fewer than 200 new IAM database authentication connections per second. 
+        The database engines that work with Amazon RDS don't impose any limits on authentication attempts per second. However, when you use
+        IAM database authentication, your application must generate an authentication token. Your application then uses that token to connect
+        to the DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database 
+        authentication can cause connection throttling.
         """
         
         if self.dbConfig.run_env == 'ao':
