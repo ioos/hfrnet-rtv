@@ -50,7 +50,7 @@ class db_manager:
                                                                Region=self.dbConfig.region)
         _log.info("Generating --> token = client.generate_db_auth_token")
         _log.info("======= token =================================")
-        _log.info(f"{token}")
+        _log.info(f"{self.dbConfig.password}")
         _log.info("========================================")
 
     def connect(self):
