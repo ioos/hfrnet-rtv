@@ -2,7 +2,7 @@ production_rule:
   sa_name: "HFRNet-gak-2km"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet-gak-2km"
-  version: "1.0.39"
+  version: "1.0.40"
   runtime:
     resources:
       cpu: "1"
