@@ -94,7 +94,10 @@ if __name__ == '__main__':
     # Process arguments
     stime = datetime.now(timezone.utc)
     args = parser.parse_args()
-    main(args)
+    try:
+        main(args)
+    except Exception as exp:
+        _log.error(f"Error in main: {exp}")
     etime = datetime.now(timezone.utc)
     print('===========================================')
     print('===========================================')

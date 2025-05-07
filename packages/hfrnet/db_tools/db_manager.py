@@ -28,8 +28,36 @@ class db_manager:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def generate_token(self):
+        """
+        Use IAM database authentication when your application requires fewer than 200 new IAM database authentication connections per second. 
+        The database engines that work with Amazon RDS don't impose any limits on authentication attempts per second. However, when you use
+        IAM database authentication, your application must generate an authentication token. Your application then uses that token to connect
+        to the DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database 
+        authentication can cause connection throttling.
+        """
+        
+        if self.dbConfig.run_env == 'ao':
+            session = boto3.Session()
+        else:
+            session = boto3.Session(region_name=self.dbConfig.region)
+        client = session.client('rds')
+
+        # Generate the authentication token
+        self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
+                                                               Port=self.dbConfig.port,
+                                                               DBUsername=self.dbConfig.user,
+                                                               Region=self.dbConfig.region)
+        _log.info("Generating --> token = client.generate_db_auth_token")
+        _log.info("======= token =================================")
+        _log.info(f"{token}")
+        _log.info("========================================")
+
     def connect(self):
         _log.info(f"-- Running in {self.dbConfig.run_env }")
+
+        self.generate_token()
+
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux
@@ -180,24 +208,7 @@ def set_db_info( config, configObj):
     _log.info(f"---------------------------------------------")
     _log.info(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
     os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
-    REGION = configObj.dbObject.region
-    
-    if configObj.dbObject.run_env == 'ao':
-        session = boto3.Session()
-    else:
-        session = boto3.Session(region_name=REGION)
-    client = session.client('rds')
-    
-    # Generate the authentication token
-    token = client.generate_db_auth_token(DBHostname=configObj.dbObject.host,
-                                        Port=configObj.dbObject.port,
-                                        DBUsername=configObj.dbObject.user,
-                                        Region=REGION)
 
-    configObj.dbObject.password = token
-    _log.info("Generating --> token = client.generate_db_auth_token")
-    _log.info("======= token =================================")
-    _log.info(f"{token}")
     _log.info("========================================")
     _log.info(f" Create tables,inter_files,lock_process  if not exist")
     create_db_table_inter_files(configObj)
