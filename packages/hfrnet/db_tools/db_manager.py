@@ -28,22 +28,24 @@ class db_manager:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-    def connect(self):
-        _log.info(f"-- Running in {self.dbConfig.run_env }")
-         
+    def generate_token(self):
         if self.dbConfig.run_env == 'ao':
             session = boto3.Session()
         else:
             session = boto3.Session(region_name=self.dbConfig.region)
         client = session.client('rds')
-            
-        # Generate the authentication token
-        token = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
-                                              Port=self.dbConfig.port,
-                                              DBUsername=self.dbConfig.user,
-                                              Region=self.dbConfig.region)
 
-        self.dbConfig.password = token
+        # Generate the authentication token
+        self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
+                                                               Port=self.dbConfig.port,
+                                                               DBUsername=self.dbConfig.user,
+                                                               Region=self.dbConfig.region)
+
+    def connect(self):
+        _log.info(f"-- Running in {self.dbConfig.run_env }")
+
+        self.generate_token()
+
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux
