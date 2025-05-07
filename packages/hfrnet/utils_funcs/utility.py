@@ -463,6 +463,18 @@ def setup_log_filename(my_pkgint, added_name=""):
 
     return handler
 
+def resolution_spaced(resolution):
+    """
+    Need to put a space in the <resolution> for metadata
+    """
+    res_spaced = ""
+    if "km" in resolution:
+        res_spaced = resolution.replace("km", " km")
+    else:
+        res_spaced = resolution.replace("m", " m")
+
+    return res_spaced
+
 def rtvNcid(metadataObj, configObj, rtvProcessObj, currTime):
     """
     %    Generates NetCDF ACDD ID attribute value
@@ -600,13 +612,13 @@ def get_timestamp_from_filename(filename):
     start = re.search(r'_s(?P<start>\d*)_', filename)
     if start is not None:
         start = start.group(1)
-        start = f"{start[:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:{start[10:12]}:{start[12:14]}z"
+        start = f"{start[:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:{start[10:12]}:{start[12:14]}Z"
     else:
         start = ""
     end = re.search(r'_e(?P<end>\d*)_', filename)
     if end is not None:
         end = end.group(1)
-        end = f"{end[:4]}-{end[4:6]}-{end[6:8]}T{end[8:10]}:{end[10:12]}:{end[12:14]}z"
+        end = f"{end[:4]}-{end[4:6]}-{end[6:8]}T{end[8:10]}:{end[10:12]}:{end[12:14]}Z"
     else:
         end = ""
     return start, end
