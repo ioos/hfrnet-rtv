@@ -34,8 +34,8 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
 
         if configObj.reprocess:
             # Warning if we're reprocessing
-            msg = (f'Total mat-file {fileLocObj.input_file} exists. Should '
-                      'have been removed to ensure consistent results.')
+            msg = (f'Total file {fileLocObj.input_file} exists. Should '
+                   'have been removed to ensure consistent results.')
             _log.warning(msg)
 
         else:
@@ -73,7 +73,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         r_network = np.array([rr.network for rr in radials])
         r_site = np.array([rr.site for rr in radials])
         r_patterntype = np.array([rr.patterntype for rr in radials])
-        
+
         siteMatch = (r_network == last['r'][I]['network']) & \
             (r_site == last['r'][I]['site']) & (r_patterntype == last['r'][I]['patterntype'])
 
