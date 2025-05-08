@@ -65,7 +65,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         set_history(U_tot, f'Saving {nNew} new solutions')
         _log.debug('Started history')
         return radials, U_tot
-    
+
     # Merge current run with prior data
     # Loop over radial datasets from previous run(s)
     for I in range(len(last['r'])):
@@ -85,6 +85,8 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
             newRadial = RadialInfo()
             
             for field in fields:
+                if field.casefold() == 'file' or field.casefold() == 'dir':
+                    continue
                 setattr(newRadial, field, last['r'][I][field])
             
             radials.append(newRadial)
