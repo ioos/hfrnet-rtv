@@ -35,22 +35,16 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 
 
 ## Running the Code
-Find the current Production rules in the Google Drive Folder above.
+Find the current Production rules in folder `test_data/` of the code base.
 
 ### HFRNet:
-#### Command Line Interface
-```bash
-conda activate hfrnet_env
-export PYTHONPATH=/path/to/repo/packages
-python -m hfrnet.run_rtv /path/to/config.yaml
-```
 
 #### Config Yaml
 ```yaml
 processing:
    domain: ushi
    resolution: 6km
-   batch_processing: 'true'
+   batch_processing: false
 time:
    start_date: '202301040000000'
    end_date:   '202301040000000'
@@ -59,24 +53,25 @@ production:
    environment: INT
    version: v1r0
 directory:
-   algorithm_dir: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet
-   log: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   output: /data/home004/milap.patel/Projects/HFR/hfrnet_nccfgit/hfrnet/packages/test
-   radial_local_dir: /data/smcd12/ASSISTT_DATA/HFRnet/SFTP/radials
-   interm_local_dir: ''
-   output_s3_bucket: ''
-   output_intermed_s3_bucket: ''
-
+   algorithm_dir: /home/WORKING_DIR/hfrnet
+            #--- Do not edit this. It must be done in order for AO to move anything outside the AO sys
+            #--- default path is /workflow/data/
+   log: /workflow/data/logs
+   #-- removing sending the output to AO to move it the s3 bucket, the algo is doing it
+   output: /home/WORKING_DIR/output
+   radial_local_dir: /home/WORKING_DIR/input/radials
+   interm_local_dir: /home/WORKING_DIR/input/intermediate
+   output_s3_bucket: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+   output_intermed_s3_bucket: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+   
 databases:
-   run_env: 'rhw' # 'aws'
-   user: 'rt'
-   host: ''
-   port: 0
+   run_env: 'ao' # 'aws' 'rhw' 'ao'
+   user: 'hfrnet'
+   host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
+   port: 3306
    password: 'token'
-   ssl_ca: './us-east-1-bundle.pem'
-   ssl_verify_identity: True
-   ssl_verify_cert: True
-   auth_plugin_map: {'mysql_clear_password': None}
+   ssl_ca: '/tmp/us-east-1-bundle.pem' #'/home/ec2-user/environment/us-east-1-bundle.pem'
+   region:  'us-east-1'
    config_dbname: 'rtvproc'
    radial_dbname: 'hfradar'
 ```
@@ -97,20 +92,100 @@ All output files will be printed to the output.txt file, which is just a dump of
 | intermediate netCDF files|  | Intermediate |
 
 
-## Test Cases
-A full suite of test cases can be found at `/data/smcd12/ASSISTT_DATA/HFRnet/test_cases`.
-There are different directories for each release version; please use the most current one.  Copy the files in the `input/` directory to your working directory and then compare your outputs with those found in the `output/` directory.  Do not run your test directly in these directories.
+#### Run on AO
+##### Step 1: 
+Create a Tag in the gitlab with all the changes. Make sure the field `version: "1.0.41"` of the the production rules yaml has the same value as the Tag you created, e.g., 1.0.41.
 
-| Test Case Path | Purpose | Config YAML specifications |
-| --- | --- | --- |
-| USHI_20230104 | Test case for USHI domain 2023/01/04 | test_data/config_hfr.yaml |
+##### Step 2:
+Submit a run request here:
 
+https://nesdis-nccfdev5006-pg-ao-user.s3.amazonaws.com/index.html
 
-*(Because of markdown limitations, show configuration needs in key=value pair notation instead of yaml notation.)*
+Create an account if necessary. In the request page, update the configuration in the second text box, e.g., change the `request_name`, `sa_name` `run_start_time` and `run_end_time` as needed
+```yaml
+{
+ "request_name": "ushi_6km",
+ "sa_name": "HFRNet-ushi-6km",
+ "version": "1.0.41",
+ "run_mode": "RT",
+ "run_start_time": "2025-05-01T14:30:00",
+ "run_end_time": "2025-05-01T19:00:00"
+}
+```
+
+And this is the example production rule for `ushi-6km`
+```yaml
+production_rule:
+  sa_name: "HFRNet-ushi-6km"
+  description: "Integrated Ocean Observing System (IOOS)"
+  sa_id: "IOOS-HFRNet-ushi-6km"
+  version: "1.0.41"
+  runtime:
+    resources:
+      cpu: "1"
+      memory: "2Gi"
+      shm: "0Ki"
+    command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml -dom ushi -res 6km"]
+    retry:
+      limit: 2
+      backoff: 5min
+  #HFRNet will run every 30 minutes and will check for any updated radial files and run processes as necessary
+  cron:
+    schedule: "*/30 * * * *"
+    default_search:
+      ordered: False
+      wait_for_file_interval: 30min
+      maximum_observation_gap_interval: 30min
+
+  outputs:
+  - catalog_name: HFRNet
+    copy_location: hfrnet/output
+    file_pattern:
+      regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+    search:
+      type: "system.temporal"
+      temporal_search_boundaries:
+        left_offset: -20min
+        right_offset: 15min
+    metadata:
+      create:
+        format: '%Y%m%d%H%M%S%f'
+        type: datetime
+        value:
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+          from: "filename"
+      end:
+        format: '%Y%m%d%H%M%S%f'
+        type: datetime
+        value:
+          from: "filename"
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+      start:
+        type: datetime
+        format: '%Y%m%d%H%M%S%f'
+        value:
+          from: "filename"
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+      domain:
+        type: string
+        value:
+          from: "filename"
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+      resolution:
+        type: string
+        value:
+          from: "filename"
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+      product_name:
+        type: string
+        value:
+          from: "filename"
+          regex: 'rtv-(?P<domain>\w+)-(?P<resolution>\w+)-(?P<product_name>[\w-]+)_v1r0_hfr_s(?P<start>\d{15})_e(?P<end>\d{15})_c(?P<create>\d{15}).nc'
+```
 
 ## Dependencies
 ### Upstream
-- N/A
+- NCCF radial files ingest team
 
 ### Downstream
 - N/A
