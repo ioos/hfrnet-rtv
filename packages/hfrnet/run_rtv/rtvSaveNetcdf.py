@@ -532,7 +532,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # ======================================
     # prod mon variable Number of solution points
     varid_prodmon = ncid.createVariable('prod_mon', 'u4')
-    varid_prodmon.assignValue(np.uint32(nSol_points))
+    varid_prodmon.assignValue(np.int(nSol_points))
     varid_prodmon.long_name = 'Total (actual) number of retrievals'
     # ======================================
     
