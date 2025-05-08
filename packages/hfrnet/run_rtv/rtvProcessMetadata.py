@@ -168,8 +168,8 @@ def getStcMetadata(processObj, configObj, metaDataObj):
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
-    metaDataObj.processing_level = ('Near real-time dataset with automated data '
-                                    'acquisition and processing quality control')
+    metaDataObj.processing_level = ('NOAA Level 3. Near real-time dataset with automated '
+                                    'data acquisition and processing quality control.')
 
     # References (OPTIONAL)
     metaDataObj.references = ('Terrill, E. et al., 2006. Data Management and Real-time '
@@ -267,9 +267,9 @@ def getLtaMetadata(processObj, configObj, metaDataObj):
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
-    metaDataObj.processing_level = ('Near real-time dataset with automated data '
-                                    'acquisition and processing quality control')
-
+    metaDataObj.processing_level = ('NOAA Level 3. Near real-time dataset with automated '
+                                    'data acquisition and processing quality control.')
+    
     # References (OPTIONAL)
     metaDataObj.references = ('Terrill, E. et al., 2006. Data Management and Real-time '
                               'Distribution in the HF-Radar National Network. '

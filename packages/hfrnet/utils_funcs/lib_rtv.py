@@ -219,7 +219,6 @@ class RadialInfo(BaseObject):
         self.speed = []
         self.heading = []
 
-
 class Metadata(BaseObject):
     """
        Metadata info
@@ -253,7 +252,7 @@ class Metadata(BaseObject):
         self.publisher_email = "espcoperations@noaa.gov"
         self.publisher_type = "institution"
         self.publisher_name = "DOC/NOAA/NESDIS/OSPO > Office of Satellite and Product Operations, NESDIS, NOAA, U.S. Department of Commerce."
-        self.publiser_url = "http://www.ospo.noaa.gov/"
+        self.publisher_url = "http://www.ospo.noaa.gov"
         self.history = ""
 
 class SetupError(Exception):

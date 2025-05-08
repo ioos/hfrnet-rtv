@@ -6,6 +6,7 @@ import numpy as np
 _log = logging.getLogger()
 
 from hfrnet.utils_funcs.utility import read_total_file, set_history
+from hfrnet.utils_funcs.lib_rtv import RadialInfo
 
 def rtvMergeData(fileLocObj, configObj, radials, U_tot):
     """
@@ -76,18 +77,22 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
 
         siteMatch = (r_network == last['r'][I]['network']) & \
             (r_site == last['r'][I]['site']) & (r_patterntype == last['r'][I]['patterntype'])
-
+        
         # Append the radial dataset to the current run if it hasn't already been loaded
         if not np.any(siteMatch):
-            ri = len(radials) + 1
+            
             fields = list(last['r'][I].keys())
-
-            for J in range(len(fields)):
-                fn = fields[J]
-                radials[ri][fn] = last['r'][I][fn]
+            newRadial = RadialInfo()
+            
+            for field in fields:
+                if field.casefold() == 'file' or field.casefold() == 'dir':
+                    continue
+                setattr(newRadial, field, last['r'][I][field])
+            
+            radials.append(newRadial)
 
             msg = (f'Merged radial dataset from {last["r"][I]["network"]}'
-                   f'{last["r"][I].site} {last["r"][I]["patterntype"]}')
+                   f'{last["r"][I]["site"]} {last["r"][I]["patterntype"]}')
             _log.debug(msg)
 
     # Find previous solutions that aren't being updated by new solutions

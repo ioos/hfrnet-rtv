@@ -8,7 +8,7 @@ import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, set_history, rtvNcid,
                                         current_datetime, get_timestamp_from_filename,
-                                        wrap_text)
+                                        wrap_text, resolution_spaced)
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
@@ -261,11 +261,11 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(U.grid.y_range[0])
     ncid.geospatial_lat_max = np.float32(U.grid.y_range[1])
-    ncid.geospatial_lat_resolution = configObj.resolution
+    ncid.geospatial_lat_resolution = resolution_spaced(configObj.resolution)
     ncid.geospatial_lat_units = 'degrees_north'
     ncid.geospatial_lon_min = np.float32(U.grid.x_range[0])
     ncid.geospatial_lon_max = np.float32(U.grid.x_range[1])
-    ncid.geospatial_lon_resolution = configObj.resolution
+    ncid.geospatial_lon_resolution = resolution_spaced(configObj.resolution)
     ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
@@ -319,7 +319,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.publisher_email = metaDataObj.publisher_email
     ncid.publisher_type = metaDataObj.publisher_type
     ncid.publisher_name = metaDataObj.publisher_name
-    ncid.publisher_url = metaDataObj.publiser_url
+    ncid.publisher_url = metaDataObj.publisher_url
 
     ## Define Data Variables & Add Attributes
 
