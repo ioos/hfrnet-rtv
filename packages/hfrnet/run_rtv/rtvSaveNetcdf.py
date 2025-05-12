@@ -337,6 +337,7 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
                                   shuffle=shuffle)
     varid_z.standard_name = 'depth'
     varid_z.units = 'm'
+    varid_z.positive = 'down'
     varid_z.bounds = 'depth_bnds'
     zComment = 'Nominal depth (and corresponding bounds) based on contributing radars'
     varid_z.comment = wrap_text(zComment)
