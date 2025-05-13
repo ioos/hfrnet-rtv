@@ -226,14 +226,17 @@ class Interface(aim.Interface):
 
         self.set_file_locations(self.fileLocObj)
 
-        processStatus = processRtv.processRtv(self.mconfigureVals,
-                                            self.siteInfoObj,
-                                            self.fileLocObj,
-                                            process_list,
-                                            self.mrtvInfo,
-                                            self.mstcLtaInfo,
-                                            self.compTotObj)
-
+        try:
+            processRtv.processRtv(self.mconfigureVals,
+                                  self.siteInfoObj,
+                                  self.fileLocObj,
+                                  process_list,
+                                  self.mrtvInfo,
+                                  self.mstcLtaInfo,
+                                  self.compTotObj)
+        except Exeption as exp:
+            _log.error(f"Could did not run procesRtv: {exp}")
+            
         self.output_info['status'] = "good"
 
     def reformat(self):
