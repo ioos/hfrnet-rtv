@@ -234,7 +234,7 @@ class Interface(aim.Interface):
                                   self.mrtvInfo,
                                   self.mstcLtaInfo,
                                   self.compTotObj)
-        except Exeption as exp:
+        except Exception as exp:
             _log.error(f"Could did not run procesRtv: {exp}")
             
         self.output_info['status'] = "good"
