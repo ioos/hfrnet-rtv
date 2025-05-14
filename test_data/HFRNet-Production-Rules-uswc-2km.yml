@@ -2,11 +2,11 @@ production_rule:
   sa_name: "HFRNet-uswc-2km"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet-uswc-2km"
-  version: "1.0.43"
+  version: "1.0.44"
   runtime:
     resources:
       cpu: "1"
-      memory: "2Gi"
+      memory: "3Gi"
       shm: "0Ki"
     command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml -dom uswc -res 2km"]
     retry:
