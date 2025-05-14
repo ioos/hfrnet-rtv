@@ -6,7 +6,7 @@ production_rule:
   runtime:
     resources:
       cpu: "1"
-      memory: "5Gi"
+      memory: "7Gi"
       shm: "0Ki"
     command: ["/bin/bash", "-c", "cd hfrnet/packages  && python -m hfrnet.run_rtv ../test_data/config_hfr.yml -dom usegc -res 1km"]
     retry:
