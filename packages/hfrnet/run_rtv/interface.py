@@ -13,22 +13,25 @@
 # *** Update to today ***
 __updated__ = "2024-07-23"
 
-from pathlib import Path
-import aim
+import logging
 import os
+from pathlib import Path
 from datetime import datetime
+
+import aim
+
 #hfrnet modules
-from hfrnet.utils_funcs.utility import setup_log_filename
-from hfrnet.db_tools.db_tables import read_domain, read_resolution, read_methods
-from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo, 
+from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
+                                        check_lock_process, clear_state_table)
+from hfrnet.utils_funcs.utility import (setup_log_filename, current_datetime, Set_s3_output_bucket
+                                        ,generate_time_spans)
+from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
                                         FileLocations, RtvProcess, RtvTotals,
-                                        SetupError, DatabaseError)
-from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo, StcInfo, LtaInfo
-from hfrnet.utils_funcs.utility import generate_time_spans
+                                        DatabaseError)
+from hfrnet.utils_funcs.lib_sumavg import StcLtaInfo
 import hfrnet.run_rtv.processRtv as processRtv
 from hfrnet.db_tools.db_manager import db_manager, set_db_info
 
-import logging
 _log = logging.getLogger()
 
 
@@ -54,7 +57,7 @@ class Interface(aim.Interface):
         'processing': {
                 'domain': str,
                 'resolution': str,
-                'batch_processing': str,
+                'batch_processing': bool,
         },
         'time': {
                 'start_date': str,
@@ -67,41 +70,38 @@ class Interface(aim.Interface):
         },
         'directory': {
             'algorithm_dir': str,
-            'working': str,
-            'input': str,
             'log': str,
             'output': str,
-            'lta_dir': str,
-            'lta_file': str,
-            'radial_remote_dir': str,
             'radial_local_dir': str,
+            'interm_local_dir': str,
+            'output_s3_bucket': str,
+            'output_intermed_s3_bucket': str,
         },
         'databases': {
             'run_env': str,
             'user': str,
             'host': str,
-            'port': str,
+            'port': int,
             'password': str,
             'ssl_ca': str,
-            'ssl_verify_identity': str,
-            'ssl_verify_cert': str,
-            'auth_plugin_map': {},
+            'region': str,
             'config_dbname': str,
             'radial_dbname': str,
         },
     }
-    
+
     mconfigureVals = ConfigureVals("", "")
     mrtvInfo = RtvInfo()
     mstcLtaInfo = StcLtaInfo()
-    mstcInfo = mstcLtaInfo.stcInfo 
-    mltaInfo = mstcLtaInfo.ltaInfo 
+    mstcInfo = mstcLtaInfo.stcInfo
+    mltaInfo = mstcLtaInfo.ltaInfo
     mnetcdf_metadata = Metadata()
     fileLocObj = FileLocations()
     siteInfoObj = []
     rtvProcessObj = RtvProcess()
     compTotObj = RtvTotals()
-    
+    lock_process_flag = False
+
     def setup(self):
         """ Generate a configuration for the science code.
         This method exists to transform the incoming configuration
@@ -113,36 +113,66 @@ class Interface(aim.Interface):
 
         *** Update docstring to be descriptive and useful ****
         """
+        #--------------- check if
+        print(f"---------------------------------------------")
+        print(f" set_db_info::Running Env is :: {self.config['databases.run_env']}")
+        if self.config['databases.run_env'] == 'ao':
+            #--- this must be done in order for AO to move anything outside the AO sys
+            #--- default path is /workflow/data/
+            print(f"AO_WORKFLOW_DATA_DIR is defined: {os.getenv('AO_WORKFLOW_DATA_DIR')}")
+        # else:
+        #     #---- default for running inside the docker
+        #     self.config['directory.log'] = '/home/WORKING_DIR/logs'
+        #     self.config['directory.output'] = '/home/WORKING_DIR/output'
+        #     print('Setting log and output dirs to /home/WORKING_DIR')
+
+        #----------------------
+
         self.mconfigureVals.domain = self.config['processing.domain']
         self.mconfigureVals.resolution = self.config['processing.resolution']
-
-        # ------ Check the working dir
-        working_dir = Path(self.config['directory.working'])
-        if not working_dir.is_dir():
-            _log.fatal(f" ---- FATAL ERROR: The directory {working_dir} does not "
-                             f"exist")
-            raise SetupError(f"The directory {working_dir} does not exist")
-        # ------ Check the log dir
         log_dir = Path(self.config['directory.log'])
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        os.environ['PRODUCT_VERSION'] = self.config['production.version']
+        self.mconfigureVals.product_version = self.config['production.version']
+        self.mconfigureVals.production_environment = self.config['production.environment']
+        self.mconfigureVals.production_site = self.config['production.site']
 
         setup_log_filename(self, f"hfrnet_{self.mconfigureVals.domain}"
-                                             f"_{self.mconfigureVals.resolution}")
+                            f"_{self.mconfigureVals.resolution}")
+        # ------ setup the rtvproc connection
+        set_db_info(self.config, self.mconfigureVals)
+
+        # ---- Set the output and intermediate s3 bucket locations
+        self.mconfigureVals.output_s3_loc = self.config['directory.output_s3_bucket']
+        self.mconfigureVals.output_intermed_s3_loc = self.config['directory.output_intermed_s3_bucket']
         
+        # ---- Set the intermedite files s3 bucket based on the running env id 
+        Set_s3_output_bucket(self.mconfigureVals)
+        
+        #====== delete this
+        # clear_state_table(self.mconfigureVals)
+
+        #Check if the process is locked
+        _log.info("=============================================")
+        _log.info("=============================================")
+        if check_lock_process( self.mconfigureVals):
+            self.lock_process_flag = True
+            return
+        _log.info("=============================================")
+        _log.info("=============================================")
+
+
         _log.info("-------------------------------------- ")
-        _log.info(f"Star processing HFRnet for domain::"
-                  f"{self.mconfigureVals.domain} "
-                  f"and Resolution::{self.mconfigureVals.resolution} ")
+        _log.info(f"Start processing HFRnet for domain::"
+                    f"{self.mconfigureVals.domain} "
+                    f"and Resolution::{self.mconfigureVals.resolution} ")
         _log.info(log_dir)
-        _log.info(working_dir)
         # set the runtime to the start time
-        self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],
-                                          '%Y%m%d%H%M%S%f')
+        self.mconfigureVals.runTime = current_datetime()
+        # self.mconfigureVals.runTime = datetime.strptime(self.config['time.start_date'],'%Y%m%d%H%M%S%f')
         # This is used when reporcessing a patch of time in the past
         self.mconfigureVals.reprocess = False
-        if self.config['processing.batch_processing'].casefold() == 'true':
+        if self.config['processing.batch_processing']:
             self.mconfigureVals.times = generate_time_spans(self.config['time.start_date'],
                                                             self.config['time.end_date'])
             self.mconfigureVals.reprocess = True
@@ -153,47 +183,60 @@ class Interface(aim.Interface):
         """ This executes the algorithm's executable (for this unit).
 
         *** Update docstring to be descriptive and useful ****
-        python -m hfrnet.run_config /data/smcd12/ASSISTT_DATA/HFRnet/test2/config_hfr_run_config.yml
+        python -m hfrnet.run_config config_hfr_run_config.yml
         """
-               
+        # Terminate if the process is locked
+        _log.info("=============================================")
+        _log.info("=============================================")
+        self.output_info['status'] = "good"
+        if self.lock_process_flag:
+            _log.info(f" Process lock = true, Run can't be executed")
+            return
+
+        _log.info(f" Process lock is set, Process is running")
+        _log.info("=============================================")
+        _log.info("=============================================")
+
         # ------ setup the rtvproc connection
 
-        set_db_info(self.config, self.mconfigureVals)
         # get the analysis parametrers for domain, res, rtv,stc,lta
         with db_manager(self.mconfigureVals.dbObject) as db_class:
-    
+
             # Check for valid domain
             try:
                 read_domain(db_class, self.mconfigureVals)
             except DatabaseError:
                 _log.info(f"No domain {self.mconfigureVals.domain} decsription were found or "
-                          f"database connection failed")
+                        f"database connection failed")
                 return
-            
+
             # ---------------------------------
             # Check for valid resolution
             try:
                 read_resolution(db_class, self.mconfigureVals)
             except DatabaseError:
                 _log.info(f"No domain {self.mconfigureVals.resolution}  were found "
-                          f"or database connection failed")
+                        f"or database connection failed")
                 return
             # ---------------------------------
             # Check for valid resolution
             process_list = []
             read_methods(db_class, self.mconfigureVals, self.mrtvInfo,
-                         self.mstcInfo, self.mltaInfo,process_list)
-        
-        self.set_file_locations(self.fileLocObj)
-        
-        processStatus = processRtv.processRtv(self.mconfigureVals,
-                                              self.siteInfoObj,
-                                              self.fileLocObj,
-                                              process_list,
-                                              self.mrtvInfo,
-                                              self.mstcLtaInfo,
-                                              self.compTotObj)
+                        self.mstcInfo, self.mltaInfo,process_list)
 
+        self.set_file_locations(self.fileLocObj)
+
+        try:
+            processRtv.processRtv(self.mconfigureVals,
+                                  self.siteInfoObj,
+                                  self.fileLocObj,
+                                  process_list,
+                                  self.mrtvInfo,
+                                  self.mstcLtaInfo,
+                                  self.compTotObj)
+        except Exception as exp:
+            _log.error(f"Could did not run procesRtv: {exp}")
+            
         self.output_info['status'] = "good"
 
     def reformat(self):
@@ -210,24 +253,41 @@ class Interface(aim.Interface):
 
         *** Update docstring to be descriptive and useful ****
         """
-    
+
     def set_file_locations(self, fileLocObj):
         """
             Set all the directory locations
         """
-        
-        fileLocObj.mdir = Path(self.config['directory.input'])
-        
+        _log.info(f" ---- Setting up the dirs")
         algo_dir = Path(self.config['directory.algorithm_dir'])
+        _log.info(f" ---- algo_dir::{algo_dir}")
+
         fileLocObj.landfile = algo_dir / 'ancillary_data/land_data'
         fileLocObj.gridfile = algo_dir / 'ancillary_data/grid_data'
-        
+        _log.info(f" ---- fileLocObj.landfile::{fileLocObj.landfile}")
+        _log.info(f" ---- fileLocObj.gridfile::{fileLocObj.gridfile}")
+
         # --- output dirs to save the nc, asc, intermediate files
-        fileLocObj.domaindir = Path(self.config['directory.output'])
-        fileLocObj.input_dir = Path(self.config['directory.input'])
         fileLocObj.output_dir = Path(self.config['directory.output'])
-        
-        fileLocObj.domaindir.mkdir(parents=True, exist_ok=True)
-        
-        fileLocObj.radial_remote_dir = Path(self.config['directory.radial_remote_dir'])
-        fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+        fileLocObj.output_dir.mkdir(parents=True, exist_ok=True)
+        _log.info(f" ---- fileLocObj.output_dir::{fileLocObj.output_dir}")
+
+        _log.info(f" ---- directory.radial_local_dir::{self.config['directory.radial_local_dir']}")
+        _log.info(f" ---- directory.interm_local_dir::{self.config['directory.interm_local_dir']}")
+
+        if self.config['directory.radial_local_dir']:
+            fileLocObj.radial_local_dir = Path(self.config['directory.radial_local_dir'])
+            _log.info(f" ---- fileLocObj.radial_local_dir::{fileLocObj.radial_local_dir}")
+        else:
+            fileLocObj.radial_local_dir = Path('/home/WORKING_DIR/input/radials')
+            _log.info(f" ---- fileLocObj.radial_local_dir")
+
+        if self.config['directory.interm_local_dir']:
+            fileLocObj.interm_local_dir = Path(self.config['directory.interm_local_dir'])
+        else:
+            fileLocObj.interm_local_dir = Path('/home/WORKING_DIR/input/intermediate')
+            _log.info(f" ---- fileLocObj.interm_local_dir")
+
+        fileLocObj.radial_local_dir.mkdir(parents=True, exist_ok=True)
+        fileLocObj.interm_local_dir.mkdir(parents=True, exist_ok=True)
+            

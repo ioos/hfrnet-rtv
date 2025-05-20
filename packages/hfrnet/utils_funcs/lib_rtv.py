@@ -84,17 +84,19 @@ class DatabaseConfig:
         self.user = ""
         self.host = ""
         self.port = ""
-        self.password = 0
-        self.ssl_ca = 0
-        self.ssl_verify_identity = ""
-        self.ssl_verify_cert = ""
-        self.auth_plugin_map = ""
+        self.password = ""
+        self.ssl_ca = ""
+        self.region = ""
         self.dbname = ""
+        self.ssl_context = ""
+        self.run_env = "rhw" # "aws" "ao" "rhw"
+        # self.ssl_verify_identity = ""
+        # self.ssl_verify_cert = ""
+        # self.auth_plugin_map = ""
         #--- This is to use the correct parameteres when connection
         # to the DB server depends on the OS
         # if it's on a linux, set it to 'rhw'
         # if it's on the cloud 9, set it to 'aws'
-        self.run_env = "rhw" # "aws"
 
 #things from the configureRtv
 class ConfigureVals(BaseObject):
@@ -103,6 +105,7 @@ class ConfigureVals(BaseObject):
     """
     def __init__(self, domain="USHI", resolution="6km"):
         self.domain = domain
+        self.domain_description = ""
         self.resolution = resolution
         self.times = None
         #-- The DB object
@@ -114,6 +117,12 @@ class ConfigureVals(BaseObject):
         # This will be the now time whenever the current time is needed
         # This will be set to the start time in the yml file
         self.runTime = None
+        self.product_version = ''
+
+        self.production_site = ''
+        self.production_environment = ''
+        self.output_s3_loc = ''
+        self.output_intermed_s3_loc = ''
 
     def to_dict(self):
         """return the dict for all attributes in the object"""
@@ -124,38 +133,22 @@ class ConfigureVals(BaseObject):
 
 class FileLocations(BaseObject):
     """
-       Keep track of all file locations
+        Keep track of all file locations
     """
     def __init__(self):
-        self.rootdir = ""
-        self.domaindir = ""
-        self.mdir = ""
-        self.mfilename = ""
-        self.mpathfile = ""
-        self.asciidir = ""
-        self.asciifilename = ""
-        self.asciipathfile = ""
-        self.ncdir = ""
-        self.ncfilename = ""
-        self.ncpathfile = ""
         self.landfile = ""
         self.gridfile = ""
-        self.radial_remote_dir = ""
         self.radial_local_dir = ""
-        self.msumdir = ""
-        self.msumfile = ""
-        self.msumfilename = ""
-        self.msumpathfile = ""
-        self.input_dir = ""
         self.input_file = ""
         self.output_dir = ""
         self.output_ncfile = ""
-        self.intermed_ncfilename = ""
-        self.intermed_ncfilepath = ""
+        self.intermed_filename = ""
+        self.intermed_filepath = ""
+        self.interm_local_dir = ""
 
 class RtvProcess(BaseObject):
     """
-       The configuration of the process
+        The configuration of the process
     """
     def __init__(self, name="", method="", description="", save_as=""):
         self.name = name
@@ -191,8 +184,8 @@ class RtvInfo(BaseObject):
         self.uwls_max_hdop = np.float64(0)
         self.uwls_max_hdop_ascii = np.float64(0)
         self.uwls_max_hdop_nc = np.float64(0)
-        self.new_state = ""
-        self.curent_state = ""
+        self.new_state = None
+        self.current_state = None
 
 class UwlsTotalInfo:
     """
@@ -226,7 +219,6 @@ class RadialInfo(BaseObject):
         self.speed = []
         self.heading = []
 
-
 class Metadata(BaseObject):
     """
        Metadata info
@@ -249,10 +241,19 @@ class Metadata(BaseObject):
         self.processing_level = ""
         self.program = ""
         self.references = ""
-        self.source = ""
         self.summary = ""
         self.title = ""
-
+        self.cdm_data_type = "Grid"
+        self.day_night_data_flag = "both"
+        self.metadata_link = "https://cdn.ioos.noaa.gov/media/2017/12/hfradar_nodc_sep_2014.pdf"
+        self.platform = "CODAR SeaSonde, COASTAL STATIONS"
+        self.platform_vocabulary = "Global Change Master Directory (GCMD) Keywords, Version 21.2"
+        self.project = "NESDIS Common Cloud Framework."
+        self.publisher_email = "espcoperations@noaa.gov"
+        self.publisher_type = "institution"
+        self.publisher_name = "DOC/NOAA/NESDIS/OSPO > Office of Satellite and Product Operations, NESDIS, NOAA, U.S. Department of Commerce."
+        self.publisher_url = "http://www.ospo.noaa.gov"
+        self.history = ""
 
 class SetupError(Exception):
     pass

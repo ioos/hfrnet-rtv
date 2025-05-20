@@ -52,6 +52,8 @@ def rtvReadRadialFile(inFile):
         _log.error(msg)
 
     # Get LLUV Table Column Names
+    # if could not open the file , still initialize columnIndex 
+    columnIndex = {}
     try:
         with open(inFile.fullfile, 'r') as fid:
             tableType = ''

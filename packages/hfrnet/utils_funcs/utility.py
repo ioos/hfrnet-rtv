@@ -5,21 +5,75 @@ from datetime import datetime, timedelta, timezone, date, time
 import calendar
 import logging
 import json
+import re
 from pathlib import Path
+import textwrap
 import numpy as np
 from scipy.io import loadmat
 import netCDF4 as nc4
 from dateutil import parser
 import h5py
+import boto3
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
-from hfrnet.db_tools.db_tables import get_state_time
 from hfrnet.run_rtv.saveNetcdf import loadNetcdf
 
 _log = logging.getLogger()
 
+def Set_s3_output_bucket(mconfigureVals):
+    '''
+    Set the intermedite files s3 bucket based on the running env id
+    Dev/Sandbox: s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    UAT: s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao
+    Prod: s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao
+    '''
+    
+    _log.info('----------------------')
+    _log.info('Set the intermediate files s3 bucket based on the running env id')
+    
+    sts = boto3.client('sts')
+    response = sts.get_caller_identity()
+    acc_id = response.get('Account')
 
+    _log.info(f'------Account {acc_id}')
+    if acc_id == '560271376700': # Dev/Sandbox
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
+    elif acc_id == '656149346314': # UAT
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+        mconfigurevals.output_intermed_s3_loc = mconfigureVals.output_s3_loc
+    elif acc_id == '844319835141': # Prod
+        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
+    
+    _log.info(f"--The output_s3_loc = {mconfigureVals.output_s3_loc}")
+    _log.info('----------------------')
+    
+def convert_time(time_str):
+    # Remove the last digit to match the format
+    time_str = time_str[:-1]
+
+    # Convert the time string to datetime object
+    time_obj = datetime.strptime(time_str, '%Y%m%d%H%M%S')
+
+    # Format the datetime object to the desired format
+    formatted_time = time_obj.strftime(constsHFR.DATETIME_FORMAT)
+
+    return formatted_time
+
+
+def get_file_stime(filen):
+    # Check if '_c' is in the string
+    if '_s' in filen:
+        # Find the position of '_s'
+        pos = filen.find('_s')
+        # Get the 15 characters after '_s'
+        result = filen[pos+2:pos+17]
+        return convert_time(result)
+    else:
+        return current_time()
+    
 class _dict(dict):
     """dict like object that exposes keys as attributes"""
     def __getattr__(self, key):
@@ -46,6 +100,7 @@ class _dict(dict):
 
 def process_record(d):
     """gets info of processes"""
+
     if hasattr(d, 'keys'):
         keys = [k for k in d.keys() if not k.startswith('__')]
         data = _dict()
@@ -55,6 +110,7 @@ def process_record(d):
 
     if not hasattr(d, 'dtype'):
         return d
+
     if d.dtype.names is None:
         if len(d) == 1 and d.dtype.name == 'object':
             return process_record(d[0])
@@ -65,18 +121,19 @@ def process_record(d):
     data = _dict()
     for name in d.dtype.names:
         data[name] = process_record(d[name])
+
     return data
 
 def read_total_file(filename):
     """read total radial file"""
     data = {'info': {}, 'data': {}}
+    raw = None
     try:
         try:
             raw = loadmat(filename)
             data['info']['version'] = raw.get('__version__', '')
             data['info']['header'] = raw.get('__header__', '')
             data['info']['globals'] = raw.get('__globals__', '')
-
             data['data'] = process_record(raw)
         except Exception:
             _log.info("Loading netCDF4 file")
@@ -93,12 +150,12 @@ def read_total_file(filename):
 #------------------------------------------------
 def generate_time_spans(stime, etime):
     """
-    
+
     :param stime: start time
     :param etime: end time
     :return: numpy array of times
     # Function to generate numpy array of 1 hr time spans
- 
+
     """
     # Convert the input strings to datetime objects
     start_date = datetime.strptime(stime, '%Y%m%d%H%M%S%f')
@@ -124,7 +181,7 @@ def generate_time_spans(stime, etime):
 
 def convert_numbers(dictobj):
     """
-    
+
     :param dictobj: is the class of a single region with parameters:
     region, polygon, length in string format
     :return: dictobj with all strs converted into numbers
@@ -201,12 +258,20 @@ def load_grid(mfile, domain, res, rtvInfoObj):
         grid.projection  = ds.getncattr('projection')
         return grid
 
+def current_time():
+    """Return the current time in str format for database"""
+    return datetime.now(timezone.utc).strftime(constsHFR.DATETIME_FORMAT)
+
+def current_datetime():
+    """Return the datetime of current time"""
+    return datetime.now(timezone.utc)
+
 def now_hour(inTime = None):
     """ Returns datetime at top of current hour"""
     if inTime:
         t = inTime
     else:
-        t = datetime.now(timezone.utc)
+        t = current_datetime()
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour)
 
 def eomday(t):
@@ -219,7 +284,7 @@ def now_second(inTime = None):
     if inTime:
         t = inTime
     else:
-        t = datetime.now(timezone.utc)
+        t = current_datetime()
     return t.replace(second=t.second, microsecond=0, minute=t.minute,
                      hour=t.hour)
 
@@ -269,7 +334,7 @@ DATETIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
 def get_datetime(datetime_str=None):
     """get datetime in different instances"""
     if not datetime_str:
-        return datetime.now(timezone.utc)
+        return current_datetime()
 
     if isinstance(datetime_str, (datetime, timedelta)):
         return datetime_str
@@ -295,7 +360,7 @@ def set_history(A, msg):
     if not hasattr(A, 'history'):
         A.history = []
         h = _dict()
-        h.timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        h.timestamp = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
         h.program = os.path.basename(__file__)
         h.user = os.getenv('USER') or 'unknown user'
         h.message = msg
@@ -322,6 +387,8 @@ def get_processes():
 
 
 def load_mat(filename):
+    """load matlab or netcdf file"""
+
     data = {'info': {}, 'data': {}}
     try:
         try:
@@ -340,7 +407,7 @@ def load_mat(filename):
     return data
 
 #########################################################################
-def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
+def create_CCAP_filename_s_e(ctime, stime, etime, alg_ver, unit_name, ext):
     """
     :param config_dict: contains the yaml config file
     :return: the ccap file name
@@ -348,7 +415,8 @@ def create_CCAP_filename_s_e(stime, etime, alg_ver, unit_name, ext):
     # example file name
     # unit_v01r1_GPM_s202105191345190_e202105191258000_c202208092344126.log
 
-    ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')[:-5]
+    # ctime = current_time('%Y%m%d%H%M%S%f')
 
     file_name = f'{unit_name}_{alg_ver}_none_s{stime}_e{etime}_c{ctime}{ext}'
     return file_name
@@ -365,13 +433,24 @@ def setup_log_filename(my_pkgint, added_name=""):
     """
     # --------------------- create the log file
     log_dir = Path(my_pkgint.config['directory.log'])
-    stime = f"{my_pkgint.config['time.start_date']}"
-    etime = f"{my_pkgint.config['time.end_date']}"
+    c_datetime = current_datetime()
+    ctime = c_datetime.strftime('%Y%m%d%H%M%S%f')[:-5]
+    if my_pkgint.config['processing.batch_processing']:
+        stime = f"{my_pkgint.config['time.start_date']}"
+        etime = f"{my_pkgint.config['time.end_date']}"
+    else:
+        # Remove minutes and seconds by setting them to 0
+        stimeobj = c_datetime.replace(minute=0, second=0, microsecond=0)
+        stime = stimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+        # Set minutes to 59 and seconds to 59.9
+        etimeobj = c_datetime.replace(minute=59, second=59, microsecond=900000)
+        etime = etimeobj.strftime('%Y%m%d%H%M%S%f')[:-5]
+
+
     algo_ver = f"{my_pkgint.config['production.version']}"
 
-    run_logfile = create_CCAP_filename_s_e(stime, etime,
-                                           algo_ver,
-                                           f"{added_name}", ".log")
+    run_logfile = create_CCAP_filename_s_e(ctime, stime, etime,
+                                            algo_ver, f"{added_name}", ".log")
     handler = logging.FileHandler(f"{log_dir}/{run_logfile}")
     date_format = '%Y-%m-%d %H:%M:%S'
     full_format = '%(asctime)s - %(levelname)s - (%(name)s:%(funcName)s) - %(message)s'
@@ -384,12 +463,24 @@ def setup_log_filename(my_pkgint, added_name=""):
 
     return handler
 
+def resolution_spaced(resolution):
+    """
+    Need to put a space in the <resolution> for metadata
+    """
+    res_spaced = ""
+    if "km" in resolution:
+        res_spaced = resolution.replace("km", " km")
+    else:
+        res_spaced = resolution.replace("m", " m")
+
+    return res_spaced
+
 def rtvNcid(metadataObj, configObj, rtvProcessObj, currTime):
     """
     %    Generates NetCDF ACDD ID attribute value
     %
     %    id = rtvNcid(metadataObj, configObj, rtvProcessObj, time) returns
-    %    an id string for the NetCDF Attribute Convention for Data 
+    %    an id string for the NetCDF Attribute Convention for Data
     %    Discovery (ACDD) metadata standard.
     %
     %    The id is comprised of the data timestamp (t) and metadata contained
@@ -425,25 +516,34 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
     reprocessing = configObj.reprocess
     doMonthly = False
     doYearly = False
-    timeNow = datetime.now(timezone.utc)
+    timeNow = current_datetime()
     timeMonthly = rtvTime
     timeYearly = rtvTime
 
     if reprocessing:
 
+        monthDiff = timeNow.month - rtvTime.month
+        yearDiff = timeNow.year - rtvTime.year
+
         #if timeNow is a month more than the reprocess date, then do monthly avg
-        if (timeNow.month - rtvTime.month) >= 1:
+        if monthDiff >= 1 or yearDiff >= 1:
             doMonthly = True
 
         #if reprocess date if previous year, then do yearly avg
-        if (timeNow.year - rtvTime.year) >= 1:
+        if yearDiff >= 1:
             doYearly = True
 
     else:#NRT
 
+        from hfrnet.db_tools.db_tables import get_state_time
+        
         #have to get state from database to see if it's already been done
-        state_time, state_cvs = get_state_time(configObj, rtvProcessObj.name.lower())
+        state_time = get_state_time(configObj, rtvProcessObj.name.lower())
 
+        if state_time is None:
+            state_time = datetime.fromisoformat('1970-01-01')
+            msg = (f"No lta state defined. Using base date 1970-01-01")
+        
         if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
 
@@ -454,9 +554,11 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
             elif month_diff == 1:
                 doMonthly = True
             else:
-                msg = ("Error: time difference in month between db state time"
-                       f"and current time inproper: {month_diff}")
-                _log.error(msg)
+                doMonthly = True
+                msg = ("Warning: time difference in month between db state time"
+                       f"and current time is {month_diff}.  "
+                       "Should be just 1 month difference during proper running")
+                _log.warning(msg)
 
             if doMonthly:
                 #replace the month in the datetime to do previous month's average
@@ -474,3 +576,148 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
                 timeYearly = rtvTime.replace(year=rtvTime.year -1)
 
     return (doMonthly, doYearly, timeMonthly, timeYearly)
+
+
+def prev_radial_data(fileName, last):
+    """ Get the array of info from previous radials.
+        Still kept the Matlab file in case needed.
+    """
+    last_radial = None
+    last_network = None
+    last_site = None
+    last_time = None
+    last_patterntype = None
+    if fileName.suffix == '.mat':
+        last_radial = last['data']['r']
+        # Loop over each site defined in the config
+        last_network = np.array(list(last_radial.network))
+        last_site = np.array(list(last_radial.site))
+        last_patterntype = np.array(list(last_radial.patterntype))
+        last_time = [datetime(2024, 12, 25, tzinfo=timezone.utc) for rr in last_radial.network]
+        last_time = np.array(last_time)
+    if fileName.suffix == '.nc':
+        last_radial = last['r']
+        # Loop over each site defined in the config
+        last_network = np.array([rr['network'] for rr in last_radial])
+        last_site = np.array([rr['site'] for rr in last_radial])
+        last_patterntype = np.array([rr['patterntype'] for rr in last_radial])
+        last_time = np.array([rr['time'] for rr in last_radial])
+
+    return last_network, last_site, last_patterntype, last_time
+
+def get_timestamp_from_filename(filename):
+    """
+    Get the start/end timestamp from the filename (output netCDF file) if available
+    """
+    start = re.search(r'_s(?P<start>\d*)_', filename)
+    if start is not None:
+        start = start.group(1)
+        start = f"{start[:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:{start[10:12]}:{start[12:14]}Z"
+    else:
+        start = ""
+    end = re.search(r'_e(?P<end>\d*)_', filename)
+    if end is not None:
+        end = end.group(1)
+        end = f"{end[:4]}-{end[4:6]}-{end[6:8]}T{end[8:10]}:{end[10:12]}:{end[12:14]}Z"
+    else:
+        end = ""
+    return start, end
+
+
+def wrap_text(text, width=None):
+    """wrap the text to certain line width"""
+    if width is None:
+        return text
+
+    return textwrap.fill(text, width)
+
+def copy_file_from_s3(s3_url, file_name, dir_dest):
+    """
+    # s3handle.download_file('nccf-dev-ingest-trust-us-east-1-560271376700', 
+    #                     'HFRNet/AOOS/WAIN/Radials/RDLm_WAIN_2025_03_21_1200.ruv', 
+    #                     '/home/ec2-user/environment/HFR/hfrnet/packages/test.ruv')
+    #  dfile:::['RDLm_PYFC_2025_04_02_1900.ruv']
+    #  dir:::['s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC']
+    # arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao
+    """
+    #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    _log.info(">>> s3_url={s3_url}")
+    s3handle = boto3.client('s3')
+    s3_url = s3_url.replace('s3://', '')
+    
+    #'arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
+    # Split the URL into parts
+    parts = s3_url.split('/', 2)
+    
+    # Extract bucket name and file key
+    # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
+    bucket_name = f"{parts[0]}/{parts[1]}"
+
+    # file_key = 'HFRNet/CariCOOS/PYFC/Radials/'
+    file_key = parts[2] if len(parts) > 2 else ''    
+    # if "Radials" not in file_key:
+    #     # file_key = f"{file_key}/Radials"
+    #     _log.error(f"--> Radials --- does exist in the file key {file_key}")
+    
+    newfpath = f"{dir_dest}/{file_name}"
+    _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
+    try:
+        s3handle.download_file(bucket_name, f"{file_key}/{file_name}", newfpath)
+        _log.info(f"\n Finished download_file from s3 {file_name} \n")
+    except Exception as exc:
+        msg = f"ERROR: Could not download file from s3: {file_key}/{file_name}; {exc}"
+        _log.error(msg)
+        
+    return newfpath
+    
+def get_s3_directory_path(time, process, configObj):
+    """
+        Set the s3 output directory structure
+    """
+    year = time.year
+    month = time.month
+    day = time.day
+    domain = configObj.domain
+    res = configObj.resolution
+    prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
+    folder = ''
+    if 'intermed' not in process:
+        folder = 'HFRNet'
+    else:
+        folder = 'HFRNet-Intermediate'
+
+    dir_path = f'{folder}/{domain}/{res}/{prod_short_name}/{year}/{month}/{day}'
+
+    return dir_path
+        
+def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
+    """    
+    Copy the output file with metadata to S3 Results bucket
+    """
+    _log.info(">>> s3_url={s3_loc}")
+
+    s3_url = s3_loc.replace('s3://', '')
+    
+    s3handle = boto3.client('s3')
+    ExtraArgs_dict={
+        "Metadata":
+        {
+            "Region": f"{configObj.domain}",
+            "Resolution": f"{configObj.resolution}",
+            "Date": f"{time}"
+        }
+    }
+    
+    dir_path = get_s3_directory_path(time, process, configObj)
+    file_key = f"{dir_path}/{file_name.name}"
+    
+    _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
+        f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")
+    
+    s3handle.upload_file(
+        Filename= f"{file_name}",
+        Bucket=f"{s3_url}",
+        Key=file_key,
+        ExtraArgs=ExtraArgs_dict
+    )
+    _log.info(f"\n Finished copying {file_name} to s3 \n\n")

@@ -98,7 +98,7 @@ class SumAndAvg:
             if self.is25Hr:#25-hour
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
-                                                  self.fileLocObj, time, 'rtv')
+                                                  self.fileLocObj, time, 'stc')
             else:
                 fileLocTemp = filenames.filenames(self.configObj,
                                                   self.rtvProcessObj,
@@ -116,7 +116,10 @@ class SumAndAvg:
         end_time = center_time + timedelta(hours=12)
         temp_time = start_time
         time_period = [start_time]
+        count=0
         while temp_time < end_time:
+            count=count+1
+            _log.info(f"hr:: {count}: {temp_time}")
             temp_time += timedelta(hours=1)
             time_period.append(temp_time)
 
@@ -133,8 +136,10 @@ class SumAndAvg:
         end_of_month = time_month.replace(day=last, hour=23)
         temp_time = start_of_month
         time_period = [temp_time]
-
+        count=0
         while temp_time < end_of_month:
+            count=count+1
+            _log.info(f"month:: {count}")
             temp_time += timedelta(hours=1)
             time_period.append(temp_time)
 
@@ -150,7 +155,10 @@ class SumAndAvg:
         time_period = [temp_time]
         month_tmp = 2
         max_months_in_year = 13
+        count=0
         while month_tmp < max_months_in_year:
+            count=count+1
+            _log.info(f"year:: {count}")
             temp_time = temp_time.replace(month=month_tmp)
             time_period.append(temp_time)
             month_tmp = month_tmp + 1
@@ -245,7 +253,7 @@ class SumAndAvg:
             if isMat:
                 inFileTotObj = dataInObj.U
             if isNC:
-                inFileTotObj = SumAvgInfo()
+                inFileTotObj = RtvTotals()
                 inFileTotObj.from_dict(**dataInObj['U'])
 
         return inFileTotObj
@@ -260,24 +268,26 @@ class SumAndAvg:
 
         # need to know which files to run over
         self.get_file_list()
-
+        
         for inFile in self.fileList:
-
+            
+            if inFile.input_file is None:
+                continue
+            
             if not Path(inFile.input_file).is_file():
                 msg = f"ERROR::sumAvg: could not load file {inFile.input_file}"
                 _log.error(msg)
                 continue
 
             inFileTotObj = self.get_intermed_sum_obj(inFile)
-
             self.nLoadedFiles = self.nLoadedFiles + 1
 
             # Filter by HDOP
             if (self.is25Hr or self.isMonthly):
                 mask = inFileTotObj.hdop >= infoObj.stcInfo.max_error
                 if np.any(mask):
-                    inFileTotObj.u[mask] = np.nan
-                    inFileTotObj.v[mask] = np.nan
+                    inFileTotObj.u_xvel[mask] = np.nan
+                    inFileTotObj.v_yvel[mask] = np.nan
 
             if len(self.sumavgObj.nGood) == 0 and not self.isAnnual:
                 self.sumavgObj = self.initalize_sumavg(self.sumavgObj,
@@ -309,24 +319,24 @@ class SumAndAvg:
                     self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
                                                                inFileTotObj.vMax)), axis=0)
             else:
-                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(inFileTotObj.u))
+                self.sumavgObj.nGood = self.sumavgObj.nGood + (1 - np.isnan(inFileTotObj.u_xvel))
                 self.sumavgObj.uSum  = np.nansum(np.stack((self.sumavgObj.uSum,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vSum  = np.nansum(np.stack((self.sumavgObj.vSum,
-                                                           inFileTotObj.v)), axis=0)
+                                                           inFileTotObj.v_yvel)), axis=0)
                 self.sumavgObj.u2sum = np.nansum(np.stack((self.sumavgObj.u2sum,
-                                                           inFileTotObj.u**2)), axis=0)
+                                                           inFileTotObj.u_xvel**2)), axis=0)
                 self.sumavgObj.v2sum = np.nansum(np.stack((self.sumavgObj.v2sum,
-                                                           inFileTotObj.v**2)), axis=0)
+                                                           inFileTotObj.v_yvel**2)), axis=0)
                 self.sumavgObj.uMin  = np.nanmin(np.stack((self.sumavgObj.uMin,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMin  = np.nanmin(np.stack((self.sumavgObj.vMin,
-                                                           inFileTotObj.v)), axis=0)
+                                                           inFileTotObj.v_yvel)), axis=0)
                 self.sumavgObj.uMax  = np.nanmax(np.stack((self.sumavgObj.uMax,
-                                                           inFileTotObj.u)), axis=0)
+                                                           inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
-                                                           inFileTotObj.v)), axis=0)
-        self.completedSum = True
+                                                           inFileTotObj.v_yvel)), axis=0)
+        self.completedSum = self.nLoadedFiles > 0 
 
         return self.sumavgObj
 
@@ -349,18 +359,28 @@ class SumAndAvg:
         if self.is25Hr:
             # Mask points below minimum temporal coverage
             if self.nLoadedFiles < infoObj.stcInfo.min_temporal_coverage:
+                msg = (f"Only loaded {self.nLoadedFiles} files for 25 Hour Avg, "
+                       f"but need min of {infoObj.stcInfo.min_temporal_coverage}")
+                _log.warning(msg)
                 return avgsumObj
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
         if self.isMonthly:
+
+            minFiles = infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY 
+            if self.nLoadedFiles < minFiles:
+                msg = f"Only loaded {self.nLoadedFiles} for monthly average; need min of {minFiles}"
+                _log.warning(msg)
+                #return avgsumObj
+            
             # Mask points below minimum temporal coverage
             mask = (avgsumObj.nGood <
                     infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if self.isAnnual:
             # Mask points below minimum temporal coverage
-            mask = (avgsumObj.nGood <
+            mask = (len(avgsumObj.nGood) <
                     infoObj.ltaInfo.min_year_temporal_coverage*constsHFR.HOURS_IN_DAY)
 
         if np.any(mask):

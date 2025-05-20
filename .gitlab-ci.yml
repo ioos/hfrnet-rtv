@@ -1,43 +1,64 @@
 variables:
-  GIT_STRATEGY: clone
-
+  GIT_LFS_SKIP_SMUDGE: "1"
+  
 stages:
-    - pre
-    - build
-    - test
+  - pre
+  - test
+  - build/container
+  - release
+  - register
 
 include:
-  - template: Jobs/SAST.latest.gitlab-ci.yml
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/secret_detection@~latest
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/dependency_scanning@~latest
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/icode_sast@main
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/checkov_sast@~latest
+    inputs:
+      test_results: "true"
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/sast@~latest
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/container_scanning@~latest
+    inputs: 
+      dockerfile: docker/process/Dockerfile
+      image: $CI_REGISTRY_IMAGE/process:latest
+      git_strategy: fetch
+      job_name: container_scanning_process
+  - component: ${CI_SERVER_HOST}/ci-catalog/security/inspector_scanning@~latest
+    inputs: 
+      image: $CI_REGISTRY_IMAGE/process:latest
+      job_name: inspector_scanning_process
+  - component: ${CI_SERVER_HOST}/ssboxes/common/assistt/ci-templates/create_container@main
+  - project: "ssboxes/common/assistt/ci-templates"
+    ref: 'main'
+    file:
+      - ".gitlab-ci-template.yml"
+  - local: .gitlab-ci-ao.yml 
 
-create_process_container:
-  stage: pre
+lint-job:
+  stage: test
+  image: registry.services.nesdis.noaa.gov/ssboxes/common/assistt/images/assistt-ci-utils:v1.0
   script:
-    - echo "Creating the process container"
-    - version=$(echo "$CI_COMMIT_MESSAGE" | sed -n 's/.*\[process container':' \([^]]*\)\].*/\1/p')
-    - docker build -t $CI_REGISTRY_IMAGE/process:$version -f docker/process/Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/process:$version
-    - docker tag $CI_REGISTRY_IMAGE/process:$version $CI_REGISTRY_IMAGE/process:latest
-    - docker push $CI_REGISTRY_IMAGE/process:latest
-  rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /^\[process container/'
-
-build-job:
-    stage: build
-    before_script:
-        - git submodule sync
-        - git submodule update --init
-    script:
-        - echo “Linting the HFR Algorithm”
-        - docker run
-            -u $(id -u)
-            -v $PWD:$PWD
-            -w $PWD
-            git.star.nesdis.noaa.gov:4567/assistt/docker_image/assistt-ci-utils:v0.1
+    - echo “Linting the HFR Algorithm”
+    - pylint --ignore-patterns='[.]*yaml' --recursive=y packages/* srappers/*
+  allow_failure: true
             
 test-job:
-    stage: test
-    script:
-        - echo “No test has been created yet”
+  stage: test
+  script:
+    - echo “No test has been created yet”
 
-sast:
-  tags: [container]
+build-container:
+  stage: build/container
+  extends: .login_gitlab_cr
+  variables:
+    GIT_LFS_SKIP_SMUDGE: "0"
+  script:
+    - |
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+      else
+        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+      fi
+    - docker build -t ${IMAGE} .
+    - docker push ${IMAGE}
+  rules:
+  - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+.*/'

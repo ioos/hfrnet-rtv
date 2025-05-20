@@ -1,8 +1,15 @@
 """db_manager"""
 
-from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
+import os
+import boto3
+import ssl
+import urllib.request
 import pymysql
+
+from hfrnet.utils_funcs.lib_rtv import DatabaseConfig
+from hfrnet.utils_funcs.constsHFR import rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH
 import logging
+
 _log = logging.getLogger()
 
 class db_manager:
@@ -14,13 +21,43 @@ class db_manager:
         self.conn_handel = None
 
     def __enter__(self):
+        _log.info(f" >>> self.connect ::{self.dbConfig.db_name}::")
         self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def generate_token(self):
+        """
+        Use IAM database authentication when your application requires fewer than 200 new IAM database authentication connections per second. 
+        The database engines that work with Amazon RDS don't impose any limits on authentication attempts per second. However, when you use
+        IAM database authentication, your application must generate an authentication token. Your application then uses that token to connect
+        to the DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database 
+        authentication can cause connection throttling.
+        """
+        
+        if self.dbConfig.run_env == 'ao':
+            session = boto3.Session()
+        else:
+            session = boto3.Session(region_name=self.dbConfig.region)
+        client = session.client('rds')
+
+        # Generate the authentication token
+        self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
+                                                               Port=self.dbConfig.port,
+                                                               DBUsername=self.dbConfig.user,
+                                                               Region=self.dbConfig.region)
+        _log.info("Generating --> token = client.generate_db_auth_token")
+        _log.info("======= token =================================")
+        _log.info(f"{self.dbConfig.password}")
+        _log.info("========================================")
+
     def connect(self):
+        _log.info(f"-- Running in {self.dbConfig.run_env }")
+
+        self.generate_token()
+
         try:
             if self.dbConfig.run_env == 'rhw':
                 # -- connect on local rhw linux
@@ -29,27 +66,36 @@ class db_manager:
                     user=self.dbConfig.user,
                     database=self.dbConfig.db_name)
             else:
-                #--- connect on AWS
-                self.conn_handel = pymysql.connect(
-                user = USER,
-                database = DBNAME,
-                host = ENDPOINT,
-                port = PORT,
-                password = token,
-                ssl_ca = './us-east-1-bundle.pem',
-                ssl_verify_identity = True,
-                ssl_verify_cert = True,
-                auth_plugin_map = {'mysql_clear_password': None},)
+                # #--- connect on AWS
+                # _log.info(f"---------------------------------------------")
+                _log.info(f" ::self.dbConfig.run_env::{self.dbConfig.run_env}")
+                # _log.info(f"--------self.dbConfig.password ::{self.dbConfig.password} ")
+                # _log.info(f"-------- pymysql.connect ")
+
+                self.conn_handel = pymysql.connect(host = self.dbConfig.host,
+                                                user = self.dbConfig.user,
+                                                password = self.dbConfig.password,
+                                                database = self.dbConfig.db_name,
+                                                port =self.dbConfig.port,
+                                                ssl = self.dbConfig.ssl_context)
         
+                _log.info(f"---------------------------- connected to ::{self.dbConfig.db_name} database")
+                # _log.info(f"---------------------------------------------")
         except Exception as err:
-            msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
-                   f", Can't connect to the database: user={self.dbConfig.user}, "
-                   f"database={self.dbConfig.name} , "
-                   f"exist")
+            msg = (f" ---- FATAL ERROR:Unexpected {err} ::::, {type(err)}::::"
+                f", Can't connect to the database: user={self.dbConfig.user}, "
+                f"database={self.dbConfig.db_name}")
             _log.fatal(msg)
+        if self.conn_handel is None:
+            msg = " Database connection failed, handle is none"
+            _log.fatal(msg)
+            raise ValueError(msg)
+            
+            
     #----------------------------------------------------------
+    
     def get_query(self, query):
-        _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+        _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
         _log.info(query)
         datasetdict = {}
         with self.conn_handel.cursor() as cursor:
@@ -59,10 +105,11 @@ class db_manager:
             self.create_dict(rows, cursor.description, datasetdict)
             
             _log.info(" ------------------ ")
+            _log.info(f" ------------------  {len(datasetdict)}")
             for key, value in datasetdict.items():
                 msg = f"{key}:::{value}"
                 _log.info(msg)
-            _log.info(" -------->>>>>>>>>>>>>>------------------ ")
+            _log.info(" -------->>>>>>>>>>>>>> get_query ------------------ ")
 
         return datasetdict
     #----------------------------------------------------------
@@ -106,41 +153,88 @@ class db_manager:
 
     def close(self):
         self.conn_handel.close()
+        _log.info(f" >>> self.conn_handel.close ::{self.dbConfig.db_name}::")
     #----------------------------------------------------------
-
+#------------------ new stuff here \/
     def table_exists(self, table_name):
         self.cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
         result = self.cursor.fetchone()
         return result is not None
     #----------------------------------------------------------
-
-    def create_table(self, table_name):
+    def create_lock_process_table(self, table_name):
         create_table_query = f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
+        CREATE TABLE IF NOT EXISTS lock_process (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            file_name VARCHAR(255),
-            file_arrival_time DATETIME,
+            exe_time DATETIME,
             domain VARCHAR(255),
             resolution VARCHAR(255)
         )
         """
-        self.get_query(create_table_query)
-        # self.connection.commit()
+        self.write_query(create_table_query)
     #----------------------------------------------------------
+
+# ----------------------------------------------------------
 def set_db_info( config, configObj):
     """
     Set DB info to be used later...?
     """
+    from hfrnet.db_tools.db_tables import create_db_table_inter_files, create_db_table_lock_process
+
     configObj.dbObject.user = config['databases.user']
     configObj.dbObject.host = config['databases.host']
     configObj.dbObject.port = config['databases.port']
     configObj.dbObject.password = config['databases.password']
     configObj.dbObject.ssl_ca = config['databases.ssl_ca']
-    configObj.dbObject.ssl_verify_identity = config['databases.ssl_verify_identity']
-    configObj.dbObject.ssl_verify_cert = config['databases.ssl_verify_cert']
-    configObj.dbObject.auth_plugin_map = config['databases.auth_plugin_map']
+    configObj.dbObject.region = config['databases.region']
     configObj.dbObject.run_env = config['databases.run_env']
+
+    #-------------------------------------------
+    # --- set the ceritication parameters
+    download_rds_certificate()
+    context = ssl.create_default_context()
+    context.check_hostname = True
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.load_verify_locations(configObj.dbObject.ssl_ca)
+    context.verify_identity = True
+    context.verify_cert = True
+    context.auth_plugin_map = {'mysql_clear_password': None}
+    configObj.dbObject.ssl_context = context
+
+    #-------------------------------------------
     #---- set the environment parameters
     configObj.config_dbname = config['databases.config_dbname']
     configObj.radial_dbname = config['databases.radial_dbname']
+
+    _log.info(f"---------------------------------------------")
+    _log.info(f" set_db_info::Running Env is :: {configObj.dbObject.run_env}")
+    os.environ['LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN'] = '1'
+
+    _log.info("========================================")
+    _log.info(f" Create tables,inter_files,lock_process  if not exist")
+    create_db_table_inter_files(configObj)
+    create_db_table_lock_process(configObj)
+    _log.info("========================================")
+
+
+def download_rds_certificate():
+    """Downloads the RDS certificate. Falls back to env variable if download fails."""
+
+    _log.info(f"------ in download_rds_certificate")   
+    try:
+        _log.debug("Attempting to download RDS certificate from AWS...")
+        urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        _log.debug("Certificate downloaded successfully.")
+    except Exception as download_error: # TODO: coding standards require catching specific errors.
+        _log.debug(f"Download failed: {download_error}")
+        # Fallback to ENV variable if download fails
+        if os.getenv('DEFAULT_RDS_CERTIFICATE'):
+            _log.debug("Using RDS certificate from environment variable.")
+            with open(docker_CERTIFICATE_PATH, 'w') as cert_file:
+                cert_file.write(os.environ['DEFAULT_RDS_CERTIFICATE'])
+        else:
+            raise RuntimeError("Failed to download certificate and no backup available in environment variable.")
+
+
+
+
 

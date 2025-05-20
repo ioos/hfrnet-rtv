@@ -1,28 +1,27 @@
 """Saves LTA data to a NetCDF file"""
 
-import os
 from datetime import datetime
-import textwrap
 import logging
 import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
 from hfrnet.utils_funcs.utility import (_dict, next_month_start,
-                                        set_history, rtvNcid)
+                                        set_history, rtvNcid, current_datetime,
+                                        get_timestamp_from_filename,
+                                        wrap_text, resolution_spaced)
 import hfrnet.utils_funcs.constsHFR as constsHFR
-from hfrnet.run_rtv.rtvMetadata import rtvMetadata
 from hfrnet.utils_funcs.math_funcs import array_rotate_and_round, all_range
 
 _log = logging.getLogger()
 
 def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessObj,
-                  time, A_totObj):
+                  time, A_totObj, inputs):
     '''
     % Saves LTA data to a NetCDF file
     %
     %    ltaSaveNetCDF( metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessObj,
-                        time, A_totObj ) 
+                        time, A_totObj )
     %    saves long-term average solutions and corresponding metadata in NetCDF format using
     %    the Climate and Foecast (CF) and Attribute Convention for Data
     %    Discovery (ACDD) metadata standards.
@@ -60,17 +59,17 @@ def ltaSaveNetcdf(metaDataObj, configObj, fileLocObj, stcLtaInfoObj, rtvProcessO
     ## Save
     try:
         writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
-                    rtvProcessObj, time, A_totObj)
+                    rtvProcessObj, time, A_totObj, inputs)
 
     except Exception as e:
-        message = f'Error saving {fileLocObj.ncpathfile}: \n {e}'
+        message = f'Error saving {fileLocObj.output_ncfile}: \n {e}'
         raise RuntimeError(message) from e
 
-    success = f"Saved {fileLocObj.ncpathfile}"
+    success = f"Saved {fileLocObj.output_ncfile}"
     _log.info(success)
 
 def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
-                rtvProcessObj, time, A_totObj):
+                rtvProcessObj, time, A_totObj, inputs):
     """ Formats LTA data and writes NetCDF file """
 
     A = A_totObj
@@ -80,15 +79,15 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # Changes to the way data are encoded (types, new vars, new metadata, updates in metadata, ...)
     # should be reflected here
     nc = _dict()
-    nc.formatVersion = '1.1.00' # major.minor.maintenance
+    nc.formatVersion = '2.0.00' # major.minor.maintenance
 
     # Metadata conventions used
     nc.conventions = _dict()
-    nc.conventions['CF'] = 'CF-1.7'
+    nc.conventions['CF'] = 'CF-1.12'
     nc.conventions['ACDD'] = 'ACDD-1.3'
 
     # CF Standard Name Version
-    nc.cfStdNameVersion = 'CF Standard Name Table, Version 51'
+    nc.cfStdNameVersion = 'CF Standard Name Table version 89'
 
 
     ## Define default deflation parameters
@@ -100,11 +99,13 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ## Define subprocess specific parameters
     if rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['month']:
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_month_temporal_coverage)
+        min_temporal_coverage_description = 'Minimum number of days required to compute monthly statistics'
         time_bnds = [datetime(year=time.year, month=time.month, day=1).timestamp(),
                      next_month_start(time).timestamp()]
 
     elif rtvProcessObj.subprocess_name == constsHFR.CONFIGS_DICT['year']:
         min_temporal_coverage = np.int16(stcLtaInfoObj.ltaInfo.min_year_temporal_coverage)
+        min_temporal_coverage_description = 'Minimum number of days required to compute annual statistics'
         time_bnds = [datetime(year=time.year, month=1, day=1).timestamp(),
                      datetime(year=time.year+1, month=1, day=1).timestamp()]
     else:
@@ -168,9 +169,6 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # aren't using features specific to the NetCDF-4.0 model.
     ncid = Dataset(fileLocObj.output_ncfile, 'w', data_mode='NETCDF4_CLASSIC')
 
-    #set the project, sensor, and institutional metadata
-    rtvMetadata(ncid, configObj)
-
     ## Define Dimensions
     # Add in order of T, Z, Y, X for CF/COARDS compliance
     dimid_t = ncid.createDimension('time', None)
@@ -205,9 +203,9 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     # representation.  Unix time epoch is:
     #	1970-01-01 00:00:00Z = 0 seconds, 86,400 sec/day
     varid_t = ncid.createVariable('time', 'i4', dimid_t,
-                                  compression=compression,
-                                  complevel=complevel,
-                                  shuffle=shuffle)
+                                compression=compression,
+                                complevel=complevel,
+                                shuffle=shuffle)
     varid_t.standard_name = 'time'
     varid_t.units = 'seconds since 1970-01-01'
     varid_t.calendar = 'gregorian'
@@ -254,10 +252,10 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.id = f"{uuid.uuid4()}"
 
     # Date Created (ACDD)
-    ncid.date_created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = metaDataObj.source
+    ncid.source = '\n'.join(inputs)
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
@@ -271,39 +269,32 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.title = metaDataObj.title
 
     # Summary (ACDD)
-    ncid.summary = textwrap.fill(metaDataObj.summary, 70)
+    ncid.summary = wrap_text(metaDataObj.summary)
 
     # Instrument (ACDD)
-    ncid.instrument = textwrap.fill(metaDataObj.instrument, 70)
+    ncid.instrument = wrap_text(metaDataObj.instrument)
 
     # Keywords (ACDD)
-    ncid.keywords = textwrap.fill(metaDataObj.keywords, 70)
-
+    ncid.keywords = wrap_text(metaDataObj.keywords)
+        
     # Geospatial Bounds (ACDD)
     ncid.geospatial_lat_min = np.float32(A.grid.y_range[0])
     ncid.geospatial_lat_max = np.float32(A.grid.y_range[1])
+    ncid.geospatial_lat_resolution = resolution_spaced(configObj.resolution)
+    ncid.geospatial_lat_units = 'degrees_north'
     ncid.geospatial_lon_min = np.float32(A.grid.x_range[0])
     ncid.geospatial_lon_max = np.float32(A.grid.x_range[1])
+    ncid.geospatial_lon_resolution = resolution_spaced(configObj.resolution)
+    ncid.geospatial_lon_units = 'degrees_east'
 
     # Processing Level (ACDD)
-    ncid.processing_level = textwrap.fill(metaDataObj.processing_level, 70)
+    ncid.processing_level = wrap_text(metaDataObj.processing_level)
 
-    # History (CF, ACDD)
-    if hasattr(A, 'history') and len(A.history) > 0:
-        ncHistory = []
-        for I in range(len(A.history)):
-
-            ncHistory.append(f'{A.history[I].timestamp} {A.history[I].user} '
-                f'{A.history[I].program}: {A.history[I].message}') ##ok<AGROW>
-
-
-        ncid.history = '\n'.join([textwrap.fill(h, 70) for h in ncHistory])
-
+    ncid.history = metaDataObj.history
 
     # References (CF, ACDD)
     if hasattr(metaDataObj, 'references'):
-        ncid.references = textwrap.fill(metaDataObj.references, 70)
-
+        ncid.references = wrap_text(metaDataObj.references)
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
@@ -326,8 +317,26 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.format_version = nc.formatVersion
 
     # LTA Product Version (ACDD)
-    ncid.product_version = os.environ['PRODUCT_VERSION']
+    ncid.product_version = configObj.product_version
 
+    # time converage
+    start, end = get_timestamp_from_filename(fileLocObj.output_ncfile.name)
+    ncid.time_coverage_start = start
+    ncid.time_coverage_end = end
+
+    #
+    ncid.cdm_data_type = metaDataObj.cdm_data_type
+    ncid.day_night_data_flag = metaDataObj.day_night_data_flag
+    ncid.metadata_link = metaDataObj.metadata_link
+    ncid.platform = metaDataObj.platform
+    ncid.platform_vocabulary = metaDataObj.platform_vocabulary
+    ncid.production_environment = configObj.production_environment
+    ncid.production_site = configObj.production_site
+    ncid.project = metaDataObj.project
+    ncid.publisher_email = metaDataObj.publisher_email
+    ncid.publisher_type = metaDataObj.publisher_type
+    ncid.publisher_name = metaDataObj.publisher_name
+    ncid.publisher_url = metaDataObj.publisher_url
 
     ## Define Data Variables & Add Attributes
 
@@ -344,9 +353,11 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
                                   shuffle=shuffle)
     varid_z.standard_name = 'depth'
     varid_z.units = 'm'
+    varid_z.positive = 'down'
+    varid_z.axis = 'Z'
     varid_z.bounds = 'depth_bnds'
     zComment = 'Nominal depth (and corresponding bounds) based on contributing radars'
-    varid_z.comment = textwrap.fill(zComment, 70)
+    varid_z.comment = wrap_text(zComment)
 
 
     # Depth Bounds (cell boundaries)
@@ -569,8 +580,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         'Method used to compute hourly total solutions from radial velocities'
 
     varid_pp.min_temporal_coverage = min_temporal_coverage
-    varid_pp.min_temporal_coverage_description = \
-        'Minimum number of days required to compute monthly statistics'
+    varid_pp.min_temporal_coverage_description = min_temporal_coverage_description
 
     if rtvProcessObj.method == 'uwls':
         varid_pp.max_hdop = np.float32(stcLtaInfoObj.stcInfo.max_error)
@@ -580,8 +590,6 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
         msg = ('max_error metadata description is undefined for processing '
                f"method:  {rtvProcessObj.method}")
         _log.error(msg)
-
-    metaDataObj.depth_bottom = ncid.depth_bottom
 
     ## Add Data Values
     varid_lat[:] = all_range(A.grid.y_range[0], A.grid.y_range[1], A.grid.dy)
