@@ -96,7 +96,7 @@ def getRtvMetadata(processObj, configObj, metaDataObj):
     # Keywords (REQUIRED)
     #case & repeat for each product below (rtv, sta, lta)
     metaDataObj.keywords_vocabulary = ('Global Change Master Directory (GCMD) '
-                                       'Keywords, Version 20.9')
+                                       'Keywords, Version 21.2')
     metaDataObj = appendKeywords(configObj, metaDataObj)
 
     # Processing Level (REQUIRED)
@@ -344,7 +344,7 @@ def set_common_metadata(configObj, metaDataObj):
     #% Institution & Contact
 
     # Organization acronym (REQUIRED)
-    metaDataObj.institution_acronym = 'SIO'
+    metaDataObj.institution_acronym = 'NCCF'
 
     # Organization descriptive name (REQUIRED)
     metaDataObj.institution = ('DOC/NOAA/NESDIS/OSPO > Office of Satellite and '
@@ -367,7 +367,7 @@ def set_common_metadata(configObj, metaDataObj):
 
     #% Instrument Definition
 
-    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 20.9'
+    metaDataObj.instrument_vocabulary = 'Global Change Master Directory (GCMD) Keywords, Version 21.2'
 
     metaDataObj.instrument = 'OCEAN SURFACE CURRENT RADAR'
 
