@@ -247,7 +247,7 @@ class Metadata(BaseObject):
         self.day_night_data_flag = "both"
         self.metadata_link = "https://cdn.ioos.noaa.gov/media/2017/12/hfradar_nodc_sep_2014.pdf"
         self.platform = "CODAR SeaSonde, COASTAL STATIONS"
-        self.platform_vocabulary = "Global Change Master Directory (GCMD) Keywords, Version 20.9"
+        self.platform_vocabulary = "Global Change Master Directory (GCMD) Keywords, Version 21.2"
         self.project = "NESDIS Common Cloud Framework."
         self.publisher_email = "espcoperations@noaa.gov"
         self.publisher_type = "institution"
