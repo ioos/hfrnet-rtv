@@ -344,7 +344,7 @@ def set_common_metadata(configObj, metaDataObj):
     #% Institution & Contact
 
     # Organization acronym (REQUIRED)
-    metaDataObj.institution_acronym = 'NCCF'
+    metaDataObj.institution_acronym = 'IOOS'
 
     # Organization descriptive name (REQUIRED)
     metaDataObj.institution = ('DOC/NOAA/NESDIS/OSPO > Office of Satellite and '

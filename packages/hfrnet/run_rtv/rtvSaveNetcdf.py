@@ -280,7 +280,6 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
 
     # Institution (CF, ACDD)
     ncid.institution = metaDataObj.institution
-    ncid.institution_acronym = metaDataObj.institution_acronym
 
     # Creator (ACDD)
     ncid.creator_type = metaDataObj.creator_type
