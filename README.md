@@ -14,6 +14,10 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 - Uses gitLFS: Yes
 - Uses submodules: Yes
 
+## Configuration Management
+
+* Configuration Item: [NCCFCM-16623](https://jira.nesdis-hq.noaa.gov/jira/secure/insight/assets/NCCFCM-16623)
+
 ### System Requirements
 - Unit Name: HFRNet
 - Clock Time: ~5 min (depends on the process)

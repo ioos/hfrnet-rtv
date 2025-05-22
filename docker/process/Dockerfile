@@ -21,6 +21,6 @@ RUN dnf update -y && \
     rm us-east-1-bundle.pem && \
     chmod 777 /home/WORKING_DIR
 WORKDIR /home/WORKING_DIR
-
+USER 1000
 # curl -OL https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem && \
 
