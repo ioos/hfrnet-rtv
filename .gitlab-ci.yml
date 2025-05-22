@@ -9,22 +9,17 @@ stages:
   - register
 
 include:
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/secret_detection@~latest
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/dependency_scanning@~latest
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/icode_sast@main
   - component: ${CI_SERVER_HOST}/ci-catalog/security/checkov_sast@~latest
     inputs:
       test_results: "true"
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/sast@~latest
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/container_scanning@~latest
-    inputs: 
-      dockerfile: docker/process/Dockerfile
-      image: $CI_REGISTRY_IMAGE/process:latest
-      git_strategy: fetch
-      job_name: container_scanning_process
+  - component: ${CI_SERVER_HOST}/ci-catalog/container/build@~latest
+    inputs:
+      job_name: build-container
+      stage: build/container
+      tag: ${CI_COMMIT_TAG}
   - component: ${CI_SERVER_HOST}/ci-catalog/security/inspector_scanning@~latest
     inputs: 
-      image: $CI_REGISTRY_IMAGE/process:latest
+      image: $CI_REGISTRY_IMAGE:$DEV_VERSION
       job_name: inspector_scanning_process
   - component: ${CI_SERVER_HOST}/ssboxes/common/assistt/ci-templates/create_container@main
   - project: "ssboxes/common/assistt/ci-templates"
@@ -32,6 +27,7 @@ include:
     file:
       - ".gitlab-ci-template.yml"
   - local: .gitlab-ci-ao.yml 
+  - local: .gitlab-ci-version.yml
 
 lint-job:
   stage: test
@@ -47,18 +43,7 @@ test-job:
     - echo “No test has been created yet”
 
 build-container:
-  stage: build/container
-  extends: .login_gitlab_cr
   variables:
     GIT_LFS_SKIP_SMUDGE: "0"
-  script:
-    - |
-      if [[ -n "$CI_COMMIT_TAG" ]]; then
-        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
-      else
-        IMAGE="${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-      fi
-    - docker build -t ${IMAGE} .
-    - docker push ${IMAGE}
   rules:
   - if: '$CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ /^(v)?\d+.\d+.\d+.*/'
