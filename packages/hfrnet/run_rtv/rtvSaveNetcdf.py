@@ -236,7 +236,8 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = [f"{rr.file}" for rr in r]
+    list_source = [f"{rr.file}" for rr in r]
+    ncid.source = ', '.join(list_source)
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):
@@ -527,7 +528,8 @@ def writeNetCDF(fileLocObj, configObj, metaDataObj, rtvInfoObj, rtvProcessObj,
     varid_rm.number_files_loaded = np.int16(len(r))
     varid_rm.number_files_loaded_description = 'Number of radial files loaded'
 
-    varid_rm.files_loaded = [f"{rr.file}" for rr in r]
+    list_loaded = [f"{rr.file}" for rr in r]
+    varid_rm.files_loaded = ', '.join(list_loaded)
     varid_rm.files_loaded_description = 'Radial file names loaded'
 
     # ======================================
