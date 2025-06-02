@@ -38,15 +38,17 @@ def Set_s3_output_bucket(mconfigureVals):
 
     _log.info(f'------Account {acc_id}')
     if acc_id == '560271376700': # Dev/Sandbox
-        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
+        mconfigureVals.output_s3_loc = 'nccf-dev-pg-results-us-east-1-560271376700' #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = 'nccf-dev-pg-results-us-east-1-560271376700'
     elif acc_id == '656149346314': # UAT
-        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
-        mconfigurevals.output_intermed_s3_loc = mconfigureVals.output_s3_loc
+        mconfigureVals.output_s3_loc = 'nccf-uat-pg-results-us-east-1-656149346314' #'s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
+        mconfigurevals.output_intermed_s3_loc = 'nccf-uat-pg-intermediate-us-east-1-656149346314'
     elif acc_id == '844319835141': # Prod
-        mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = mconfigureVals.output_s3_loc
-    
+        mconfigureVals.output_s3_loc = 'nccf-prod-pg-results-us-east-1-844319835141' #'s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
+        mconfigureVals.output_intemed_s3_loc = 'nccf-prod-pg-intermediate-us-east-1-844319835141'
+    else:
+        _log.error(f"Account id {acc_id} not recognized, so cannot set output S3 bucket.")
+        
     _log.info(f"--The output_s3_loc = {mconfigureVals.output_s3_loc}")
     _log.info('----------------------')
     
@@ -694,7 +696,7 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
     """    
     Copy the output file with metadata to S3 Results bucket
     """
-    _log.info(">>> s3_url={s3_loc}")
+    _log.info(f">>> s3_url={s3_loc}")
 
     s3_url = s3_loc.replace('s3://', '')
     
@@ -710,7 +712,7 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
     
     dir_path = get_s3_directory_path(time, process, configObj)
     file_key = f"{dir_path}/{file_name.name}"
-    
+    print("\n\n", s3_url, file_key, "\n\n")
     _log.info(f"--> s3handle.upload_file(Filename= {file_name}, "
         f"Bucket={s3_url}, Key={file_key}, ExtraArgs={ExtraArgs_dict})")
     
