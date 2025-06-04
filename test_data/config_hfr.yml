@@ -24,7 +24,7 @@ directory:
 databases:
    run_env: 'ao' # 'aws' 'rhw' 'ao'
    user: 'hfrnet'
-   host: 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
+   host: 'var' #'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
    port: 3306
    password: 'token'
    ssl_ca: '/tmp/us-east-1-bundle.pem' #'/home/ec2-user/environment/us-east-1-bundle.pem'
