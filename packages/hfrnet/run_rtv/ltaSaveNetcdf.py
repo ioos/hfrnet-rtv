@@ -255,7 +255,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # Source (CF)
-    ncid.source = '\n'.join(inputs)
+    ncid.source = ', '.join(inputs)
 
     # Program (ACDD)
     if hasattr(metaDataObj, 'program'):

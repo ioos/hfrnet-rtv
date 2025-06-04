@@ -173,6 +173,28 @@ class db_manager:
         self.write_query(create_table_query)
     #----------------------------------------------------------
 
+def set_db_host():
+    """
+        The database host will change depending on the environment
+    """
+    _log.info('----------------------')
+    _log.info('Set the database host based on the running env id')
+    
+    sts = boto3.client('sts')
+    response = sts.get_caller_identity()
+    acc_id = response.get('Account')
+    
+    _log.info(f'------Account {acc_id}')
+    if acc_id == '560271376700': # Dev/Sandbox
+        host = 'nesdis-nccfdev5006-hfrnet-db.cluster-cggwesdxhbs9.us-east-1.rds.amazonaws.com'
+    elif acc_id == '656149346314': # UAT
+        host = 'nesdis-nccfuat5065-hfrnet-db.cluster-ciaelnl1aaal.us-east-1.rds.amazonaws.com'
+    elif acc_id == '844319835141': # Prod
+        host = ''
+
+    return host
+
+
 # ----------------------------------------------------------
 def set_db_info( config, configObj):
     """
@@ -181,7 +203,7 @@ def set_db_info( config, configObj):
     from hfrnet.db_tools.db_tables import create_db_table_inter_files, create_db_table_lock_process
 
     configObj.dbObject.user = config['databases.user']
-    configObj.dbObject.host = config['databases.host']
+    configObj.dbObject.host = set_db_host()
     configObj.dbObject.port = config['databases.port']
     configObj.dbObject.password = config['databases.password']
     configObj.dbObject.ssl_ca = config['databases.ssl_ca']
