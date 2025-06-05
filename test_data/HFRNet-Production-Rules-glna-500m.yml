@@ -2,7 +2,7 @@ production_rule:
   sa_name: "HFRNet-glna-500m"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet-glna-500m"
-  version: "1.0.50"
+  version: "1.0.51"
   runtime:
     resources:
       cpu: "1"
