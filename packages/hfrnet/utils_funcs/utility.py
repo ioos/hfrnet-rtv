@@ -39,13 +39,13 @@ def Set_s3_output_bucket(mconfigureVals):
     _log.info(f'------Account {acc_id}')
     if acc_id == '560271376700': # Dev/Sandbox
         mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao' #'nccf-dev-pg-results-us-east-1-560271376700'
+        mconfigureVals.output_intermed_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao' #'nccf-dev-pg-results-us-east-1-560271376700'
     elif acc_id == '656149346314': # UAT
         mconfigureVals.output_s3_loc = 'nccf-uat-pg-results-us-east-1-656149346314' #'s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
         mconfigureVals.output_intermed_s3_loc = 'nccf-uat-pg-intermediate-us-east-1-656149346314'
     elif acc_id == '844319835141': # Prod
         mconfigureVals.output_s3_loc = 'nccf-prod-pg-results-us-east-1-844319835141' #'s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = 'nccf-prod-pg-intermediate-us-east-1-844319835141'
+        mconfigureVals.output_intermed_s3_loc = 'nccf-prod-pg-intermediate-us-east-1-844319835141'
     else:
         _log.error(f"Account id {acc_id} not recognized, so cannot set output S3 bucket.")
         
@@ -645,21 +645,22 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
     _log.info(f">>> s3_url={s3_url}")
     s3handle = boto3.client('s3')
-    s3_url = s3_url.replace('s3://', '')
+
+    if 's3://' in s3_url:
+        s3_url = s3_url.replace('s3://', '')
     
     #'arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
     # Split the URL into parts
-    parts = s3_url.split('/', 2)
+    parts = s3_url.split('/')
     
     # Extract bucket name and file key
     # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
-    bucket_name = f"{parts[0]}/{parts[1]}"
-
+    bucket_name = parts[0]
+    if 'accesspoint' in s3_url:
+        bucket_name += f"/{parts[1]}"
+        
     # file_key = 'HFRNet/CariCOOS/PYFC/Radials/'
-    file_key = parts[2] if len(parts) > 2 else ''    
-    # if "Radials" not in file_key:
-    #     # file_key = f"{file_key}/Radials"
-    #     _log.error(f"--> Radials --- does exist in the file key {file_key}")
+    file_key = s3_url.split(f"{bucket_name}/")[1]
     
     newfpath = f"{dir_dest}/{file_name}"
     _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
