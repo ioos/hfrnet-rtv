@@ -646,33 +646,21 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     _log.info(f">>> s3_url={s3_url}")
     s3handle = boto3.client('s3')
 
-    inDev = False
     if 's3://' in s3_url:
         s3_url = s3_url.replace('s3://', '')
-        inDev = True
     
     #'arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
     # Split the URL into parts
-    parts = None
-    if inDev:
-        parts = s3_url.split('/', 2)
-    else:
-        parts = s3_url.split('/', 1)
+    parts = s3_url.split('/')
     
     # Extract bucket name and file key
     # bucket_name = 'nccf-dev-ingest-trust-us-east-1-560271376700'
-    bucket_name = ''
-    if inDev:
-        bucket_name = f"{parts[0]}/{parts[1]}"
-    else:
-        bucket_name = f"{parts[0]}"
+    bucket_name = parts[0]
+    if 'accesspoint' in s3_url:
+        bucket_name += f"/{parts[1]}"
         
     # file_key = 'HFRNet/CariCOOS/PYFC/Radials/'
-    file_key = None
-    if inDev:
-        file_key = parts[2] if len(parts) > 2 else ''
-    else:
-        file_key = parts[1] if len(parts) > 1 else ''
+    file_key = s3_url.split(f"{bucket_name}/")[1]
     
     newfpath = f"{dir_dest}/{file_name}"
     _log.info(f"--> s3handle.download_file({bucket_name}, {file_key}/{file_name}, {newfpath})")
