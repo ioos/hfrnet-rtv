@@ -39,13 +39,13 @@ def Set_s3_output_bucket(mconfigureVals):
     _log.info(f'------Account {acc_id}')
     if acc_id == '560271376700': # Dev/Sandbox
         mconfigureVals.output_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao' #'nccf-dev-pg-results-us-east-1-560271376700'
+        mconfigureVals.output_intermed_s3_loc = 's3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-pg-results-ao' #'nccf-dev-pg-results-us-east-1-560271376700'
     elif acc_id == '656149346314': # UAT
         mconfigureVals.output_s3_loc = 'nccf-uat-pg-results-us-east-1-656149346314' #'s3://arn:aws:s3:us-east-1:656149346314:accesspoint/nccf-uat-pg-results-ao'
         mconfigureVals.output_intermed_s3_loc = 'nccf-uat-pg-intermediate-us-east-1-656149346314'
     elif acc_id == '844319835141': # Prod
         mconfigureVals.output_s3_loc = 'nccf-prod-pg-results-us-east-1-844319835141' #'s3://arn:aws:s3:us-east-1:844319835141:accesspoint/nccf-prod-pg-results-ao'
-        mconfigureVals.output_intemed_s3_loc = 'nccf-prod-pg-intermediate-us-east-1-844319835141'
+        mconfigureVals.output_intermed_s3_loc = 'nccf-prod-pg-intermediate-us-east-1-844319835141'
     else:
         _log.error(f"Account id {acc_id} not recognized, so cannot set output S3 bucket.")
         

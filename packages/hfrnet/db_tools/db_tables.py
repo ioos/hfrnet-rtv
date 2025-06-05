@@ -653,7 +653,7 @@ def record_output_files(configObj, file_name, process_name, s3_dir_name):
 		# ---- Add the intermediate file to the DB table
 		record_pars["name"] = f"'{file_name}'" ;
 		dir_path = get_s3_directory_path(datetime.strptime(stime, constsHFR.DATETIME_FORMAT), s3_dir_name, configObj)
-		record_pars["dir"] = f"'{configObj.output_s3_loc}/{dir_path}'"
+		record_pars["dir"] = f"'{configObj.output_intermed_s3_loc}/{dir_path}'"
 		# Create a string of the keys
 		keys_str = ', '.join(record_pars.keys())
 		# Create a string of the values
