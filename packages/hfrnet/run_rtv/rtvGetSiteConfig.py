@@ -32,7 +32,6 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
     """
     siteInfoObj = []
     results, nRows = get_active_sitelist(configObj, t)
-    
     if nRows == 0:
         # No sites configured
         msg = f'Site configuration not found for {configObj.domain}, {configObj.resolution}'
@@ -47,8 +46,9 @@ def rtvGetSiteConfig(configObj, siteInfoObj, t):
         _, idx = np.unique(ids, return_index=True)
         if len(ids) != len(idx):
             idx = np.setxor1d(idx, np.arange(len(ids)))
+            list_tmp = ",".join([results['name'][i] for i in idx])
             errmsg = (f'Found {len(idx)} site(s) with overlapping configurations; '
-                f'{",".join([results[i].name for i in idx])}')
+                      f'{list_tmp}')
             _log.error(errmsg)
 
         for i in range(nRows):
