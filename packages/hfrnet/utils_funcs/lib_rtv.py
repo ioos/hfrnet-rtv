@@ -254,7 +254,8 @@ class Metadata(BaseObject):
         self.publisher_name = "DOC/NOAA/NESDIS/OSPO > Office of Satellite and Product Operations, NESDIS, NOAA, U.S. Department of Commerce."
         self.publisher_url = "http://www.ospo.noaa.gov"
         self.history = ""
-
+        self.uuid = ""
+        
 class SetupError(Exception):
     pass
 

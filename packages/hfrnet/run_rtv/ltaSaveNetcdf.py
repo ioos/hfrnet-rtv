@@ -2,7 +2,6 @@
 
 from datetime import datetime
 import logging
-import uuid
 import numpy as np
 import netCDF4
 from netCDF4 import Dataset
@@ -249,8 +248,8 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcLtaInfoObj,
     ncid.id_HFR = rtvNcid(metaDataObj, configObj, rtvProcessObj, time)
 
     # UUID
-    ncid.id = f"{uuid.uuid4()}"
-
+    ncid.id = metaDataObj.uuid
+    
     # Date Created (ACDD)
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
 

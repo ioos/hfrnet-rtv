@@ -437,7 +437,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
         # Speed thresholding
         idx = abs(d.speed) > rtvInfoObj.max_rad_speed
         nIdx = np.sum(idx)
-
+        
         if nIdx > 0:
 
             d.latitude = d.latitude[~idx]
@@ -493,8 +493,7 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
                     nOverLand = nOverLand + sum(is_in)
 
-
-
+                    
 
         if nOverLand > 0:
             errmsg = f'Removed {nOverLand} radials falling over land'

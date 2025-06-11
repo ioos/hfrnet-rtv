@@ -14,6 +14,7 @@ import netCDF4 as nc4
 from dateutil import parser
 import h5py
 import boto3
+import hashlib
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
 from hfrnet.utils_funcs import constsHFR
@@ -693,7 +694,7 @@ def get_s3_directory_path(time, process, configObj):
 
     return dir_path
         
-def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
+def copy_file_to_s3(s3_loc, file_name, configObj, time, metaDataObj, process):
     """    
     Copy the output file with metadata to S3 Results bucket
     """
@@ -702,12 +703,26 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, process):
     s3_url = s3_loc.replace('s3://', '')
     
     s3handle = boto3.client('s3')
+
+    start_time = str(file_name).split("_")[-3].replace('s','')
+    prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
+    uuid = metaDataObj.uuid
+    sha384_hash = hashlib.sha384(open(str(file_name), "rb").read()).hexdigest()
+    sha256_hash = hashlib.sha256(open(str(file_name), "rb").read()).hexdigest()
+    md5_hash = hashlib.md5(open(str(file_name), "rb").read()).hexdigest()
+
     ExtraArgs_dict={
         "Metadata":
         {
             "Region": f"{configObj.domain}",
             "Resolution": f"{configObj.resolution}",
-            "Date": f"{time}"
+            "Date": f"{time}",
+            "ProductShortName": f"{prod_short_name}",
+            "observationstarttime": f"{start_time}",
+            "UUID": f"{uuid}",
+            "SHA256": f"{sha256_hash}",
+            "SHA384": f"{sha384_hash}",
+            "MD5": f"{md5_hash}"
         }
     }
     
