@@ -704,7 +704,12 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, metaDataObj, process):
     
     s3handle = boto3.client('s3')
 
-    start_time = str(file_name).split("_")[-3].replace('s','')
+    #strip the start time and format it for CMR metadata 
+    start_time_strip = str(file_name).split("_")[-3].replace('s','')
+    start_time_format = datetime.strptime(start_time_strip, constsHFR.NCCF_FORMAT)
+    start_time = datetime.strftime(start_time_format, "%Y-%m-%dT%H:%M:%S.%f")
+    start_time = start_time[:-3] #remove the last zeros of milliseconds
+
     prod_short_name = constsHFR.PRODUCT_SHORT_NAMES[f'{process}']
     uuid = metaDataObj.uuid
     sha384_hash = hashlib.sha384(open(str(file_name), "rb").read()).hexdigest()
