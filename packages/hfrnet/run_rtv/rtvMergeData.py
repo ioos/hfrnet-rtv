@@ -85,8 +85,6 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
             newRadial = RadialInfo()
             
             for field in fields:
-                if field.casefold() == 'file' or field.casefold() == 'dir':
-                    continue
                 setattr(newRadial, field, last['r'][I][field])
             
             radials.append(newRadial)
