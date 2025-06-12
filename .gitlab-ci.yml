@@ -17,10 +17,10 @@ include:
       job_name: build-container
       stage: build/container
       tag: ${CI_COMMIT_TAG}
-  - component: ${CI_SERVER_HOST}/ci-catalog/security/inspector_scanning@~latest
-    inputs: 
-      image: $CI_REGISTRY_IMAGE:$DEV_VERSION
-      job_name: inspector_scanning_process
+  #- component: ${CI_SERVER_HOST}/ci-catalog/security/inspector_scanning@~latest
+  #  inputs: 
+  #    image: $CI_REGISTRY_IMAGE:$DEV_VERSION
+  #    job_name: inspector_scanning_process
   - component: ${CI_SERVER_HOST}/ssboxes/common/assistt/ci-templates/create_container@main
   - project: "ssboxes/common/assistt/ci-templates"
     ref: 'main'

@@ -153,7 +153,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
                 _log.info("Saving stc total intermediate files in netcdf format")
                 #copy intermediate file to s3 bucket
-                copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, center_time, 'stc-intermed')
+                copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, center_time, metaDataObj, 'stc-intermed')
 
                 if avgObj is not None:
                     avgObj.land = land
@@ -162,7 +162,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                   fileNameList, stcInfoObj,
                                   process, center_time, avgObj, inputs)
                     #copy file to s3 bucket
-                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, center_time, 'stc')
+                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, center_time, metaDataObj, 'stc')
                 else:
                     msg = f"Could not save average file because average was not calculated"
                     _log.error(msg)
@@ -184,9 +184,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
-                
-                if doMonthly:
 
+                if doMonthly:
+                    
                     #for execution time logging
                     stime = current_datetime() # time in constsHFR.DATETIME_FORMAT
 
@@ -214,7 +214,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                               "format")
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
                     #copy intermediate file to s3 bucket
-                    copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, iTime, 'monthly-intermed')
+                    copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, iTime, metaDataObj, 'monthly-intermed')
                     record_output_files(configObj, fileNameList.intermed_filename, process.name.casefold(), 'monthly-intermed')
                     
                     #save final file
@@ -228,7 +228,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                       fileNameList, stcLtaInfoObj,
                                       process, iTime, avgObj, inputs)
                         #copy file to s3 bucket
-                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, 'monthly')
+                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'monthly')
                     else:
                         _log.warning("Could not save monthly average file")
                     
@@ -267,7 +267,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                       fileNameList, stcLtaInfoObj,
                                       process, iTime, avgObjYear, inputs)
                         #copy file to s3 bucket
-                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, 'annual')
+                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'annual')
                     else:
                         _log.warning("Could not save yearly average file")
                         

@@ -1,7 +1,6 @@
 """stcSaveNetcdf"""
 
 from datetime import timedelta
-import uuid
 import logging
 import numpy as np
 import netCDF4
@@ -238,7 +237,7 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     ncid.id_HFR = rtvNcid(metaDataObj, configObj, rtvProcessObj, t)
 
     # UUID
-    ncid.id = f"{uuid.uuid4()}"
+    ncid.id = metaDataObj.uuid
 
     # Date Created (ACDD)
     ncid.date_created = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')

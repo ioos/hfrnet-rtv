@@ -1,5 +1,6 @@
 """rtvProcessMetadata"""
 
+import uuid
 import logging
 from hfrnet.utils_funcs.lib_rtv import Metadata
 from hfrnet.utils_funcs import constsHFR
@@ -371,6 +372,9 @@ def set_common_metadata(configObj, metaDataObj):
 
     metaDataObj.instrument = 'OCEAN SURFACE CURRENT RADAR'
 
+    # UUID
+    metaDataObj.uuid = f"{uuid.uuid4()}"
+        
     # Define nominal average and profile depth using resolution as proxy for
     # operating frequency and corresponding sampling depth
     if configObj.resolution == '500m':

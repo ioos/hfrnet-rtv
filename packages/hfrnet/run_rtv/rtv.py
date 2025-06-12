@@ -137,7 +137,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                           rtvInfoObj, rtvProcessObj, CalcTime,
                           U_tot, radials)
             #copy file to the s3 bucket
-            copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, CalcTime, 'rtv')
+            copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, CalcTime, metaDataObj, 'rtv')
 
             _log.info(f"Saving uwls total intermediate files in netcdf format")
             #save intermediate file (greater precision)
@@ -149,7 +149,7 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
                             'r': [r.to_dict() for r in radials]}
             saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
             #copy intermediate file to S3 bucket
-            copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, CalcTime, 'rtv-intermed')
+            copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, CalcTime, metaDataObj, 'rtv-intermed')
 
             _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
             update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)

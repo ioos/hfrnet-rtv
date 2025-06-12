@@ -149,7 +149,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
         if len(rpSpeed) > 0:
             rpSpeed = np.concatenate(rpSpeed)
             rpHeading = np.concatenate(rpHeading)
-
+        
         # See if we have:
         #  (1) New radial data with
         #  (2) enough contributing sites and
@@ -163,6 +163,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
             nRads[solutionIndex]  = len(rpSpeed)
             nRadSites[solutionIndex] = nSitesContributing
 
+    
     u_temp = np.array([tot.u for tot in uwlsTotalComp])
     v_temp = np.array([tot.v for tot in uwlsTotalComp])
     dopx_temp = np.array([tot.dopx for tot in uwlsTotalComp])
@@ -192,7 +193,7 @@ def rtvComputeTotals(compTotInput, radials, rtvInfoObj) -> RtvTotals:
         _log.info(msg)
     else:
         _log.debug('No solutions eliminated by masking')
-
+        
     #Structure data
     if np.any(nRads) > 0:
         U_totals.lat = compTotInput.grid.ocean_xy[1, :]
