@@ -23,7 +23,7 @@ def uwlsTotal(rSpeed, rHeading) -> UwlsTotalInfo:
     det_transpose = np.linalg.det(X_transpose_X)
     
     #can't do inverse
-    if det_transpose < 1e-5:
+    if abs(det_transpose) < 1e-5:
         return retValUwlsTotal
     
     C = np.linalg.inv(X_transpose_X)
