@@ -208,7 +208,7 @@ class RadialInfo(BaseObject):
         self.network = ""
         self.patterntype = ""
         self.manufacturer = ""
-        self.fileloc = ""
+        self.file = ""
         self.directory = ""
         self.sitelatitude = np.float64(0)
         self.sitelongitude = 9999.0
