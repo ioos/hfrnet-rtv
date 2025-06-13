@@ -362,13 +362,13 @@ def set_history(A, msg):
     """ Append to NetCDF history"""
     if not hasattr(A, 'history'):
         A.history = []
-        h = _dict()
-        h.timestamp = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
-        h.program = os.path.basename(__file__)
-        h.user = os.getenv('USER') or 'unknown user'
-        h.message = msg
-        A.history.append(h)
-
+    h = _dict()
+    h.timestamp = current_datetime().strftime('%Y-%m-%dT%H:%M:%SZ')
+    h.program = os.path.basename(__file__)
+    h.user = os.getenv('USER') or 'unknown user'
+    h.message = msg
+    A.history.append(h)
+    
 def get_processes():
     """
        Get a list of processes based on the input time
