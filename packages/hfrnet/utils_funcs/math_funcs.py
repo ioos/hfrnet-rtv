@@ -10,10 +10,15 @@ from shapely.geometry.polygon import Polygon
 from geographiclib.geodesic import Geodesic
 import numpy as np
 
-def azimuth(lat1, lat2, long1, long2):
+def azimuth(lat1, long1, lat2, long2):
     """get azimuth"""
-    brng = Geodesic.WGS84.Inverse(lat1, long1, lat2, long2)['azi1']
-    return brng
+    def _azimuth(lat1, long1, lat2, long2):
+        brng = Geodesic.WGS84.Inverse(lat1, long1, lat2, long2)['azi1']
+        return brng
+    
+    azi = np.vectorize(_azimuth)
+
+    return azi(lat1, long1, lat2, long2)
 
 def cart2pol(x, y):
     """cartesian to polar"""
