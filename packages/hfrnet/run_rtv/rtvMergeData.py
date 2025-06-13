@@ -31,7 +31,7 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         return radials, U_tot
         
     if fileLocObj.input_file.is_file():
-        configObj.reprocess = False
+
         if configObj.reprocess:
             # Warning if we're reprocessing
             msg = (f'Total file {fileLocObj.input_file} exists. Should '
