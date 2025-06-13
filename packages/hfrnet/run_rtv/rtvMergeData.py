@@ -29,7 +29,6 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
     if fileLocObj.input_file is None:
         _log.warning('fileLocObj.input_file is None')
         return radials, U_tot
-
         
     if fileLocObj.input_file.is_file():
 
@@ -108,7 +107,9 @@ def rtvMergeData(fileLocObj, configObj, radials, U_tot):
         U_tot.nSites[osi] = last['U']['nSites'][osi]
 
     # Append to history
-    U_tot.history = last['U']['history']
+    if 'history' in last['U']:
+        U_tot.history = last['U']['history']
+
     msg =  (f'Saving {np.count_nonzero(np.isfinite(U_tot.u_xvel))} solutions; '
             f'{nNew} new or updated, {np.count_nonzero(osi)} unmodified from '
             'previous run(s)')
