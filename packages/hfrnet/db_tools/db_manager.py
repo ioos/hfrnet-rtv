@@ -241,10 +241,25 @@ def set_db_info( config, configObj):
 def download_rds_certificate():
     """Downloads the RDS certificate. Falls back to env variable if download fails."""
 
+    def download_with_retries(url, filename, retries=3, delay=2):
+        for attempt in range(retries):
+            try:
+                urllib.request.urlretrieve(url, filename)
+                return
+            except Exception as e:
+                if attempt < retries - 1:
+                    time.sleep(delay * (2 ** attempt))
+                else:
+                    error_msg = f"Not able to download certificate: {e}"
+                    _log.error(error_msg)
+                    raise e
+
+
     _log.info(f"------ in download_rds_certificate")   
     try:
         _log.debug("Attempting to download RDS certificate from AWS...")
-        urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        #urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        download_with_retries(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
         _log.debug("Certificate downloaded successfully.")
     except Exception as download_error: # TODO: coding standards require catching specific errors.
         _log.debug(f"Download failed: {download_error}")
