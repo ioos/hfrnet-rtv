@@ -2,6 +2,7 @@
 
 import os
 import boto3
+from botocore.config import Config
 import ssl
 import urllib.request
 import pymysql
@@ -36,12 +37,20 @@ class db_manager:
         to the DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database 
         authentication can cause connection throttling.
         """
+        from botocore.config import Config
+
+        config = Config(
+            retries = {
+                'max_attempts':3,
+                'mode' = 'adaptive'
+            }
+        )
         
         if self.dbConfig.run_env == 'ao':
             session = boto3.Session()
         else:
             session = boto3.Session(region_name=self.dbConfig.region)
-        client = session.client('rds')
+        client = session.client('rds', config=config)
 
         # Generate the authentication token
         self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
@@ -180,7 +189,14 @@ def set_db_host():
     _log.info('----------------------')
     _log.info('Set the database host based on the running env id')
     
-    sts = boto3.client('sts')
+    config = Config(
+        retries = {
+            'max_attempts':3,
+            'mode' = 'adaptive'
+        }
+    )
+    
+    sts = boto3.client('sts', config=config)
     response = sts.get_caller_identity()
     acc_id = response.get('Account')
     
