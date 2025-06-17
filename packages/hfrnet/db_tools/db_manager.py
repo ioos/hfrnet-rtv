@@ -2,6 +2,7 @@
 
 import os
 import boto3
+from botocore.config import Config
 import ssl
 import urllib.request
 import pymysql
@@ -36,12 +37,20 @@ class db_manager:
         to the DB instance. If you exceed the limit of maximum new connections per second, then the extra overhead of IAM database 
         authentication can cause connection throttling.
         """
+        from botocore.config import Config
+
+        my_config = Config(
+            retries = {
+                'max_attempts' : 3,
+                'mode': 'adaptive'
+            }
+        )
         
         if self.dbConfig.run_env == 'ao':
             session = boto3.Session()
         else:
             session = boto3.Session(region_name=self.dbConfig.region)
-        client = session.client('rds')
+        client = session.client('rds', config=my_config)
 
         # Generate the authentication token
         self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
@@ -180,7 +189,14 @@ def set_db_host():
     _log.info('----------------------')
     _log.info('Set the database host based on the running env id')
     
-    sts = boto3.client('sts')
+    my_config = Config(
+        retries = {
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
+        }
+    )
+    
+    sts = boto3.client('sts', config=my_config)
     response = sts.get_caller_identity()
     acc_id = response.get('Account')
     
@@ -241,10 +257,25 @@ def set_db_info( config, configObj):
 def download_rds_certificate():
     """Downloads the RDS certificate. Falls back to env variable if download fails."""
 
+    def download_with_retries(url, filename, retries=3, delay=2):
+        for attempt in range(retries):
+            try:
+                urllib.request.urlretrieve(url, filename)
+                return
+            except Exception as e:
+                if attempt < retries - 1:
+                    time.sleep(delay * (2 ** attempt))
+                else:
+                    error_msg = f"Not able to download certificate: {e}"
+                    _log.error(error_msg)
+                    raise e
+
+
     _log.info(f"------ in download_rds_certificate")   
     try:
         _log.debug("Attempting to download RDS certificate from AWS...")
-        urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        #urllib.request.urlretrieve(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
+        download_with_retries(rds_CERTIFICATE_URL, docker_CERTIFICATE_PATH)
         _log.debug("Certificate downloaded successfully.")
     except Exception as download_error: # TODO: coding standards require catching specific errors.
         _log.debug(f"Download failed: {download_error}")

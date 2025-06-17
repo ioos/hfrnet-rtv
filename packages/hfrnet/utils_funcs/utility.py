@@ -14,6 +14,7 @@ import netCDF4 as nc4
 from dateutil import parser
 import h5py
 import boto3
+from botocore.config import Config
 import hashlib
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
@@ -32,8 +33,15 @@ def Set_s3_output_bucket(mconfigureVals):
     
     _log.info('----------------------')
     _log.info('Set the intermediate files s3 bucket based on the running env id')
+
+    my_config = Config(
+        retries = {
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
+        }
+    )
     
-    sts = boto3.client('sts')
+    sts = boto3.client('sts', config=my_config)
     response = sts.get_caller_identity()
     acc_id = response.get('Account')
 
@@ -645,7 +653,15 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
     """
     #'s3://arn:aws:s3:us-east-1:560271376700:accesspoint/nccf-dev-ingest-trust-ssbox/HFRNet/CariCOOS/PYFC/Radials/RDLm_WAIN_2025_03_21_1200.ruv'
     _log.info(f">>> s3_url={s3_url}")
-    s3handle = boto3.client('s3')
+
+    my_config = Config(
+        retries = {
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
+        }
+    )
+    
+    s3handle = boto3.client('s3', config=my_config)
 
     if 's3://' in s3_url:
         s3_url = s3_url.replace('s3://', '')
@@ -702,7 +718,14 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, metaDataObj, process):
 
     s3_url = s3_loc.replace('s3://', '')
     
-    s3handle = boto3.client('s3')
+    my_config = Config(
+        retries = {
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
+        }
+    )
+    
+    s3handle = boto3.client('s3', config=my_config)
 
     #strip the start time and format it for CMR metadata 
     start_time_strip = str(file_name).split("_")[-3].replace('s','')
