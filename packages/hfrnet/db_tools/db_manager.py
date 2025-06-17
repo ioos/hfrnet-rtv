@@ -41,8 +41,8 @@ class db_manager:
 
         config = Config(
             retries = {
-                'max_attempts':3,
-                'mode' = 'adaptive'
+                'max_attempts' : 3,
+                'mode': 'adaptive'
             }
         )
         
@@ -191,8 +191,8 @@ def set_db_host():
     
     config = Config(
         retries = {
-            'max_attempts':3,
-            'mode' = 'adaptive'
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
         }
     )
     

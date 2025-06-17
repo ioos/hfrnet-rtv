@@ -14,7 +14,7 @@ import netCDF4 as nc4
 from dateutil import parser
 import h5py
 import boto3
-rom botocore.config import Config
+from botocore.config import Config
 import hashlib
 
 from hfrnet.utils_funcs.lib_rtv import RtvProcess, Grid
@@ -36,8 +36,8 @@ def Set_s3_output_bucket(mconfigureVals):
 
     config = Config(
         retries = {
-            'max_attempts':3,
-            'mode' = 'adaptive'
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
         }
     )
     
@@ -656,8 +656,8 @@ def copy_file_from_s3(s3_url, file_name, dir_dest):
 
     config = Config(
         retries = {
-            'max_attempts':3,
-            'mode' = 'adaptive'
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
         }
     )
     
@@ -720,8 +720,8 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, metaDataObj, process):
     
     config = Config(
         retries = {
-            'max_attempts':3,
-            'mode' = 'adaptive'
+            'max_attempts' : 3,
+            'mode' : 'adaptive'
         }
     )
     
