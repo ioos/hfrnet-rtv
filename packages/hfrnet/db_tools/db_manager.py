@@ -39,7 +39,7 @@ class db_manager:
         """
         from botocore.config import Config
 
-        config = Config(
+        my_config = Config(
             retries = {
                 'max_attempts' : 3,
                 'mode': 'adaptive'
@@ -50,7 +50,7 @@ class db_manager:
             session = boto3.Session()
         else:
             session = boto3.Session(region_name=self.dbConfig.region)
-        client = session.client('rds', config=config)
+        client = session.client('rds', config=my_config)
 
         # Generate the authentication token
         self.dbConfig.password = client.generate_db_auth_token(DBHostname=self.dbConfig.host,
@@ -189,14 +189,14 @@ def set_db_host():
     _log.info('----------------------')
     _log.info('Set the database host based on the running env id')
     
-    config = Config(
+    my_config = Config(
         retries = {
             'max_attempts' : 3,
             'mode' : 'adaptive'
         }
     )
     
-    sts = boto3.client('sts', config=config)
+    sts = boto3.client('sts', config=my_config)
     response = sts.get_caller_identity()
     acc_id = response.get('Account')
     
