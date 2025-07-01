@@ -151,8 +151,6 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
             #copy intermediate file to S3 bucket
             copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, CalcTime, metaDataObj, 'rtv-intermed')
 
-            _log.info(f"Update the process {rtvProcessObj.name} time in the state table")
-            update_state_time(configObj,rtvProcessObj.name.casefold(), CalcTime)
             record_output_files(configObj, fileNameList.intermed_filename, rtvProcessObj.name.casefold(), 'rtv-intermed')
 
         else:
@@ -161,7 +159,10 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         _log.info(f" Set the processing time:: {CalcTime} for averages processes")
         newFileMask[index] = True
 
-
+    if not configObj.reprocess:
+        _log.info(f"Update the process {rtvProcessObj.name} time to {rtvInfoObj.new_state} in the state table")
+        update_state_time(configObj,rtvProcessObj.name.casefold(), rtvInfoObj.new_state)
+    
     #return only new files left
     newRtvFiles = processTimes[newFileMask]
 
