@@ -161,7 +161,10 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
         _log.info(f" Set the processing time:: {CalcTime} for averages processes")
         newFileMask[index] = True
 
-
+    if not configObj.reprocess:
+        _log.info(f"Update the process {rtvProcessObj.name} time to {rtvInfoObj.new_state} in the state table")
+        update_state_time(configObj,rtvProcessObj.name.casefold(), rtvInfoObj.new_state)
+    
     #return only new files left
     newRtvFiles = processTimes[newFileMask]
 
