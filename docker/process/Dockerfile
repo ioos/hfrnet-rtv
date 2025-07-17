@@ -11,6 +11,8 @@ RUN dnf update -y && \
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/share/assistt/compilers/miniconda3 && \
     rm Miniconda3-latest-Linux-x86_64.sh && \
     sed -i -e 's/name: .*/name: base/' -e '/^prefix:/d' /home/conda_environment.yml && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     conda env update --file /home/conda_environment.yml && \
     conda clean --all --yes && \
     pip install /home/t4_utils-1.0.2a24-py3-none-any.whl && \
