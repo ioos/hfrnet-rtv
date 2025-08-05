@@ -134,6 +134,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                    fileLocObj, center_time, stcLtaInfoObj)
                 sumObj = sumAvg.get_sum()
                 avgObj = sumAvg.get_avg()
+                if avgObj is None:
+                    _log.error("Could not save the sum nor average file because the average was not calculated.")
+                    continue
                 
                 inputs = [Path(f.input_file).name for f in sumAvg.fileList if f.input_file is not None]
                 
@@ -154,18 +157,15 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 _log.info("Saving stc total intermediate files in netcdf format")
                 #copy intermediate file to s3 bucket
                 copy_file_to_s3(configObj.output_intermed_s3_loc, fileNameList.intermed_filepath, configObj, center_time, metaDataObj, 'stc-intermed')
-
-                if avgObj is not None:
-                    avgObj.land = land
-                    avgObj.grid = grid
-                    stcSaveNetcdf(metaDataObj, configObj,
-                                  fileNameList, stcInfoObj,
-                                  process, center_time, avgObj, inputs)
-                    #copy file to s3 bucket
-                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, center_time, metaDataObj, 'stc')
-                else:
-                    msg = f"Could not save average file because average was not calculated"
-                    _log.error(msg)
+                
+                #Save the average file
+                avgObj.land = land
+                avgObj.grid = grid
+                stcSaveNetcdf(metaDataObj, configObj,
+                              fileNameList, stcInfoObj,
+                              process, center_time, avgObj, inputs)
+                #copy file to s3 bucket
+                copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, center_time, metaDataObj, 'stc')
                 
                 stcTime = current_time() # time in constsHFR.DATETIME_FORMAT
                 _log.info(f"Update the process {process.name} time {stcTime} in the state table")
@@ -184,7 +184,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             for iTime in newRtvFiles:
 
                 doMonthly, doYearly, monthTime, yearTime = ltaRunConfig(iTime, configObj, process)
-
+                doMonthly = True
                 if doMonthly:
                     
                     #for execution time logging
@@ -195,6 +195,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, monthTime, stcLtaInfoObj)
                     sumObj = sumAvg.get_sum()
                     avgObj = sumAvg.get_avg()
+
+                    if avgObj is None:
+                        _log.warning("Could not save the monthly sum or average file.")
+                        continue
                     
                     inputs = [Path(f.input_file).name for f in sumAvg.fileList if f.input_file is not None]
                     
@@ -209,7 +213,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                'stcLtaInfoObj': stcLtaInfoObj.to_dict(),
                                'process': process.to_dict()}
                     allInfo_dict = {'c': allInfo, 't': iTime, 'S': sumObj.to_dict()}
-
+                    
                     _log.info("------------- Saving monthly total files in netcdf "
                               "format")
                     saveNetcdf(fileNameList.intermed_filepath, allInfo_dict)
@@ -220,17 +224,14 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     #save final file
                     _log.info("------------- Saving intermediate monthly total files "
                               "in netcdf format")
-
-                    if avgObj is not None:
-                        avgObj.land = land
-                        avgObj.grid = grid
-                        ltaSaveNetcdf(metaDataObj, configObj,
-                                      fileNameList, stcLtaInfoObj,
-                                      process, iTime, avgObj, inputs)
-                        #copy file to s3 bucket
-                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'monthly')
-                    else:
-                        _log.warning("Could not save monthly average file")
+                    
+                    avgObj.land = land
+                    avgObj.grid = grid
+                    ltaSaveNetcdf(metaDataObj, configObj,
+                                  fileNameList, stcLtaInfoObj,
+                                  process, iTime, avgObj, inputs)
+                    #copy file to s3 bucket
+                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'monthly')
                     
                     monthlyTime = current_time() # time in constsHFR.DATETIME_FORMAT
                     _log.info(f"Update the process {process.name} time "
@@ -252,6 +253,11 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                        fileLocObj, yearTime, stcLtaInfoObj)
                     sumObjYear = sumAvgYear.get_sum()
                     avgObjYear = sumAvgYear.get_avg()
+
+                    if avgObjYear is None:
+                        _log.warning("Could not save yearly average file.")
+                        continue
+                    
                     inputs = [Path(f.input_file).name for f in sumAvgYear.fileList if f.input_file is not None]
 
                     #metadata and filenames for output
@@ -260,16 +266,13 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                                              fileLocObj, yearTime)
                     #save final file
                     _log.info("------------- Saving annual total files in netcdf format")
-                    if avgObjYear is not None:
-                        avgObjYear.land = land
-                        avgObjYear.grid = grid
-                        ltaSaveNetcdf(metaDataObj, configObj,
-                                      fileNameList, stcLtaInfoObj,
+                    avgObjYear.land = land
+                    avgObjYear.grid = grid
+                    ltaSaveNetcdf(metaDataObj, configObj,
+                                  fileNameList, stcLtaInfoObj,
                                       process, iTime, avgObjYear, inputs)
-                        #copy file to s3 bucket
-                        copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'annual')
-                    else:
-                        _log.warning("Could not save yearly average file")
+                    #copy file to s3 bucket
+                    copy_file_to_s3(configObj.output_s3_loc, fileNameList.output_ncfile, configObj, iTime, metaDataObj, 'annual')
                         
                     yearlyTime = current_time() # time in constsHFR.DATETIME_FORMAT
                     _log.info(

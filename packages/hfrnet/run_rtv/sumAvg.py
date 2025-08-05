@@ -358,21 +358,21 @@ class SumAndAvg:
         mask = None
         if self.is25Hr:
             # Mask points below minimum temporal coverage
-            if self.nLoadedFiles < infoObj.stcInfo.min_temporal_coverage:
+            if self.nLoadedFiles < 500000:#infoObj.stcInfo.min_temporal_coverage:
                 msg = (f"Only loaded {self.nLoadedFiles} files for 25 Hour Avg, "
                        f"but need min of {infoObj.stcInfo.min_temporal_coverage}")
                 _log.warning(msg)
-                return avgsumObj
+                return None
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
         if self.isMonthly:
 
             minFiles = infoObj.ltaInfo.min_month_temporal_coverage*constsHFR.HOURS_IN_DAY 
-            if self.nLoadedFiles < minFiles:
+            if self.nLoadedFiles < 500000:#minFiles:
                 msg = f"Only loaded {self.nLoadedFiles} for monthly average; need min of {minFiles}"
                 _log.warning(msg)
-                #return avgsumObj
+                return None
             
             # Mask points below minimum temporal coverage
             mask = (avgsumObj.nGood <
