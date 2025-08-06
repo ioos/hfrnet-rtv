@@ -362,7 +362,7 @@ class SumAndAvg:
                 msg = (f"Only loaded {self.nLoadedFiles} files for 25 Hour Avg, "
                        f"but need min of {infoObj.stcInfo.min_temporal_coverage}")
                 _log.warning(msg)
-                return avgsumObj
+                return None
 
             mask = avgsumObj.nGood < infoObj.stcInfo.min_temporal_coverage
 
@@ -372,7 +372,7 @@ class SumAndAvg:
             if self.nLoadedFiles < minFiles:
                 msg = f"Only loaded {self.nLoadedFiles} for monthly average; need min of {minFiles}"
                 _log.warning(msg)
-                #return avgsumObj
+                return None
             
             # Mask points below minimum temporal coverage
             mask = (avgsumObj.nGood <
