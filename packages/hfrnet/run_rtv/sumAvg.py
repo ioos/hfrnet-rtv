@@ -203,10 +203,10 @@ class SumAndAvg:
         sumavgObj.vMin = np.full(nGridPts, np.nan)
         sumavgObj.uMax = np.full(nGridPts, np.nan)
         sumavgObj.vMax = np.full(nGridPts, np.nan)
-        sumavgObj.uAvg = np.zeros(nGridPts)
-        sumavgObj.vAvg = np.zeros(nGridPts)
-        sumavgObj.uVar = np.zeros(nGridPts)
-        sumavgObj.vVar = np.zeros(nGridPts)
+        sumavgObj.uAvg = np.full(nGridPts, np.nan)
+        sumavgObj.vAvg = np.full(nGridPts, np.nan)
+        sumavgObj.uVar = np.full(nGridPts, np.nan)
+        sumavgObj.vVar = np.full(nGridPts, np.nan)
 
         return sumavgObj
 
@@ -336,6 +336,7 @@ class SumAndAvg:
                                                            inFileTotObj.u_xvel)), axis=0)
                 self.sumavgObj.vMax  = np.nanmax(np.stack((self.sumavgObj.vMax,
                                                            inFileTotObj.v_yvel)), axis=0)
+
         self.completedSum = self.nLoadedFiles > 0 
 
         return self.sumavgObj
@@ -393,7 +394,7 @@ class SumAndAvg:
             avgsumObj.vMin[mask] = np.nan
             avgsumObj.uMax[mask] = np.nan
             avgsumObj.vMax[mask] = np.nan
-
+            
         if not self.nanany(avgsumObj.nGood):
             return avgsumObj
 
