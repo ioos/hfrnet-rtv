@@ -206,7 +206,7 @@ def set_db_host():
     elif acc_id == '656149346314': # UAT
         host = 'nesdis-nccfuat5065-hfrnet-db.cluster-ciaelnl1aaal.us-east-1.rds.amazonaws.com'
     elif acc_id == '844319835141': # Prod
-        host = ''
+        host = 'nesdis-nccfprod5065-hfrnet-db.cluster-c1a7lh8kiqkv.us-east-1.rds.amazonaws.com'
 
     return host
 
