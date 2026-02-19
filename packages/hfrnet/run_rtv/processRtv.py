@@ -123,7 +123,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             msg = "\n" + "="*80 + f"\nRtv execution time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
 
-        if process.name.casefold() == 'stc1' and newRtvFiles is not None:
+        if process.name.casefold() == 'stc' and newRtvFiles is not None:
 
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
@@ -187,8 +187,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 else:
                     _log.error("Could not save the sum nor average file because the average was not calculated.")
                 
-        if process.name.casefold() == 'lta1' and newRtvFiles is not None:
-            #newRtvFiles = [configObj.runTime]
+        if process.name.casefold() == 'lta' and newRtvFiles is not None:
+
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
             _log.info("#########################################")

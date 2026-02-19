@@ -534,8 +534,8 @@ def check_lock_process(configObj):
 				ct_temp = results['exe_time'][0]
 				process_stime = ct_temp.replace(tzinfo=timezone.utc)
 
-				time_diff = ct - process_stime; db_locked = check_lock(results); test = results['process_running'][0]; print("\n\n", results, "\n\n", db_locked, "\n\n")
-				if db_locked: #time_diff < process_time:
+				db_locked = check_lock(results)
+				if db_locked:
 					_log.fatal(f"Process of Domain = {configObj.domain}:: and resolution ="
 							f" {configObj.resolution} already running.  Can't run")
 					return True
