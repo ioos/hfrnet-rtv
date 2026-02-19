@@ -12,8 +12,10 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.run_rtv.rtvSaveNetcdf import rtvSaveNetcdf
 from hfrnet.utils_funcs.filenames import filenames
 from hfrnet.run_rtv.saveNetcdf import saveNetcdf
-from hfrnet.db_tools.db_tables import update_state_time, record_output_files
-from hfrnet.utils_funcs.utility import copy_file_to_s3
+from hfrnet.db_tools.db_tables import (update_state_time, record_output_files,
+                                       update_db_lock, check_time_len_db)
+from hfrnet.utils_funcs.utility import (copy_file_to_s3, current_datetime)
+from hfrnet.utils_funcs import constsHFR
 
 _log = logging.getLogger()
 
@@ -52,6 +54,9 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     all processing is completed.
     """
 
+    #to keep track of time lenght of processing for db lock
+    rtv_process_db_start_time = current_datetime()
+    
     processTimes = []
     _log.info(f"rtv:: {configObj.reprocess}")
     if configObj.reprocess:
@@ -83,6 +88,10 @@ def rtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj, compTotOb
     #Loop over all the processing times
     for CalcTime in processTimes:
         _log.info(f"------------- Processing Time :: {CalcTime}")
+
+        #update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+        rtv_process_db_start_time = check_time_len_db(rtv_process_db_start_time, configObj)
+        
         #increment index
         index = index + 1
 

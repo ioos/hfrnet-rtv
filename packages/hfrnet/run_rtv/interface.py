@@ -22,7 +22,8 @@ import aim
 
 #hfrnet modules
 from hfrnet.db_tools.db_tables import (read_domain, read_resolution, read_methods,
-                                        check_lock_process, clear_state_table)
+                                       check_lock_process, clear_state_table,
+                                       clear_db_lock)
 from hfrnet.utils_funcs.utility import (setup_log_filename, current_datetime, Set_s3_output_bucket
                                         ,generate_time_spans)
 from hfrnet.utils_funcs.lib_rtv import (ConfigureVals, Metadata, RtvInfo,
@@ -236,7 +237,8 @@ class Interface(aim.Interface):
                                   self.compTotObj)
         except Exception as exp:
             _log.error(f"Could not run procesRtv: {exp}")
-            
+
+        clear_db_lock(self.mconfigureVals)
         self.output_info['status'] = "good"
 
     def reformat(self):

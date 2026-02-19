@@ -18,7 +18,8 @@ from hfrnet.run_rtv.rtvProcessMetadata import rtvProcessMetadata
 from hfrnet.utils_funcs.utility import (load_land, load_grid, ltaRunConfig,
                                         current_time, current_datetime,
                                         copy_file_to_s3)
-from hfrnet.db_tools.db_tables import update_state_time, record_output_files
+from hfrnet.db_tools.db_tables import (update_state_time, record_output_files,
+                                       update_db_lock, check_time_len_db)
 
 _log = logging.getLogger()
 
@@ -69,6 +70,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
     Use runRtv to call processRtv in batch mode from the command-line.
 
     """
+
+    #time for db lock checking
+    process_start_time = current_datetime()
+    
     process = RtvProcess()
 
     domain = configObj.domain.lower()
@@ -103,7 +108,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             _log.info( f"{stime}")
             _log.info("#########################################")
 
-
+            #update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+            process_start_time = check_time_len_db(process_start_time, configObj)
+                           
             newRtvFiles = rtv.rtv(configObj, siteInfoObj, fileLocObj,
                                   process, rtvInfoObj, compTotObj, land, grid)
             if newRtvFiles is None:
@@ -115,9 +122,8 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             rtvTime = current_datetime()
             msg = "\n" + "="*80 + f"\nRtv execution time:  {(rtvTime - stime)}\n" + "="*80
             _log.info(msg)
-        # else:
-        #     continue
-        if process.name.casefold() == 'stc' and newRtvFiles is not None:
+
+        if process.name.casefold() == 'stc1' and newRtvFiles is not None:
 
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
@@ -125,6 +131,9 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
             for iTime in newRtvFiles:
                 #for execution time logging
                 stime = current_datetime() # datetime obj
+
+                #update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+                process_start_time = check_time_len_db(process_start_time, configObj)
 
                 #offset time to the center of the 25 hr window
                 center_time = iTime - timedelta(hours=12)
@@ -178,7 +187,7 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                 else:
                     _log.error("Could not save the sum nor average file because the average was not calculated.")
                 
-        if process.name.casefold() == 'lta' and newRtvFiles is not None:
+        if process.name.casefold() == 'lta1' and newRtvFiles is not None:
             #newRtvFiles = [configObj.runTime]
             _log.info("#########################################")
             _log.info( f"processing:: {process.name.casefold()} , newRtvFiles={len(newRtvFiles)}")
@@ -191,7 +200,10 @@ def processRtv(configObj, siteInfoObj, fileLocObj, rtvProcessObj, rtvInfoObj,
                     
                     #for execution time logging
                     stime = current_datetime() # time in constsHFR.DATETIME_FORMAT
-
+                    
+                    #update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+                    process_start_time = check_time_len_db(process_start_time, configObj)
+                    
                     #calculation
                     sumAvg = SumAndAvg("monthly", configObj, process,
                                        fileLocObj, monthTime, stcLtaInfoObj)

@@ -180,6 +180,11 @@ class db_manager:
         )
         """
         self.write_query(create_table_query)
+#        add_field_query = f"""
+ #       ALTER TABLE lock_process
+#        ADD db_lock BOOL 
+#      """
+ #       self.write_query(add_field_query)
     #----------------------------------------------------------
 
 def set_db_host():
