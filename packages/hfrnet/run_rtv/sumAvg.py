@@ -8,9 +8,11 @@ from copy import deepcopy
 import numpy as np
 from hfrnet.utils_funcs.lib_sumavg import SumAvgInfo
 from hfrnet.utils_funcs.lib_rtv import RtvTotals
-from hfrnet.utils_funcs.utility import read_total_file
+from hfrnet.utils_funcs.utility import (read_total_file,
+                                        current_datetime)
 import hfrnet.utils_funcs.filenames as filenames
 import hfrnet.utils_funcs.constsHFR as constsHFR
+from hfrnet.db_tools.db_tables import check_time_len_db
 
 _log = logging.getLogger()
 
@@ -70,6 +72,7 @@ class SumAndAvg:
         self.nLoadedFiles = 0
         self.completedSum = False
         self.is25Hr, self.isMonthly, self.isAnnual = self.get_mode_bools()
+        self.process_start_time = current_datetime()
 
         if self.mode.casefold() not in constsHFR.MODES:
             raise ValueError(f"Must have mode be one of: {constsHFR.MODES}")
@@ -270,6 +273,9 @@ class SumAndAvg:
         self.get_file_list()
         
         for inFile in self.fileList:
+
+            #update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+            self.process_start_time = check_time_len_db(self.process_start_time, self.configObj)
             
             if inFile.input_file is None:
                 continue

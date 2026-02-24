@@ -4,7 +4,7 @@ from hfrnet.db_tools.db_manager import db_manager
 from datetime import timedelta, timezone, datetime
 from decimal import Decimal
 from hfrnet.utils_funcs import constsHFR
-from hfrnet.utils_funcs.utility import get_s3_directory_path
+from hfrnet.utils_funcs.utility import get_s3_directory_path, check_lock
 
 
 _log = logging.getLogger()
@@ -522,7 +522,7 @@ def check_lock_process(configObj):
 
 	with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
 		# Build & execute query
-		sqlquery = (f"SELECT exe_time FROM lock_process WHERE domain = "
+		sqlquery = (f"SELECT exe_time, process_running FROM lock_process WHERE domain = "
 					f"'{configObj.domain}' AND resolution = '{configObj.resolution}' ")
 
 		try:
@@ -534,8 +534,8 @@ def check_lock_process(configObj):
 				ct_temp = results['exe_time'][0]
 				process_stime = ct_temp.replace(tzinfo=timezone.utc)
 
-				time_diff = ct - process_stime
-				if time_diff < process_time:
+				db_locked = check_lock(results)
+				if db_locked:
 					_log.fatal(f"Process of Domain = {configObj.domain}:: and resolution ="
 							f" {configObj.resolution} already running.  Can't run")
 					return True
@@ -544,7 +544,7 @@ def check_lock_process(configObj):
 								f"Domain = {configObj.domain}:: and resolution ="
 								f" {configObj.resolution}.")
 
-					update_query = (f"UPDATE lock_process SET exe_time = '{ct}' "
+					update_query = (f"UPDATE lock_process SET exe_time = '{ct}', process_running = true  "
 									f"WHERE domain = '{configObj.domain}' "
 									f"AND resolution = '{configObj.resolution}'")
 					try:
@@ -561,9 +561,9 @@ def check_lock_process(configObj):
 							f"Domain = {configObj.domain}:: and resolution ="
 							f" {configObj.resolution}")
 
-				lock_query = (f"INSERT into lock_process (domain, resolution, exe_time) "
+				lock_query = (f"INSERT into lock_process (domain, resolution, exe_time, process_running) "
 							f"values ('{configObj.domain}', '{configObj.resolution}',"
-							f"'{ct}' )")
+							f"'{ct}', true )")
 				try:
 					db_class.write_query(lock_query)
 					return False
@@ -706,7 +706,7 @@ def create_db_table_lock_process(configObj):
 		create_table_query = """
 			CREATE TABLE IF NOT EXISTS lock_process 
 			( id INT AUTO_INCREMENT PRIMARY KEY, 
-			exe_time timestamp NOT NULL, 
+			exe_time timestamp NOT NULL, process_running INT NOT NULL,  
 			domain VARCHAR(255) NOT NULL, 
 			resolution VARCHAR(255) NOT NULL)
 			"""
@@ -716,3 +716,58 @@ def create_db_table_lock_process(configObj):
 			msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
 					f", Can't create lock_process ::{create_table_query}::")
 			_log.fatal(msg)
+
+
+def update_db_lock(configObj):
+        """
+           update the database to keep it locked
+        """
+
+        from hfrnet.utils_funcs.utility import current_datetime
+        
+        ct = current_datetime()
+        with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
+                
+                update_query = (f"UPDATE lock_process SET exe_time = '{ct}', process_running = true "
+                                f"WHERE domain = '{configObj.domain}' "
+                                f"AND resolution = '{configObj.resolution}'")
+                try:
+                        db_class.write_query(update_query)
+                        return False
+                except Exception as err:
+                        msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+                               f", Can't update the lock_process for "
+                               f"{configObj.domain}::{configObj.resolution}")
+                        
+def clear_db_lock(configObj):
+        """
+           Unlocks the database after the running is complete
+        """
+
+        with db_manager(configObj.dbObject, configObj.config_dbname) as db_class:
+                update_query = (f"UPDATE lock_process SET process_running = false "
+                                f"WHERE domain = '{configObj.domain}' "
+                                f"AND resolution = '{configObj.resolution}'")
+                try:
+                        db_class.write_query(update_query)
+                        return False
+                except Exception as err:
+                        msg = (f" ---- FATAL ERROR:Unexpected {err=}, {type(err)=}"
+                               f", Can't unlock by setting the process_running = false for "
+                               f"{configObj.domain}::{configObj.resolution}")
+                        _log.error(msg)
+
+
+def check_time_len_db(check_time, configObj):
+        """
+           Update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+           Return updated timestamp if db has been updated, else the same time
+        """
+        from hfrnet.utils_funcs.utility import current_datetime
+        
+        time_diff = current_datetime() - check_time
+        if time_diff > constsHFR.process_time:
+                update_db_lock(configObj)
+                return current_datetime()
+        else:
+                return check_time

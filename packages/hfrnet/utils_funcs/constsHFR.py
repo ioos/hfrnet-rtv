@@ -31,4 +31,4 @@ YEAR_AVG_MIN_DATE = datetime(datetime.now(timezone.utc).year, 1, 20, 0, 0, tzinf
 MONTH_AVG_MIN_DAY = 13
 #--------
 # Waiting time for locking a process
-process_time = timedelta(seconds=2)# timedelta(minutes=2)
+process_time = timedelta(hours=4)

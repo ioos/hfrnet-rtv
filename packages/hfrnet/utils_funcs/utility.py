@@ -551,14 +551,23 @@ def ltaRunConfig(rtvTime, configObj, rtvProcessObj):
         #have to get state from database to see if it's already been done
         state_time = get_state_time(configObj, rtvProcessObj.name.lower())
 
+        msg = f"State time for {rtvProcessObj.name.lower()} is {state_time}"
+        _log.info(msg)
+        
         if state_time is None:
             state_time = datetime.fromisoformat('1970-01-01')
             msg = (f"No lta state defined. Using base date 1970-01-01")
-        
+            _log.warning(msg)
+            
         if rtvTime.day >= constsHFR.MONTH_AVG_MIN_DAY:
             doMonthly = True
 
             month_diff = timeNow.month - state_time.month
+            year_diff = timeNow.year - state_time.year
+            
+            if month_diff < 0 and year_diff > 0:
+                month_diff = month_diff + year_diff*12
+                
             # Average has already been done this month
             if month_diff == 0:
                 doMonthly = False
@@ -767,3 +776,36 @@ def copy_file_to_s3(s3_loc, file_name, configObj, time, metaDataObj, process):
         ExtraArgs=ExtraArgs_dict
     )
     _log.info(f"\n Finished copying {file_name} to s3 \n\n")
+
+#def check_time_len_db(check_time, configObj):
+ #   """
+ #      Update the timestamp for db_lock if it has been longer than the set time limit (constsHFR.process_time)
+ #      Return updated timestamp if db has been updated, else the same time
+#   """
+#    time_diff = current_datetime() - check_time
+#    if time_diff > constsHFR.process_time:
+#        update_db_lock(configObj)
+#        return current_datetime()
+#else:
+ #       return check_time
+    
+def check_lock(results):
+    """
+       Check if the database lock is valid
+    """
+    ct = current_datetime()
+    process_lock = results['process_running'][0]
+    ct_temp = results['exe_time'][0]
+    process_stime = ct_temp.replace(tzinfo=timezone.utc)
+    
+    time_diff = ct - process_stime
+    ret_val = False
+    if process_lock:
+        ret_val = True
+
+        if time_diff > constsHFR.process_time:
+            # The process lock is still true in the database, but the time since the setting is longer than the time set in the constsHFR.
+            # This means the process ended before it could reset the database, so either crashed or some other problem.
+            ret_val = False
+
+    return ret_val
