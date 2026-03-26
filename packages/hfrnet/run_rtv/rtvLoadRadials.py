@@ -405,7 +405,8 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             errmsg = f': {str(e)}'
             _log.error(errmsg)
 
-        if d is None:
+        # 0 radials loaded
+        if len(d.latitude) == 0:
             continue
 
         # VFLG filtering
