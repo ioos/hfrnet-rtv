@@ -384,15 +384,8 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
 
         n = n + 1
         ifile = file_list_temp[I]
-        # ifile.fullfile = Path(f"{ifile.dir}/{ifile.file}")
         ifile.fullfile = Path(copy_file_from_s3(ifile.dir,ifile.file,fileLocObj.radial_local_dir))
         
-        # raise ValueError("==================")   
-        # if fileLocObj.radial_local_dir:
-        #     ifile.fullfile = Path(f"{fileLocObj.radial_local_dir}",
-        #                           f"{ifile.network}", f"{ifile.site}",
-        #                           f"{ifile.t.strftime('%Y-%m')}",
-        #                           f"{ifile.file}")
         # Load radial data
         d = None
         try:
@@ -405,6 +398,10 @@ def rtvLoadRadials(configObj, siteInfoObj, fileLocObj, rtvInfoObj, landInfoObj, 
             errmsg = f': {str(e)}'
             _log.error(errmsg)
 
+        # no file loaded
+        if d is None:
+            continue
+        
         # 0 radials loaded
         if len(d.latitude) == 0:
             continue
