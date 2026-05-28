@@ -3,6 +3,18 @@ HFRNet is a python package designed to process radial velocities measured by HF-
 
 [[_TOC_]]
 
+## Disclaimer
+
+This repository is a scientific product and is not official communication of the National Oceanic and
+Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is
+provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of
+Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed
+by all applicable Federal law. Any reference to specific commercial products, processes, or services by service
+mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or
+favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a
+DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by
+DOC or the United States Government.
+
 ## Important Resources
 - __[Google Drive](https://drive.google.com/drive/folders/12joE1XzYbQWOT3Yez3ye7HmyPhhYnNPF)__
 - __[Algorithm Support Document](https://docs.google.com/document/d/1QUiUwgeGr3LINf9lBWBIfja_m__yLKfTMWHam_f_Ooo/edit?tab=t.0#heading=h.gjdgxs)__
@@ -92,7 +104,7 @@ All output files will be printed to the output.txt file, which is just a dump of
 | File Type | File Token Label | Type of Output<br>(Primary, Intermediate, Diagnostic) |
 | --- | --- | --- |
 | output netCDF files | | Primary |
-| log  |  | Diagnostic |
+| log  |  | Diagnositc |
 | intermediate netCDF files|  | Intermediate |
 
 
@@ -198,13 +210,9 @@ production_rule:
 - N/A
 
 
-## Contributor Guidelines
+## Note for users cloning from the GitHub mirror
 
-The public `hfrnet-rtv` GitHub repository, hosted at https://github.com/ioos/hfrnet-rtv, is a mirror of a non-public codebase hosted in an internal GitLab instance.
-It is important to note that, while code contributions, documentation, issues, etc, are welcomed in this repository,
-those may not be merge quickly, and/or not incorporated into the non-public repository.   
+If working with the mirror hosted at https://github.com/ioos/hfrnet-rtv you will need a workaround to obtain the failes hosted via git-lfs.
 
-If working with the public mirror you will need a workaround to obtain the files hosted via git-lfs.
-
-1. Before cloning, set the environment variable `GIT_LFS_SKIP_SMUDGE=1`, to avoid an incomplete clone.
-1. Install the Python package `pooch` in your working environment and run the python script `download_ancillary_data.py` to populate the `ancillary_data` folder.
+1. When cloning set the environment variablw `GIT_LFS_SKIP_SMUDGE=1` to avoid an incomplete close.
+1. Run the python script `download_ancillary_data.py` to populate the `ancillary_data` folder.
