@@ -130,12 +130,12 @@ def writeNetCDF(metaDataObj, configObj, fileLocObj, stcInfoObj, rtvProcessObj,
     hi_uvar_count = np.sum(np.sum(u_var > 32767))  # 16-bit signed limit
     u_var[u_var > 32767] = 32767 # hi limit range check
     if hi_uvar_count > 0:
-        _log.notice(f'U variance exceeds integer limits {hi_uvar_count} times while saving NetCDF' )
+        _log.warning(f'U variance exceeds integer limits {hi_uvar_count} times while saving NetCDF' )
 
     hi_vvar_count = np.sum(np.sum(v_var > 32767))  # 16-bit signed limit
     v_var[ v_var > 32767 ] = 32767 # hi limit range check
     if hi_vvar_count > 0:
-        _log.notice(f'V variance exceeds integer limits {hi_vvar_count} times while saving NetCDF')
+        _log.warning(f'V variance exceeds integer limits {hi_vvar_count} times while saving NetCDF')
 
     # n_obs
     n_obs = array_rotate_and_round(A.grid, A.nGood, 'nGood')
