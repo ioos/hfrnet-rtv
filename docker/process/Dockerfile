@@ -1,4 +1,4 @@
-FROM redhat/ubi9
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
 LABEL Maintainer="nesdis.ocs.assistt.cm@noaa.gov"
 COPY docker/process/t4_utils-1.0.2a24-py3-none-any.whl /home
 COPY conda_environment.yml /home/
