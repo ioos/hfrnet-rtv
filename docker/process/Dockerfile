@@ -1,28 +1,26 @@
-FROM redhat/ubi9
-LABEL Maintainer="nesdis.ocs.assistt.cm@noaa.gov"
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal AS builder
 COPY docker/process/t4_utils-1.0.2a24-py3-none-any.whl /home
-COPY conda_environment.yml /home/
-ENV PATH=/usr/share/assistt/compilers/miniconda3/bin:$PATH
-RUN dnf update -y && \
-    dnf install -y wget uuid zip diffutils && \
-    rpm -ivh https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/ksh-1.0.6-3.el9.x86_64.rpm && \
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    curl -OL https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem && \
-    bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/share/assistt/compilers/miniconda3 && \
-    rm Miniconda3-latest-Linux-x86_64.sh && \
+COPY conda_environment.yml /home
+RUN dnf install -y bzip2 tar && dnf clean all && \
+    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba && \
     sed -i -e 's/name: .*/name: base/' -e '/^prefix:/d' /home/conda_environment.yml && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    conda env update --file /home/conda_environment.yml && \
-    conda clean --all --yes && \
+    /bin/micromamba shell init -s bash -r /usr/share/assistt/compilers/micromamba && \
+    source ~/.bashrc && \
+    micromamba activate && \
+    micromamba install -y -f /home/conda_environment.yml && \
     pip install /home/t4_utils-1.0.2a24-py3-none-any.whl && \
+    micromamba clean --all --yes
+    
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
+LABEL Maintainer="nesdis.ocs.assistt.cm@noaa.gov"
+RUN dnf update -y && \
+    dnf install -y wget uuid zip diffutils && dnf clean all && \
     mkdir /home/WORKING_DIR && \
-    cp -rf us-east-1-bundle.pem /home/WORKING_DIR && \
-    rm /home/conda_environment.yml && \
-    rm /home/t4_utils-1.0.2a24-py3-none-any.whl && \
-    rm us-east-1-bundle.pem && \
+    curl -OL https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem && \
+    mv us-east-1-bundle.pem /home/WORKING_DIR && \
     chmod 777 /home/WORKING_DIR
+    
 WORKDIR /home/WORKING_DIR
+COPY --from=builder /usr/share/assistt/compilers/micromamba /usr/share/assistt/compilers/micromamba
+ENV PATH=/usr/share/assistt/compilers/micromamba/bin:$PATH
 USER 1000
-# curl -OL https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem && \
-

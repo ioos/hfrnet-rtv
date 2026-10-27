@@ -2,7 +2,7 @@ production_rule:
   sa_name: "HFRNet-ushi-6km"
   description: "Integrated Ocean Observing System (IOOS)"
   sa_id: "IOOS-HFRNet-ushi-6km"
-  version: "1.0.60"
+  version: "1.0.63"
   runtime:
     resources:
       cpu: "1"
